@@ -1,15 +1,12 @@
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import {
-  Avatar,
-  AvatarFallback,
-  AvatarImage,
-} from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Bell, Search, LogOut, Settings, User } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
+import logo from "@/assets/logo/logo.png";
 
 export default function Navbar() {
   const { user, logout } = useAuth();
@@ -31,12 +28,7 @@ export default function Navbar() {
         <div className="h-16 flex items-center gap-3 sm:gap-4">
           {/* Logo */}
           <div className="flex items-center gap-2 shrink-0">
-            <div className="size-7 rounded-full bg-white shadow ring-1 ring-black/5 grid place-items-center">
-              <span className="text-orange-600 font-black -mt-[2px]">✓</span>
-            </div>
-            <span className="text-lg sm:text-xl font-semibold text-gray-800">
-              Veridate
-            </span>
+            <img src={logo} alt="Veridate Logo" className="h-8 w-auto" />
           </div>
 
           {/* Search (desktop only) */}
