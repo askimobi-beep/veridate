@@ -1,0 +1,56 @@
+const express = require("express");
+const router = express.Router();
+const {
+  // createProfile,
+  savePersonalInfo,
+  saveEducation,
+  getProfile,
+  saveExperience,
+  listProfilesPublic,
+  getProfileByUserId,
+} = require("../controllers/profile.Controller");
+
+const upload = require("../middlewares/uploadMiddleware");
+const { protect } = require("../middlewares/authMiddleware");
+
+// router.post(
+//   "/create",
+//   protect,
+//   upload.fields([
+//     { name: "resume", maxCount: 1 },
+//     { name: "profilePic", maxCount: 1 },
+//     { name: "educationFiles", maxCount: 10 },
+//   ]),
+//   createProfile
+// );
+
+router.post(
+  "/save-personal-info",
+  protect,
+  upload.fields([
+    { name: "resume", maxCount: 1 },
+    { name: "profilePic", maxCount: 1 },
+  ]),
+  savePersonalInfo
+);
+
+router.post(
+  "/save-education",
+  protect,
+  upload.any(), // ✅ ACCEPT ANY FIELD NAMES, we'll filter by prefix server-side
+  saveEducation
+);
+
+router.post(
+  "/save-experience",
+  protect,
+  upload.any(), // ✅ ACCEPT ANY FIELD NAMES, we'll filter by prefix server-side
+  saveExperience
+);
+
+router.get("/directory", listProfilesPublic);
+
+router.get("/getonid/:userId", getProfileByUserId);
+router.get("/me", protect, getProfile);
+
+module.exports = router;
