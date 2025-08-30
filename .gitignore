@@ -16,7 +16,6 @@ server/node_modules/puppeteer-core/.local-chromium/
 *.dll
 *.exe
 
-
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
@@ -38,3 +37,6 @@ server/node_modules/puppeteer-core/.local-chromium/
 # Optional: Build directories
 build/
 public/
+
+# Ignore uploads (don’t push server-side uploads)
+server/upload/
