@@ -1,6 +1,11 @@
 "use client";
 
-import React, { useState, useRef, forwardRef, useImperativeHandle } from "react";
+import React, {
+  useState,
+  useRef,
+  forwardRef,
+  useImperativeHandle,
+} from "react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
@@ -95,6 +100,7 @@ export default forwardRef(function FileUploader(
         </Label>
       )}
 
+      {/* DROPZONE (the file input overlay only covers this box) */}
       <div
         className={cn(
           "relative border-2 border-dashed rounded-xl p-4 shadow-sm group transition",
@@ -107,6 +113,7 @@ export default forwardRef(function FileUploader(
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
       >
+        {/* Invisible overlay that opens the file picker – it only covers THIS box */}
         <Input
           ref={inputRef}
           type="file"
@@ -151,11 +158,14 @@ export default forwardRef(function FileUploader(
             </div>
           )}
         </div>
+      </div>
 
-        {(file || previewUrl) && !disabled && (
+      {/* CLEAR BUTTON OUTSIDE the dropzone (so the overlay can't catch the click) */}
+      {(file || previewUrl) && !disabled && (
+        <div className="flex justify-end">
           <button
             type="button"
-            className="absolute top-2 right-2 z-20 pointer-events-auto inline-flex items-center gap-1 rounded-md border px-2 py-1 text-xs hover:bg-gray-50"
+            className="relative z-20 inline-flex items-center gap-1 rounded-md border px-2 py-1 text-xs hover:bg-gray-50"
             onClick={(e) => {
               e.preventDefault();
               e.stopPropagation();
@@ -165,8 +175,8 @@ export default forwardRef(function FileUploader(
             <X className="w-3 h-3" />
             Clear
           </button>
-        )}
-      </div>
+        </div>
+      )}
 
       {error && <p className="text-sm text-red-500 mt-1">{error}</p>}
     </div>

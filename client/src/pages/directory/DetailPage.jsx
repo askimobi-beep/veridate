@@ -177,7 +177,7 @@ export default function DetailPage() {
         openValue={openValue}
         setOpenValue={setOpenValue}
         locked={!!profile?.personalInfoLocked}
-        contentClassName="text-left" // 👈 forces left alignment inside the body
+        contentClassName="text-left" 
       >
         <SectionWrapper>
           <DefinitionList className="!text-left !grid-cols-1 space-y-2">
@@ -224,6 +224,7 @@ export default function DetailPage() {
         openValue={openValue}
         setOpenValue={setOpenValue}
         locked={!!profile?.educationLocked}
+        contentClassName="text-left"
       >
         <SectionWrapper>
           {Array.isArray(profile?.education) && profile.education.length ? (
@@ -292,6 +293,7 @@ export default function DetailPage() {
         openValue={openValue}
         setOpenValue={setOpenValue}
         locked={!!profile?.experienceLocked}
+        contentClassName="text-left"
       >
         <SectionWrapper>
           {Array.isArray(profile?.experience) && profile.experience.length ? (

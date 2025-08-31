@@ -1,5 +1,7 @@
 // controllers/profile.Controller.js
 const Profile = require("../models/Profile");
+const mongoose = require("mongoose");
+const { Types: { ObjectId } } = mongoose;
 const {
   removeOldPersonalFile,
   removeOldEducationFile,
@@ -665,7 +667,7 @@ exports.saveExperience = async (req, res) => {
    ========================= */
 exports.listProfilesPublic = async (req, res) => {
   try {
-    let { page = 1, limit = 12, q = "", gender, country, jobTitle, industry } = req.query;
+    let { page = 1, limit = 12, q = "", gender, country, jobTitle, industry, excludeId } = req.query;
 
     page = parseInt(page, 10);
     limit = Math.min(50, parseInt(limit, 10) || 12);
@@ -680,6 +682,26 @@ exports.listProfilesPublic = async (req, res) => {
     if (country) filter.country = country;
     if (jobTitle) filter["experience.jobTitle"] = jobTitle;
     if (industry) filter["experience.industry"] = industry;
+
+    // 🔒 hide my own profile if logged in
+    const loggedUserId = req.user?.id || req.user?._id; // depends on your JWT payload
+    if (loggedUserId && ObjectId.isValid(loggedUserId)) {
+      filter.user = { $ne: new ObjectId(loggedUserId) };
+    }
+
+    // optional: also honor ?excludeId=<profileId or userId>
+    if (excludeId) {
+      // try both: exclude profile _id or user field
+      if (!filter.$and) filter.$and = [];
+      const or = [];
+      if (ObjectId.isValid(excludeId)) {
+        or.push({ _id: { $ne: new ObjectId(excludeId) } });
+        or.push({ user: { $ne: new ObjectId(excludeId) } });
+      } else {
+        // non-ObjectId (just in case) -> leave it alone
+      }
+      if (or.length) filter.$and.push(...or);
+    }
 
     const [rows, total] = await Promise.all([
       Profile.find(filter)
@@ -723,8 +745,7 @@ exports.listProfilesPublic = async (req, res) => {
 
       return {
         _id: p._id,
-        user:
-          typeof p.user === "object" && p.user?.toString ? p.user.toString() : p.user || "",
+        user: typeof p.user === "object" && p.user?.toString ? p.user.toString() : p.user || "",
         name: p.name || "Unnamed",
         email: isHidden("email") ? "" : p.email || "",
         mobile: isHidden("mobile") ? "" : p.mobile || "",

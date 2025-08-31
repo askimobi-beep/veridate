@@ -104,7 +104,7 @@ export default function ExperienceForm({
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <AppSelect
-                  name={`jobTitle-${index}`}
+                  name={`jobTitle`}
                   label="Job Title"
                   icon={BriefcaseBusiness}
                   value={exp.jobTitle}
@@ -113,7 +113,7 @@ export default function ExperienceForm({
                   disabled={isDisabled(rowLocked, "jobTitle")}
                 />
                 <AppSelect
-                  name={`company-${index}`}
+                  name={`company`}
                   label="Company"
                   icon={Building2}
                   value={exp.company}
@@ -123,7 +123,7 @@ export default function ExperienceForm({
                 />
 
                 <AppInput
-                  name={`startDate-${index}`}
+                  name={`startDate`}
                   label="Start Date"
                   type="date"
                   value={exp.startDate}
@@ -133,7 +133,8 @@ export default function ExperienceForm({
                 />
 
                 <AppInput
-                  name={`endDate-${index}`}
+                  // name={`endDate-${index}`}
+                  name={`endDate`}
                   label="End Date"
                   type="date"
                   value={exp.endDate}
@@ -143,7 +144,7 @@ export default function ExperienceForm({
                 />
 
                 <AppInput
-                  name={`companyWebsite-${index}`}
+                  name={`companyWebsite`}
                   label="Company Website"
                   value={exp.companyWebsite}
                   onChange={(e) => updateExperience(index, "companyWebsite", e.target.value)}
@@ -172,7 +173,7 @@ export default function ExperienceForm({
                 />
 
                 <AppSelect
-                  name={`industry-${index}`}
+                  name={`industry`}
                   label="Industry"
                   value={exp.industry}
                   onChange={(e) => updateExperience(index, "industry", e.target.value)}

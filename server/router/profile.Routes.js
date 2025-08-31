@@ -12,6 +12,7 @@ const {
 
 const upload = require("../middlewares/uploadMiddleware");
 const { protect } = require("../middlewares/authMiddleware");
+const { softAuth } = require("../middlewares/softAuth");
 
 // router.post(
 //   "/create",
@@ -48,7 +49,7 @@ router.post(
   saveExperience
 );
 
-router.get("/directory", listProfilesPublic);
+router.get("/directory", softAuth , listProfilesPublic);
 
 router.get("/getonid/:userId", getProfileByUserId);
 router.get("/me", protect, getProfile);

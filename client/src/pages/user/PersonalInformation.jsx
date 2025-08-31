@@ -12,6 +12,7 @@ import ConfirmDialog from "@/components/common/ConfirmDialog";
 import usePersonalInformationForm from "@/hooks/usePersonalInformationForm";
 import { toYMD } from "@/lib/dates";
 import { getProfileMe } from "@/lib/profileApi";
+import { useAuth } from "@/context/AuthContext"; // ✅ NEW
 
 export default function PersonalInformation() {
   const {
@@ -33,6 +34,9 @@ export default function PersonalInformation() {
   const { enqueueSnackbar } = useSnackbar();
   const [open, setOpen] = useState("pi");
   const [locked, setLocked] = useState({});
+
+  // ✅ auth context (logged-in user)
+  const { user, loading: authLoading } = useAuth();
 
   // uploader refs
   const resumeRef = useRef(null);
@@ -58,6 +62,10 @@ export default function PersonalInformation() {
     setFormData((prev) => ({
       ...prev,
       ...data,
+      // ✅ also make sure name/email are always in sync with auth when available
+      name:
+        `${(user?.firstName ?? data.firstName ?? "")} ${(user?.lastName ?? data.lastName ?? "")}`.trim(),
+      email: (user?.email ?? data.email ?? ""),
       personalHiddenFields: Array.isArray(data.personalHiddenFields) ? data.personalHiddenFields : [],
       dob: toYMD(data.dob),
       education: Array.isArray(data.education)
@@ -87,13 +95,10 @@ export default function PersonalInformation() {
         const serverProfile = res?.data?.profile;
         enqueueSnackbar(`${pendingTitle} saved`, { variant: "success" });
 
-        // update locked flags locally
         setLocked((prev) => ({ ...prev, [pendingValue]: true }));
 
-        // IMPORTANT: pull fresh profile back to local state so rows have _id
         if (serverProfile) normalizeFromServer(serverProfile);
 
-        // clear file inputs by section
         if (pendingValue === "pi") {
           resumeRef.current?.reset?.();
           profilePicRef.current?.reset?.();
@@ -126,6 +131,19 @@ export default function PersonalInformation() {
     setPendingValue(null);
   };
 
+  // ✅ 1) Immediately reflect auth user into the form (fast UI), even before /profile call
+  useEffect(() => {
+    if (!authLoading && user) {
+      setFormData((prev) => ({
+        ...prev,
+        name: `${user.firstName || ""} ${user.lastName || ""}`.trim(),
+        email: user.email || prev.email || "",
+      }));
+    }
+    // if user is null we don't clear fields; keep whatever is there
+  }, [authLoading, user, setFormData]);
+
+  // ✅ 2) Fetch full profile + normalize; also respects auth user for name/email
   useEffect(() => {
     const load = async () => {
       try {
@@ -134,6 +152,10 @@ export default function PersonalInformation() {
         setFormData((prev) => ({
           ...prev,
           ...data,
+          // ensure name/email come from auth if available, else from profile
+          name:
+            `${(user?.firstName ?? data.firstName ?? "")} ${(user?.lastName ?? data.lastName ?? "")}`.trim(),
+          email: (user?.email ?? data.email ?? prev.email ?? ""),
           dob: toYMD(data.dob),
           education: Array.isArray(data.education)
             ? data.education.map((e) => ({
@@ -173,8 +195,9 @@ export default function PersonalInformation() {
       }
     };
 
-    load();
-  }, [setFormData]);
+    // only load after auth check finishes (prevents flicker/race)
+    if (!authLoading) load();
+  }, [authLoading, user, setFormData]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();

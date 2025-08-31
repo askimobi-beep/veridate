@@ -116,7 +116,7 @@ export default function PersonalDetailsForm({
           value={formData.name}
           onChange={handleChange}
           placeholder="Your full name"
-          disabled={isDisabled(locked, "name")}
+          disabled
         />
 
         <AppInput
@@ -132,7 +132,7 @@ export default function PersonalDetailsForm({
           onChange={handleChange}
           placeholder="you@example.com"
           autoComplete="email"
-          disabled={isDisabled(locked, "email")}
+          disabled
         />
 
         <AppInput
