@@ -12,13 +12,9 @@ const initials = (name = "") =>
     .toUpperCase();
 
 export default function ProfileHeader({ user, previewUrl }) {
-  const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
 
-  const profileImageUrl = previewUrl
-    ? previewUrl // live preview if new file is chosen
-    : user?.profilePic
-    ? `${API_URL}/uploads/profile/${user.profilePic}`
-    : "";
+
+  const URL = "https://api.veridate.site/uploads"
 
   return (
     <motion.div
@@ -33,7 +29,7 @@ export default function ProfileHeader({ user, previewUrl }) {
         className="relative rounded-full p-[2px]  shadow-md"
       >
         <Avatar className="size-14 border-2 border-white shadow-md">
-          <AvatarImage src={profileImageUrl} alt={user?.name || "User"} />
+          <AvatarImage src={`${URL}/profile/${user?.profilePic}`} alt={user?.name || "User"} />
           <AvatarFallback className="text-lg font-bold">
             {initials(user?.name)}
           </AvatarFallback>

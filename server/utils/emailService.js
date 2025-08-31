@@ -10,32 +10,35 @@ const transporter = nodemailer.createTransport({
   },
 });
 
-const sendRegistrationEmail = async (to, name) => {
+const sendOTPEmail = async (to, otp) => {
   const mailOptions = {
-    from: `"Relatia" <${process.env.GMAIL_USER}>`,
+    from: `Veridate <${process.env.GMAIL_USER}>`,
     to,
-    subject: "👋 Welcome to Relatia – Set Your Password",
+    subject: "🔐 Verify Your Email - Veridate",
     html: `
-      <div style="background: linear-gradient(to right, #1f1c2c, #928dab); padding: 40px; font-family: 'Segoe UI', sans-serif;">
-        <div style="max-width: 500px; margin: auto; background: rgba(255, 255, 255, 0.15); backdrop-filter: blur(10px); border-radius: 20px; padding: 30px; color: #fff; box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);">
-          <h2 style="text-align: center; font-size: 24px; margin-bottom: 20px;">🎉 Welcome, ${name}!</h2>
-          <h3 style="text-align: center; font-size: 18px; margin-bottom: 20px;">📧 ${to}</h3>
-          <p style="font-size: 16px; line-height: 1.5;">
-            You're almost ready to start using <strong>Relatia</strong>. 
-            To get started, you'll need to set your password.
-          </p>
-          <div style="text-align: center; margin: 30px 0;">
-            <a href="http://localhost:5173/set-password?email=${encodeURIComponent(to)}" 
-              style="background: #00c6ff; background: linear-gradient(to right, #0072ff, #00c6ff); color: white; padding: 12px 20px; border-radius: 8px; text-decoration: none; font-weight: bold;">
-              🔐 Set Your Password
-            </a>
+      <div style="background: linear-gradient(135deg, #f0f4ff, #f9f9ff); padding: 40px; font-family: 'Segoe UI', Tahoma, sans-serif; color: #333;">
+        <div style="max-width: 500px; margin: auto; background: white; border-radius: 16px; padding: 32px; box-shadow: 0 10px 25px rgba(0,0,0,0.08); border: 1px solid #eef1f7;">
+          <div style="text-align: center; margin-bottom: 24px;">
+            <img src="https://cdn-icons-png.flaticon.com/512/942/942751.png" alt="Veridate" width="60" style="margin-bottom: 12px;" />
+            <h2 style="font-size: 22px; font-weight: 700; color: #2d2d2d; margin: 0;">Verify Your Email</h2>
+            <p style="font-size: 14px; color: #666; margin-top: 6px;">Secure your account with a one-time passcode</p>
           </div>
-          <p style="font-size: 14px; opacity: 0.8;">
-            If you did not request this registration, please ignore this email or contact support.
+
+          <div style="background: linear-gradient(135deg, #6a11cb, #2575fc); color: white; text-align: center; border-radius: 12px; padding: 20px; font-size: 28px; font-weight: bold; letter-spacing: 4px;">
+            ${otp}
+          </div>
+
+          <p style="margin-top: 24px; font-size: 15px; line-height: 1.6; text-align: center; color: #444;">
+            Enter this code in the verification screen to complete your registration.
+            <br/>
+            This code will expire in <b>10 minutes</b>.
           </p>
-          <hr style="border-color: rgba(255, 255, 255, 0.2); margin: 30px 0;" />
-          <p style="font-size: 13px; opacity: 0.7; text-align: center;">
-            Need help? Contact us at <a href="mailto:support@relatia.com" style="color: #aad4ff;">support@relatia.com</a>
+
+        
+          <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;" />
+
+          <p style="font-size: 13px; color: #777; text-align: center; margin: 0;">
+            Didn’t request this code? You can safely ignore this email.
           </p>
         </div>
       </div>
@@ -45,22 +48,4 @@ const sendRegistrationEmail = async (to, name) => {
   await transporter.sendMail(mailOptions);
 };
 
-const sendForgotPasswordEmail = async (to, otp) => {
-  const mailOptions = {
-    from: `Relatia <${process.env.GMAIL_USER}>`,
-    to,
-    subject: "🔐 Reset Your Relatia Password",
-    html: `
-      <div style="padding: 20px; font-family: Arial, sans-serif;">
-        <h2 style="color: #333">Reset Your Password</h2>
-        <p>We received a request to reset your password. Use the OTP below to proceed:</p>
-        <h1 style="color: #007bff">${otp}</h1>
-        <p>This OTP is valid for 10 minutes. If you didn’t request this, just ignore this email.</p>
-      </div>
-    `,
-  };
-  await transporter.sendMail(mailOptions);
-};
-
-
-module.exports = { sendRegistrationEmail , sendForgotPasswordEmail };
+module.exports = { sendOTPEmail };

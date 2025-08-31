@@ -2,16 +2,8 @@ const mongoose = require("mongoose");
 
 const UserSchema = new mongoose.Schema(
   {
-    firstName: {
-      type: String,
-      required: true,
-      trim: true,
-    },
-    lastName: {
-      type: String,
-      required: true,
-      trim: true,
-    },
+    firstName: { type: String, required: true, trim: true },
+    lastName: { type: String, required: true, trim: true },
     email: {
       type: String,
       required: true,
@@ -20,29 +12,17 @@ const UserSchema = new mongoose.Schema(
       trim: true,
       match: [/^\S+@\S+\.\S+$/, "Invalid email format"],
     },
-    password: {
-      type: String,
-      required: true,
-      minlength: 8,
-      match: [
-        /^(?=.*[A-Z])(?=.*[!@#$%^&*])/,
-        "Password must be at least 8 characters long, include an uppercase letter and a special character",
-      ],
-    },
-    role: {
-      type: String,
-      enum: ["user", "admin"],
-      default: "user",
-    },
-
+    password: { type: String },
+    role: { type: String, enum: ["user", "admin"], default: "user" },
     verifyCredits: {
-      education: { type: Number, default: 1 }, // user can verify 1 education
-      experience: { type: Number, default: 1 }, // and 1 experience
+      education: { type: Number, default: 1 },
+      experience: { type: Number, default: 1 },
     },
+    otp: { type: Number },
+    otpExpiry: { type: Date },
+    isVerified: { type: Boolean, default: false },
   },
-  {
-    timestamps: true,
-  }
+  { timestamps: true }
 );
 
 module.exports = mongoose.model("User", UserSchema);

@@ -1,3 +1,6 @@
+// app/(auth)/register/page.jsx  OR pages/register.jsx (wherever yours lives)
+"use client";
+
 import { useState } from "react";
 import AppInput from "@/components/form/AppInput";
 import { Button } from "@/components/ui/button";
@@ -5,6 +8,7 @@ import { Mail, Lock, User, Loader2 } from "lucide-react";
 import { motion } from "framer-motion";
 import axiosInstance from "@/utils/axiosInstance";
 import { useSnackbar } from "notistack";
+import OtpVerify from "@/components/auth/OtpVerify";
 
 export default function RegisterPage() {
   const { enqueueSnackbar } = useSnackbar();
@@ -18,6 +22,10 @@ export default function RegisterPage() {
   });
   const [submitting, setSubmitting] = useState(false);
 
+  // OTP modal control
+  const [otpOpen, setOtpOpen] = useState(false);
+  const [lastRegisterPayload, setLastRegisterPayload] = useState(null);
+
   const handleChange = (e) => {
     setFormData((prev) => ({
       ...prev,
@@ -29,7 +37,6 @@ export default function RegisterPage() {
     e.preventDefault();
     if (submitting) return;
 
-    // quick client checks
     if (!formData.firstName || !formData.lastName || !formData.email || !formData.password) {
       enqueueSnackbar("Please fill all required fields.", { variant: "warning" });
       return;
@@ -42,7 +49,6 @@ export default function RegisterPage() {
     try {
       setSubmitting(true);
 
-      // API expects: firstName, lastName, email, password
       const payload = {
         firstName: formData.firstName.trim(),
         lastName: formData.lastName.trim(),
@@ -50,22 +56,20 @@ export default function RegisterPage() {
         password: formData.password,
       };
 
-      // assumes axiosInstance.defaults.baseURL = "http://localhost:8000/api/v1"
       const { data } = await axiosInstance.post("/auth/register-user", payload);
 
-      enqueueSnackbar(data?.message || "Registered successfully.", { variant: "success" });
+      // // pro message
+      // enqueueSnackbar(
+      //   data?.message ||
+      //     "A verification code has been sent to your email address. Please check your inbox (and Spam/Junk folder if you don’t see it).",
+      //   { variant: "success" }
+      // );
 
-      // optional: clear form and redirect
-      setFormData({
-        firstName: "",
-        lastName: "",
-        email: "",
-        password: "",
-        confirmPassword: "",
-      });
+      setLastRegisterPayload(payload);
+      setOtpOpen(true); // open OTP dialog
 
-      // if you're on Next.js, prefer router.push('/'); keeping simple here:
-      window.location.href = "/";
+      // keep the form filled so user can resend easily; or clear if you prefer
+      // setFormData({ firstName:"", lastName:"", email:"", password:"", confirmPassword:"" });
     } catch (err) {
       const apiMsg =
         err?.response?.data?.message ||
@@ -77,20 +81,22 @@ export default function RegisterPage() {
     }
   };
 
+  const onOtpSuccess = () => {
+    // after verification, send user to login
+    window.location.href = "/";
+  };
+
   return (
     <div className="min-h-screen w-full bg-gradient-to-br from-white via-[#f7f9fc] to-[#eef3ff] flex items-center justify-center px-4 relative overflow-hidden">
-      {/* Glow Layers */}
       <div className="pointer-events-none absolute -top-40 left-1/3 h-[36rem] w-[36rem] rounded-full bg-[radial-gradient(circle_at_center,rgba(56,189,248,0.12),transparent_70%)] blur-3xl" />
       <div className="pointer-events-none absolute -bottom-48 right-[-10%] h-[34rem] w-[34rem] rounded-full bg-[radial-gradient(circle_at_center,rgba(167,139,250,0.12),transparent_70%)] blur-3xl" />
 
-      {/* Wrapper */}
       <motion.div
         initial={{ opacity: 0, y: 40 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
         className="z-10 w-full max-w-5xl grid grid-cols-1 md:grid-cols-2 bg-white/60 backdrop-blur-xl shadow-xl border border-white/20 rounded-2xl overflow-hidden"
       >
-        {/* Left Side */}
         <div className="hidden md:flex items-center justify-center bg-gradient-to-br from-purple-500/20 via-indigo-500/10 to-transparent p-6">
           <div className="text-center space-y-4">
             <h2 className="text-4xl font-extrabold text-purple-700 drop-shadow-md">
@@ -103,7 +109,6 @@ export default function RegisterPage() {
           </div>
         </div>
 
-        {/* Right Side: Form */}
         <div className="p-8">
           <div className="flex justify-center mb-6 md:hidden">
             <img src="" alt="Logo" className="h-14 w-auto" />
@@ -113,7 +118,7 @@ export default function RegisterPage() {
             Create a New Account
           </h2>
 
-          {/* Social Buttons (non-functional placeholders) */}
+          {/* Social placeholders */}
           <div className="space-y-3">
             <button
               type="button"
@@ -140,14 +145,12 @@ export default function RegisterPage() {
             </button>
           </div>
 
-          {/* Divider */}
           <div className="my-6 flex items-center gap-2">
             <div className="h-px bg-gray-300 flex-1" />
             <span className="text-gray-500 text-sm">or</span>
             <div className="h-px bg-gray-300 flex-1" />
           </div>
 
-          {/* Form */}
           <form onSubmit={handleRegister} className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <AppInput
@@ -230,6 +233,20 @@ export default function RegisterPage() {
           </form>
         </div>
       </motion.div>
+
+      {/* OTP Dialog */}
+      <OtpVerify
+        open={otpOpen}
+        onOpenChange={setOtpOpen}
+        email={formData.email.trim()}
+        resendPayload={{
+          firstName: formData.firstName.trim(),
+          lastName: formData.lastName.trim(),
+          email: formData.email.trim(),
+          password: formData.password,
+        }}
+        onSuccess={onOtpSuccess}
+      />
     </div>
   );
 }
