@@ -1,8 +1,7 @@
 const allowedOrigins = [
   "http://localhost:5173",
-  "https://app.veridate.site",
-  "https://www.app.veridate.site",
-  
+  "https://app.veridate.space",
+  "https://www.app.veridate.space",
 ];
 
 const corsOptions = {
