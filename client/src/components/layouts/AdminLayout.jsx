@@ -45,7 +45,7 @@ export default function AdminLayout() {
 
       {/* content */}
       <div className="md:pl-72">
-        <Topbar />
+        {/* <Topbar /> */}
         <main className="p-6">
           <Outlet />
         </main>
@@ -54,28 +54,28 @@ export default function AdminLayout() {
   );
 }
 
-function Topbar() {
-  return (
-    <div className="sticky top-0 z-40 bg-background/70 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b">
-      <div className="flex items-center gap-3 p-4">
-        <div className="relative flex-1 max-w-xl">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input placeholder="Search…" className="pl-9" />
-        </div>
-        <div className="hidden sm:flex items-center gap-2">
-          <Button variant="outline" size="sm">Download</Button>
-          <Button variant="ghost" size="icon" aria-label="Notifications">
-            <Bell className="h-5 w-5" />
-          </Button>
-          <Button variant="ghost" size="icon" aria-label="Settings">
-            <Settings className="h-5 w-5" />
-          </Button>
-          <UserMenu />
-        </div>
-      </div>
-    </div>
-  );
-}
+// function Topbar() {
+//   return (
+//     <div className="sticky top-0 z-40 bg-background/70 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b">
+//       <div className="flex items-center gap-3 p-4">
+//         <div className="relative flex-1 max-w-xl">
+//           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+//           <Input placeholder="Search…" className="pl-9" />
+//         </div>
+//         <div className="hidden sm:flex items-center gap-2">
+//           <Button variant="outline" size="sm">Download</Button>
+//           <Button variant="ghost" size="icon" aria-label="Notifications">
+//             <Bell className="h-5 w-5" />
+//           </Button>
+//           <Button variant="ghost" size="icon" aria-label="Settings">
+//             <Settings className="h-5 w-5" />
+//           </Button>
+//           <UserMenu />
+//         </div>
+//       </div>
+//     </div>
+//   );
+// }
 
 function UserMenu() {
   return (
