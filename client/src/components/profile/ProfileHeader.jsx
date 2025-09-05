@@ -14,7 +14,7 @@ const initials = (name = "") =>
 export default function ProfileHeader({ user, previewUrl }) {
 
 
-  const URL = "https://api.veridate.site/uploads"
+  const URL = "https://api.veridate.store/uploads"
 
   return (
     <motion.div

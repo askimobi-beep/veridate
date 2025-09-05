@@ -41,6 +41,7 @@ exports.Registeruser = async (req, res) => {
         otp,
         otpExpiry,
         isVerified: false,
+        isBlocked: false
       });
       await newUser.save();
     }
@@ -61,31 +62,27 @@ exports.Loginuser = async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    // Check if user exists
     const user = await User.findOne({ email });
     if (!user || !user.password) {
       return res.status(400).json({ message: "Invalid email or password" });
     }
 
-    if (!user.isVerified) {
-      return res
-        .status(403)
-        .json({ message: "Please verify your email first" });
+    // 🚫 block gate
+    if (user.isBlocked) {
+      return res.status(403).json({ message: "Your account is blocked. Contact support." });
     }
 
-    // Compare password
+    if (!user.isVerified) {
+      return res.status(403).json({ message: "Please verify your email first" });
+    }
+
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
       return res.status(401).json({ message: "Incorrect password" });
     }
 
-    // Create JWT payload
-    const payload = {
-      id: user._id,
-      email: user.email,
-    };
-
-    const token = generateToken(payload, res); // ✅ FIXED
+    const payload = { id: user._id, email: user.email, role: user.role };
+    const token = generateToken(payload, res);
 
     res.status(200).json({
       message: "Login successful",
@@ -105,21 +102,20 @@ exports.Loginuser = async (req, res) => {
   }
 };
 
+
 exports.googleLogin = async (req, res) => {
   try {
-    const { credential } = req.body; // Google ID token
+    const { credential } = req.body;
     if (!credential) {
       return res.status(400).json({ message: "Missing Google credential" });
     }
 
-    // Verify the ID token against Google
     const ticket = await googleClient.verifyIdToken({
       idToken: credential,
-      audience: process.env.GOOGLE_CLIENT_ID, // must match your Web Client ID
+      audience: process.env.GOOGLE_CLIENT_ID,
     });
     const payload = ticket.getPayload();
 
-    // Extract fields
     const googleId = payload.sub;
     const email = (payload.email || "").toLowerCase();
     const emailVerified = payload.email_verified;
@@ -131,21 +127,18 @@ exports.googleLogin = async (req, res) => {
       return res.status(403).json({ message: "Google email not verified" });
     }
 
-    // 🔍 check for existing user
     let user = await User.findOne({ email });
 
     if (user) {
-      const updates = {};
-
-      if (!user.googleId) updates.googleId = googleId;
-      if (picture && !user.picture) updates.picture = picture;
-
-      if (!user.isVerified) {
-        updates.isVerified = true;
-        updates.otp = null;
-        updates.otpExpiry = null;
+      // 🚫 block gate
+      if (user.isBlocked) {
+        return res.status(403).json({ message: "Your account is blocked. Contact support." });
       }
 
+      const updates = {};
+      if (!user.googleId) updates.googleId = googleId;
+      if (picture && !user.picture) updates.picture = picture;
+      if (!user.isVerified) { updates.isVerified = true; updates.otp = null; updates.otpExpiry = null; }
       if (!user.firstName && givenName) updates.firstName = givenName;
       if (!user.lastName && familyName) updates.lastName = familyName;
 
@@ -153,12 +146,12 @@ exports.googleLogin = async (req, res) => {
         user = await User.findByIdAndUpdate(user._id, updates, { new: true });
       }
     } else {
-      // 🆕 create new google user
+      // brand new Google user (implicitly not blocked because schema default = false)
       user = await User.create({
         firstName: givenName || "User",
         lastName: familyName || "",
         email,
-        password: undefined, // Google users don’t need password
+        password: undefined,
         role: "user",
         verifyCredits: { education: 1, experience: 1 },
         isVerified: true,
@@ -168,8 +161,7 @@ exports.googleLogin = async (req, res) => {
       });
     }
 
-    // 🔑 generate JWT + cookie
-    const token = generateToken({ id: user._id, email: user.email }, res);
+    const token = generateToken({ id: user._id, email: user.email, role: user.role }, res);
 
     return res.status(200).json({
       message: "Google login successful",
@@ -190,6 +182,7 @@ exports.googleLogin = async (req, res) => {
     return res.status(500).json({ message: "Internal Server Error" });
   }
 };
+
 
 exports.facebookLogin = async (req, res) => {
   try {

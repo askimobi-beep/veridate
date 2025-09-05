@@ -6,9 +6,11 @@ const cors = require("cors");
 const cookieParser = require("cookie-parser");
 const DatabaseConnection = require("./config/Database");
 const authRoutes = require("./router/auth.Routes");
+const adminRoutes = require("./router/admin.Routes");
 const profileRoutes = require("./router/profile.Routes");
 const verify = require("./router/verify.routes");
 const corsOptions = require("./config/corsOptions");
+
 
 dotenv.config();
 
@@ -23,6 +25,7 @@ app.use(cookieParser());
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 app.use("/api/v1/auth", authRoutes);
+app.use("/api/v1/admin", adminRoutes);
 app.use("/api/v1/profile", profileRoutes);
 app.use("/api/v1/verify", verify);
 

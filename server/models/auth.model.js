@@ -12,7 +12,7 @@ const UserSchema = new mongoose.Schema(
       trim: true,
       match: [/^\S+@\S+\.\S+$/, "Invalid email format"],
     },
-    password: { type: String }, // will be empty for Google-only accounts
+    password: { type: String },
     role: { type: String, enum: ["user", "admin"], default: "user" },
 
     // verification credits (your existing feature)
@@ -27,11 +27,19 @@ const UserSchema = new mongoose.Schema(
     isVerified: { type: Boolean, default: false },
 
     // 🔽 Google fields
-    googleId: { type: String, index: true }, // 'sub' from Google ID token
-    facebookId: { type: String, index: true },  
+    googleId: { type: String, index: true },
+    facebookId: { type: String, index: true },
     picture: { type: String },
-    provider:   { type: String, enum: ["local", "google", "facebook"], default: "local" }, // 👈 UPDATED
+    provider: {
+      type: String,
+      enum: ["local", "google", "facebook"],
+      default: "local",
+    },
+
+    // Block User
+    isBlocked: { type: Boolean, default: false },
   },
+
   { timestamps: true }
 );
 

@@ -13,6 +13,7 @@ const groups = [
     label: "Dashboards",
     items: [
       { to: "/admin", icon: LayoutDashboard, label: "Dashboard" },
+      { to: "/admin/users", icon: LayoutDashboard, label: "Users" },
     ],
   },
 ];

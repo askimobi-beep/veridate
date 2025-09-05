@@ -26,7 +26,7 @@ export default function AppInput({
         disabled={disabled}
         className={cn(
           "bg-white/90 border border-gray-200 text-gray-900 placeholder:text-gray-400",
-          "focus-visible:ring-2 focus-visible:ring-purple-500 focus-visible:ring-offset-0",
+          "focus-visible:ring-2 focus-visible:ring-black focus-visible:ring-offset-0",
           disabled && "bg-gray-100 text-gray-500 cursor-not-allowed",
           inputClassName
         )}
