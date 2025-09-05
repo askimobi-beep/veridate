@@ -1,9 +1,17 @@
-import React from "react";
+import React, { useMemo, useState } from "react";
 import AppInput from "@/components/form/AppInput";
 import AppSelect from "@/components/form/AppSelect";
 import FileUploader from "@/components/form/FileUploader";
 import CheckboxGroup from "@/components/form/CheckboxGroup";
-import { UserRound, Mail, FileText, Image as ImageIcon } from "lucide-react";
+import {
+  UserRound,
+  Mail,
+  FileText,
+  Image as ImageIcon,
+  Share2,
+  Copy,
+  Check,
+} from "lucide-react";
 import {
   countries,
   genders,
@@ -54,56 +62,94 @@ export default function PersonalDetailsForm({
   locked,
   resumeRef, // ref from parent for reset()
   profilePicRef, // ref from parent for reset()
+  userId, // <-- pass the current user's id down to this component
 }) {
+  // Prefer env base, else current origin, else fallback to localhost:5173
+  // Prefer env base, else current origin, else fallback
+  const baseUrl =
+    import.meta.env.VITE_PROFILE_BASE_URL ||
+    (typeof window !== "undefined" && window.location?.origin) ||
+    "http://localhost:5173";
+
+  const shareUrl = useMemo(() => {
+    const id = userId || formData?.id || "UNKNOWN_ID";
+    return `${baseUrl}/dashboard/profiles/${id}`;
+  }, [baseUrl, userId, formData?.id]);
+
+  const [copied, setCopied] = useState(false);
+
+  const handleShare = async () => {
+    try {
+      if (navigator.share) {
+        await navigator.share({
+          title: "My Profile",
+          text: "Check out my profile",
+          url: shareUrl,
+        });
+        return;
+      }
+      await navigator.clipboard.writeText(shareUrl);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1200);
+    } catch (err) {
+      // fallback of fallback — just show prompt
+      window.prompt("Copy this URL:", shareUrl);
+    }
+  };
+
   return (
     <>
-      <div className="mt-8 mb-10 rounded-2xl border border-gray-200 bg-white shadow-sm p-6">
-        <h3 className="text-lg font-semibold text-gray-800 flex items-center gap-2 mb-2">
-          <span className="inline-block h-2 w-2 rounded-full bg-purple-500"></span>
-          Privacy Preferences
-        </h3>
-        <p className="text-sm text-gray-500 mb-5">
-          Control what details are visible to others in the directory & your
-          public profile.
-        </p>
-
-        <div className="grid sm:grid-cols-2 gap-3">
-          {PRIVACY_ITEMS.map((item) => {
-            const checked = (formData.personalHiddenFields || []).includes(
-              item.value
-            );
-
-            return (
-              <label
-                key={item.value}
-                className={`flex items-center gap-3 px-4 py-3 rounded-xl cursor-pointer transition 
-            ${
-              checked
-                ? "bg-purple-50 border border-purple-300"
-                : "border border-gray-200 hover:bg-gray-50"
-            }`}
+      {/* Share block */}
+      <div className="mb-6 rounded-2xl border border-gray-200 bg-white shadow-sm p-6">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h3 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
+              <span className="inline-block h-2 w-2 rounded-full bg-purple-500"></span>
+              Share your profile
+            </h3>
+            <p className="text-sm text-gray-500">
+              One tap to share, fallback copies the link.
+            </p>
+          </div>
+          <div className="flex items-center gap-2">
+            <input
+              readOnly
+              value={shareUrl}
+              className="w-[320px] max-w-full rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-700"
+            />
+            <button
+              type="button"
+              onClick={handleShare}
+              className="inline-flex items-center gap-2 rounded-xl border border-purple-600 px-4 py-2 text-sm font-medium text-white bg-purple-600 hover:bg-purple-700 active:scale-[0.98] transition"
+              aria-label="Share profile link"
+            >
+              {copied ? (
+                <Check className="h-4 w-4" />
+              ) : (
+                <Share2 className="h-4 w-4" />
+              )}
+              {copied ? "Copied!" : "Share"}
+            </button>
+            {!navigator.share && (
+              <button
+                type="button"
+                onClick={async () => {
+                  await navigator.clipboard.writeText(shareUrl);
+                  setCopied(true);
+                  setTimeout(() => setCopied(false), 1200);
+                }}
+                className="inline-flex items-center gap-2 rounded-xl border px-3 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                aria-label="Copy profile link"
+                title="Copy link"
               >
-                <input
-                  type="checkbox"
-                  className="h-4 w-4 accent-purple-600 cursor-pointer"
-                  checked={checked}
-                  onChange={(e) => {
-                    let updated = [...(formData.personalHiddenFields || [])];
-                    if (e.target.checked) {
-                      updated.push(item.value);
-                    } else {
-                      updated = updated.filter((v) => v !== item.value);
-                    }
-                    handleCustomChange("personalHiddenFields", updated);
-                  }}
-                />
-                <span className="text-sm text-gray-700">{item.label}</span>
-              </label>
-            );
-          })}
+                <Copy className="h-4 w-4" />
+              </button>
+            )}
+          </div>
         </div>
       </div>
 
+      {/* The rest of your form exactly as you had it */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <AppInput
           label={
@@ -240,7 +286,6 @@ export default function PersonalDetailsForm({
           icon={FileText}
           onChange={(file) => handleCustomChange("resume", file)}
           disabled={isDisabled(locked, "resume")}
-          // defaultPreviewUrl={formData.resumeUrl} // optional if you have it
         />
         <FileUploader
           ref={profilePicRef}
@@ -250,7 +295,6 @@ export default function PersonalDetailsForm({
           icon={ImageIcon}
           onChange={(file) => handleCustomChange("profilePic", file)}
           disabled={isDisabled(locked, "profilePic")}
-          // defaultPreviewUrl={formData.profilePicUrl} // optional if you have it
         />
 
         <CheckboxGroup
@@ -272,6 +316,53 @@ export default function PersonalDetailsForm({
           }
           disabled={isDisabled(locked, "workAuthorization")}
         />
+      </div>
+
+      {/* Privacy prefs */}
+      <div className="mt-8 mb-10 rounded-2xl border border-gray-200 bg-white shadow-sm p-6">
+        <h3 className="text-lg font-semibold text-gray-800 flex items-center gap-2 mb-2">
+          <span className="inline-block h-2 w-2 rounded-full bg-purple-500"></span>
+          Privacy Preferences
+        </h3>
+        <p className="text-sm text-gray-500 mb-5">
+          Control what details are visible to others in the directory & your
+          public profile.
+        </p>
+
+        <div className="grid sm:grid-cols-2 gap-3">
+          {PRIVACY_ITEMS.map((item) => {
+            const checked = (formData.personalHiddenFields || []).includes(
+              item.value
+            );
+            return (
+              <label
+                key={item.value}
+                className={`flex items-center gap-3 px-4 py-3 rounded-xl cursor-pointer transition 
+                  ${
+                    checked
+                      ? "bg-purple-50 border border-purple-300"
+                      : "border border-gray-200 hover:bg-gray-50"
+                  }`}
+              >
+                <input
+                  type="checkbox"
+                  className="h-4 w-4 accent-purple-600 cursor-pointer"
+                  checked={checked}
+                  onChange={(e) => {
+                    let updated = [...(formData.personalHiddenFields || [])];
+                    if (e.target.checked) {
+                      updated.push(item.value);
+                    } else {
+                      updated = updated.filter((v) => v !== item.value);
+                    }
+                    handleCustomChange("personalHiddenFields", updated);
+                  }}
+                />
+                <span className="text-sm text-gray-700">{item.label}</span>
+              </label>
+            );
+          })}
+        </div>
       </div>
     </>
   );

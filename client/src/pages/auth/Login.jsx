@@ -1,16 +1,18 @@
 import { useState, useEffect } from "react";
-import { useAuth } from "@/context/AuthContext"; // 👈 make sure path is right
-import { useNavigate } from "react-router-dom";
-
+import { useAuth } from "@/context/AuthContext";
+import { useNavigate, useLocation, Link } from "react-router-dom";
 import AppInput from "@/components/form/AppInput";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
 import { Mail, Lock } from "lucide-react";
 import { motion } from "framer-motion";
+import GoogleSignIn from "@/components/auth/GoogleSignIn";
+import FacebookSignIn from "@/components/auth/FacebookSignIn";
 
 export default function LoginPage() {
   const { user, login, loading: authLoading } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+  // console.log("Location state 👉", location.state);
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -18,10 +20,26 @@ export default function LoginPage() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
 
-  // if already authed, bounce to dashboard
+  // If user was redirected here by PrivateRoute, this holds their original URL
+  const fromLocation = location.state?.from;
+  const fromPath =
+    (fromLocation?.pathname || "") +
+    (fromLocation?.search || "") +
+    (fromLocation?.hash || "");
+
   useEffect(() => {
-    if (!authLoading && user) navigate("/dashboard", { replace: true });
-  }, [authLoading, user, navigate]);
+    if (!authLoading && user) {
+      // If there was a saved destination, go back there
+      if (fromPath) {
+        navigate(fromPath, { replace: true });
+        return;
+      }
+      // Otherwise, role-based default
+      const role = String(user.role || "").toLowerCase().trim();
+      if (role === "admin") navigate("/admin", { replace: true });
+      else navigate("/dashboard", { replace: true });
+    }
+  }, [authLoading, user, fromPath, navigate]);
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -29,14 +47,12 @@ export default function LoginPage() {
     setSubmitting(true);
 
     try {
-      // optional: persist a hint for your API layer/cookies
       if (remember) localStorage.setItem("remember", "1");
       else localStorage.removeItem("remember");
 
       await login({ email, password });
-      navigate("/dashboard", { replace: true });
+      // no navigate here — useEffect handles redirect correctly
     } catch (err) {
-      // try to surface API message if present
       const msg =
         err?.response?.data?.message ||
         err?.message ||
@@ -47,8 +63,7 @@ export default function LoginPage() {
     }
   };
 
-  // while context is resolving session on initial load
-  if (authLoading) return null; // or a spinner component
+  if (authLoading) return null;
 
   return (
     <div className="min-h-screen w-full bg-gradient-to-br from-white via-[#f7f9fc] to-[#eef3ff] flex items-center justify-center px-4 relative overflow-hidden">
@@ -90,35 +105,14 @@ export default function LoginPage() {
             <p className="text-center text-sm text-red-600 mb-4">{error}</p>
           ) : (
             <p className="text-center text-sm text-gray-500 mb-4">
-              Use your email and password to sign in.
+              Use your email and password or sign in with Google.
             </p>
           )}
 
-          {/* Fake Social Login */}
-          <div className="space-y-3">
-            <button
-              type="button"
-              className="w-full flex items-center justify-center gap-2 bg-white border border-gray-300 text-gray-700 py-2 rounded-md hover:bg-gray-100 transition"
-            >
-              <img
-                src="https://upload.wikimedia.org/wikipedia/commons/thumb/c/c1/Google_%22G%22_logo.svg/2048px-Google_%22G%22_logo.svg.png"
-                alt="Google"
-                className="h-5 w-5"
-              />
-              Continue with Google
-            </button>
-
-            <button
-              type="button"
-              className="w-full flex items-center justify-center gap-2 bg-[#3b5998] text-white py-2 rounded-md hover:bg-[#314e89] transition"
-            >
-              <img
-                src="https://upload.wikimedia.org/wikipedia/commons/thumb/b/b9/2023_Facebook_icon.svg/2048px-2023_Facebook_icon.svg.png"
-                alt="Facebook"
-                className="h-5 w-5"
-              />
-              Continue with Facebook
-            </button>
+          {/* Social Login */}
+          <div className="space-y-3 mb-4">
+            <GoogleSignIn onError={(msg) => setError(msg)} />
+            <FacebookSignIn onError={(msg) => setError(msg)} />
           </div>
 
           {/* Divider */}
@@ -128,7 +122,7 @@ export default function LoginPage() {
             <div className="h-px bg-gray-300 flex-1" />
           </div>
 
-          {/* Form */}
+          {/* Email/Password Form */}
           <form onSubmit={handleLogin} className="space-y-4">
             <AppInput
               icon={Mail}
@@ -139,7 +133,6 @@ export default function LoginPage() {
               required
               autoComplete="email"
             />
-
             <AppInput
               icon={Lock}
               type="password"
@@ -173,16 +166,19 @@ export default function LoginPage() {
             >
               {submitting ? "Signing in…" : "Login"}
             </Button>
-            <div className="mt-6 text-sm text-center text-gray-600">
-              Don’t have an account?{" "}
-              <span
-                onClick={() => navigate("/register-user")}
-                className="text-purple-600 font-medium hover:underline cursor-pointer"
-              >
-                Register
-              </span>
-            </div>
           </form>
+
+          {/* ---- Register CTA ---- */}
+          <div className="mt-6 text-center text-sm text-gray-600">
+            Don’t have an account?{" "}
+            <Link
+              to="/register-user"
+              className="text-purple-600 font-medium hover:underline"
+            >
+              Register
+            </Link>
+          </div>
+          {/* ---------------------- */}
         </div>
       </motion.div>
     </div>

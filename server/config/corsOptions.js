@@ -1,5 +1,6 @@
 const allowedOrigins = [
   "http://localhost:5173",
+  "https://localhost:5173",
   "https://app.veridate.space",
   "https://www.app.veridate.space",
 ];

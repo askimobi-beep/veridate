@@ -10,7 +10,7 @@ const dashboardRoutes = [
   
 
   {
-    element: <PrivateRoute />, // 🔒 protect everything below
+    element: <PrivateRoute allowedRoles={["user"]}/>, // 🔒 protect everything below
     children: [
      { index:true, element: <PersonalInformation/>},
      { path: "directory", element: <Directory/>},

@@ -1,6 +1,10 @@
 import React, { useEffect, useRef, useState } from "react";
 import { useSnackbar } from "notistack";
-import { BriefcaseBusiness as Briefcase, FileText, UserRound } from "lucide-react";
+import {
+  BriefcaseBusiness as Briefcase,
+  FileText,
+  UserRound,
+} from "lucide-react";
 
 import AccordionSection from "@/components/common/AccordionSection";
 import ProfileHeader from "@/components/profile/ProfileHeader";
@@ -21,14 +25,23 @@ export default function PersonalInformation() {
     handleChange,
     handleCustomChange,
     // education
-    addEducation, updateEducation, removeEducation, saveEducation,
+    addEducation,
+    updateEducation,
+    removeEducation,
+    saveEducation,
     // experience
-    addExperience, updateExperience, removeExperience, saveExperience,
+    addExperience,
+    updateExperience,
+    removeExperience,
+    saveExperience,
     // personal
     savePersonalInfo,
     saving,
-    submit, resetForm,
-    clearPersonalFiles, clearEducationFiles, clearExperienceFiles,
+    submit,
+    resetForm,
+    clearPersonalFiles,
+    clearEducationFiles,
+    clearExperienceFiles,
   } = usePersonalInformationForm();
 
   const { enqueueSnackbar } = useSnackbar();
@@ -63,10 +76,13 @@ export default function PersonalInformation() {
       ...prev,
       ...data,
       // ✅ also make sure name/email are always in sync with auth when available
-      name:
-        `${(user?.firstName ?? data.firstName ?? "")} ${(user?.lastName ?? data.lastName ?? "")}`.trim(),
-      email: (user?.email ?? data.email ?? ""),
-      personalHiddenFields: Array.isArray(data.personalHiddenFields) ? data.personalHiddenFields : [],
+      name: `${user?.firstName ?? data.firstName ?? ""} ${
+        user?.lastName ?? data.lastName ?? ""
+      }`.trim(),
+      email: user?.email ?? data.email ?? "",
+      personalHiddenFields: Array.isArray(data.personalHiddenFields)
+        ? data.personalHiddenFields
+        : [],
       dob: toYMD(data.dob),
       education: Array.isArray(data.education)
         ? data.education.map((e) => ({
@@ -113,7 +129,9 @@ export default function PersonalInformation() {
           clearExperienceFiles();
         }
       } else {
-        enqueueSnackbar(res?.error || `Failed to save ${pendingTitle}`, { variant: "error" });
+        enqueueSnackbar(res?.error || `Failed to save ${pendingTitle}`, {
+          variant: "error",
+        });
       }
     } catch {
       enqueueSnackbar(`Failed to save ${pendingTitle}`, { variant: "error" });
@@ -153,9 +171,10 @@ export default function PersonalInformation() {
           ...prev,
           ...data,
           // ensure name/email come from auth if available, else from profile
-          name:
-            `${(user?.firstName ?? data.firstName ?? "")} ${(user?.lastName ?? data.lastName ?? "")}`.trim(),
-          email: (user?.email ?? data.email ?? prev.email ?? ""),
+          name: `${user?.firstName ?? data.firstName ?? ""} ${
+            user?.lastName ?? data.lastName ?? ""
+          }`.trim(),
+          email: user?.email ?? data.email ?? prev.email ?? "",
           dob: toYMD(data.dob),
           education: Array.isArray(data.education)
             ? data.education.map((e) => ({
@@ -170,7 +189,7 @@ export default function PersonalInformation() {
                 startDate: toYMD(x.startDate),
                 endDate: toYMD(x.endDate),
               }))
-            : (prev.experience || [
+            : prev.experience || [
                 {
                   jobTitle: "",
                   startDate: "",
@@ -182,7 +201,7 @@ export default function PersonalInformation() {
                   industry: "",
                   hiddenFields: [],
                 },
-              ]),
+              ],
         }));
 
         setLocked({
@@ -243,6 +262,7 @@ export default function PersonalInformation() {
               locked={!!locked.pi}
               resumeRef={resumeRef}
               profilePicRef={profilePicRef}
+              userId={user._id} // or whatever your user id is
             />
           </AccordionSection>
 
