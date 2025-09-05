@@ -112,7 +112,7 @@ export default function LoginPage() {
           {/* Social Login */}
           <div className="space-y-3 mb-4">
             <GoogleSignIn onError={(msg) => setError(msg)} />
-            <FacebookSignIn onError={(msg) => setError(msg)} />
+            {/* <FacebookSignIn onError={(msg) => setError(msg)} /> */}
           </div>
 
           {/* Divider */}
