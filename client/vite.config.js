@@ -16,7 +16,7 @@ export default defineConfig({
     },
   },
   server: {
-    https: false,       // ✅ enable HTTPS
+    https: true,       // ✅ enable HTTPS
     host: 'localhost',
     port: 5173,
     proxy: {

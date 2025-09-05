@@ -35,7 +35,9 @@ export default function LoginPage() {
         return;
       }
       // Otherwise, role-based default
-      const role = String(user.role || "").toLowerCase().trim();
+      const role = String(user.role || "")
+        .toLowerCase()
+        .trim();
       if (role === "admin") navigate("/admin", { replace: true });
       else navigate("/dashboard", { replace: true });
     }
@@ -110,9 +112,10 @@ export default function LoginPage() {
           )}
 
           {/* Social Login */}
-          <div className="space-y-3 mb-4">
-            <GoogleSignIn onError={(msg) => setError(msg)} />
-            {/* <FacebookSignIn onError={(msg) => setError(msg)} /> */}
+          <div className="w-full flex justify-center">
+            <div className="w-full max-w-[400px]">
+              <GoogleSignIn onError={setError} />
+            </div>
           </div>
 
           {/* Divider */}

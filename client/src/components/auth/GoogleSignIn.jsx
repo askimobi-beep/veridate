@@ -1,50 +1,45 @@
 import { GoogleLogin } from "@react-oauth/google";
+import { useRef, useLayoutEffect, useState } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useNavigate } from "react-router-dom";
-import { useState, useEffect } from "react";
 
 export default function GoogleSignIn({ onError }) {
   const { googleLogin } = useAuth();
   const navigate = useNavigate();
-  const [ready, setReady] = useState(false);
 
-  useEffect(() => {
-    // tiny delay for skeleton effects if you want; safe to set to true immediately
-    const t = setTimeout(() => setReady(true), 200);
-    return () => clearTimeout(t);
+  const wrapRef = useRef(null);
+  const [w, setW] = useState(0);
+
+  useLayoutEffect(() => {
+    const update = () => setW(wrapRef.current?.offsetWidth || 0);
+    update();
+    window.addEventListener("resize", update);
+    return () => window.removeEventListener("resize", update);
   }, []);
 
-  if (!ready) {
-    return (
-      <div className="w-full h-10 rounded-md bg-gray-200 animate-pulse" />
-    );
-  }
-
   return (
-    <GoogleLogin
-      ux_mode="popup" // keeps flow smooth in most setups
-      onSuccess={async (credentialResponse) => {
-        try {
-          const token = credentialResponse?.credential;
-          if (!token) throw new Error("No Google credential");
-          const res = await googleLogin(token);
-          const user = res?.data?.user;
-
-          // Optional: smart redirect if profile incomplete
-          if (!user?.cnic || !user?.address || !user?.contact) {
-            navigate("/auth/complete-profile");
-          } else {
-            navigate("/dashboard", { replace: true });
+    <div ref={wrapRef} className="w-full">
+      <GoogleLogin
+        ux_mode="popup"
+        theme="filled_blue"
+        text="signin_with"
+        shape="rectangular"
+        size="large"
+        width={w || undefined} // when 0 on first render, let Google choose; updates right after
+        onSuccess={async (resp) => {
+          try {
+            const token = resp?.credential;
+            if (!token) throw new Error("No Google credential");
+            const r = await googleLogin(token);
+            const u = r?.data?.user;
+            if (!u?.cnic || !u?.address || !u?.contact) navigate("/auth/complete-profile");
+            else navigate("/dashboard", { replace: true });
+          } catch (e) {
+            onError?.(e?.response?.data?.message || e?.message || "Google sign-in failed");
           }
-        } catch (err) {
-          const msg =
-            err?.response?.data?.message ||
-            err?.message ||
-            "Google sign-in failed";
-          onError?.(msg);
-        }
-      }}
-      onError={() => onError?.("Google sign-in failed")}
-    />
+        }}
+        onError={() => onError?.("Google sign-in failed")}
+      />
+    </div>
   );
 }
