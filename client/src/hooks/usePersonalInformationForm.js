@@ -133,7 +133,6 @@ export default function usePersonalInformationForm() {
     }));
   };
 
-
   const removeExperience = (index) => {
     setFormData((prev) => {
       const updated = [...prev.experience];
@@ -165,41 +164,67 @@ export default function usePersonalInformationForm() {
 
   // ===== APIs =====
   const savePersonalInfo = async () => {
-    setSaving(true);
-    try {
-      const fd = new FormData();
-      fd.append("name", formData.name || "");
-      fd.append("email", formData.email || "");
-      fd.append("fatherName", formData.fatherName || "");
-      fd.append("mobile", formData.mobile || "");
-      fd.append("cnic", formData.cnic || "");
-      fd.append("city", formData.city || "");
-      fd.append("country", formData.country || "");
-      fd.append("gender", formData.gender || "");
-      fd.append("maritalStatus", formData.maritalStatus || "");
-      fd.append("residentStatus", formData.residentStatus || "");
-      fd.append("nationality", formData.nationality || "");
-      fd.append("dob", formData.dob || "");
-      fd.append("shiftPreferences", JSON.stringify(formData.shiftPreferences || []));
-      fd.append("workAuthorization", JSON.stringify(formData.workAuthorization || []));
-      fd.append("personalHiddenFields", JSON.stringify(formData.personalHiddenFields || []));
-      if (formData.resume instanceof File) fd.append("resume", formData.resume);
-      if (formData.profilePic instanceof File) fd.append("profilePic", formData.profilePic);
+  setSaving(true);
+  try {
+    const fd = new FormData();
+    fd.append("name", formData.name || "");
+    fd.append("email", formData.email || "");
+    fd.append("fatherName", formData.fatherName || "");
+    fd.append("mobile", formData.mobile || "");
+    fd.append("cnic", formData.cnic || "");
+    fd.append("city", formData.city || "");
+    fd.append("country", formData.country || "");
+    fd.append("gender", formData.gender || "");
+    fd.append("maritalStatus", formData.maritalStatus || "");
+    fd.append("residentStatus", formData.residentStatus || "");
+    fd.append("nationality", formData.nationality || "");
+    fd.append("dob", formData.dob || "");
+    fd.append(
+      "shiftPreferences",
+      JSON.stringify(formData.shiftPreferences || [])
+    );
+    fd.append(
+      "workAuthorization",
+      JSON.stringify(formData.workAuthorization || [])
+    );
+    fd.append(
+      "personalHiddenFields",
+      JSON.stringify(formData.personalHiddenFields || [])
+    );
 
-      const res = await axiosInstance.post("/profile/save-personal-info", fd, {
-        headers: { "Content-Type": "multipart/form-data" },
-      });
-
-      return { ok: true, data: res.data };
-    } catch (err) {
-      return {
-        ok: false,
-        error: err?.response?.data?.error || err?.message || "Failed to save personal info",
-      };
-    } finally {
-      setSaving(false);
+    if (formData.resume instanceof File) {
+      fd.append("resume", formData.resume);
     }
-  };
+    if (formData.profilePic instanceof File) {
+      fd.append("profilePic", formData.profilePic);
+    } else if (formData.profilePic === "") {
+      // allow clearing the avatar
+      fd.append("profilePic", "");
+    }
+
+    const res = await axiosInstance.post("/profile/save-personal-info", fd, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
+
+    if (res?.status === 200) {
+      // ✅ refresh page once after successful save
+      window.location.reload();
+    }
+
+    return { ok: true, data: res.data };
+  } catch (err) {
+    return {
+      ok: false,
+      error:
+        err?.response?.data?.error ||
+        err?.message ||
+        "Failed to save personal info",
+    };
+  } finally {
+    setSaving(false);
+  }
+};
+
 
  const saveEducation = async () => {
   setSaving(true);

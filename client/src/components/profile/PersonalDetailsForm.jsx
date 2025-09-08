@@ -277,7 +277,7 @@ export default function PersonalDetailsForm({
         />
       </div>
 
-      <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="mt-6 grid grid-cols-1 md:grid-cols-1 gap-4">
         <FileUploader
           ref={resumeRef}
           label="Resume (PDF)"
@@ -287,7 +287,7 @@ export default function PersonalDetailsForm({
           onChange={(file) => handleCustomChange("resume", file)}
           disabled={isDisabled(locked, "resume")}
         />
-        <FileUploader
+        {/* <FileUploader
           ref={profilePicRef}
           label="Profile Picture (Image)"
           name="profilePic"
@@ -295,7 +295,7 @@ export default function PersonalDetailsForm({
           icon={ImageIcon}
           onChange={(file) => handleCustomChange("profilePic", file)}
           disabled={isDisabled(locked, "profilePic")}
-        />
+        /> */}
 
         <CheckboxGroup
           title="Shift Preferences"

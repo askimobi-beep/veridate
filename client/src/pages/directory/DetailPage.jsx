@@ -35,12 +35,22 @@ export default function DetailPage() {
   const [busyEdu, setBusyEdu] = useState("");
   const [busyExp, setBusyExp] = useState("");
 
-  const baseURL = useMemo(
-    () => axiosInstance.defaults.baseURL?.replace(/\/$/, ""),
-    []
-  );
-  const fileUrl = (type, name) =>
-    name && baseURL ? `${baseURL}/uploads/${type}/${name}` : undefined;
+ const baseURL = useMemo(
+  () => axiosInstance.defaults.baseURL?.replace(/\/$/, ""),
+  []
+);
+
+// remove `/api/v1` if present
+const fileBaseURL = useMemo(() => {
+  if (!baseURL) return "";
+  return baseURL.replace(/\/api\/v1$/, "");
+}, [baseURL]);
+
+const fileUrl = (type, name) =>
+  name && fileBaseURL ? `${fileBaseURL}/uploads/${type}/${name}` : undefined;
+
+
+ 
 
   useEffect(() => {
     if (!userId) return;
@@ -138,6 +148,9 @@ export default function DetailPage() {
   const avatarUrl =
     profile?.profilePicUrl ||
     (profile?.profilePic ? fileUrl("profile", profile.profilePic) : undefined);
+
+
+    
 
   return (
     <div className="mx-auto max-w-5xl p-4 md:p-6">
@@ -265,7 +278,7 @@ export default function DetailPage() {
                         <LinkText
                           href={
                             edu.degreeFile
-                              ? fileUrl("degrees", edu.degreeFile)
+                              ? fileUrl("education", edu.degreeFile)
                               : undefined
                           }
                         >

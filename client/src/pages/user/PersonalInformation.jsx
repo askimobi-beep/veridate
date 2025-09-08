@@ -241,7 +241,21 @@ export default function PersonalInformation() {
       <div className="pointer-events-none absolute -bottom-40 right-[-10%] h-[40rem] w-[40rem] rounded-full bg-[radial-gradient(circle_at_center,rgba(167,139,250,0.24),transparent_70%)] blur-3xl" />
 
       <div className="relative z-10 w-full max-w-5xl">
-        <ProfileHeader user={formData} />
+        <ProfileHeader
+          user={formData}
+          profilePicRef={profilePicRef}
+          uploading={saving && open === "pi"}
+          onPhotoChange={(file) => {
+            // file can be null (Delete)
+            // use the SAME key that works with your FileUploader:
+            //   <FileUploader onChange={(file) => handleCustomChange("profilePic", file)} />
+            if (file) {
+              handleCustomChange("profilePic", file); // << key al  igned
+            } else {
+              handleCustomChange("profilePic", ""); // clear
+            }
+          }}
+        />
 
         <form onSubmit={handleSubmit} className="space-y-6">
           <AccordionSection
