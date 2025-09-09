@@ -104,7 +104,7 @@ export default function PersonalDetailsForm({
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h3 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
-              <span className="inline-block h-2 w-2 rounded-full bg-purple-500"></span>
+              <span className="inline-block h-2 w-2 rounded-full bg-orange-500"></span>
               Share your profile
             </h3>
             <p className="text-sm text-gray-500">
@@ -120,7 +120,7 @@ export default function PersonalDetailsForm({
             <button
               type="button"
               onClick={handleShare}
-              className="inline-flex items-center gap-2 rounded-xl border border-purple-600 px-4 py-2 text-sm font-medium text-white bg-purple-600 hover:bg-purple-700 active:scale-[0.98] transition"
+              className="inline-flex items-center gap-2 rounded-xl border border-orange-600 px-4 py-2 text-sm font-medium text-white bg-orange-600 hover:bg-orange-700 active:scale-[0.98] transition"
               aria-label="Share profile link"
             >
               {copied ? (
@@ -154,7 +154,7 @@ export default function PersonalDetailsForm({
         <AppInput
           label={
             <>
-              <UserRound className="h-4 w-4 text-purple-600" />
+              <UserRound className="h-4 w-4 text-orange-600" />
               <span>Name</span>
             </>
           }
@@ -168,7 +168,7 @@ export default function PersonalDetailsForm({
         <AppInput
           label={
             <>
-              <Mail className="h-4 w-4 text-purple-600" />
+              <Mail className="h-4 w-4 text-orange-600" />
               <span>Email</span>
             </>
           }
@@ -321,7 +321,7 @@ export default function PersonalDetailsForm({
       {/* Privacy prefs */}
       <div className="mt-8 mb-10 rounded-2xl border border-gray-200 bg-white shadow-sm p-6">
         <h3 className="text-lg font-semibold text-gray-800 flex items-center gap-2 mb-2">
-          <span className="inline-block h-2 w-2 rounded-full bg-purple-500"></span>
+          <span className="inline-block h-2 w-2 rounded-full bg-orange-500"></span>
           Privacy Preferences
         </h3>
         <p className="text-sm text-gray-500 mb-5">
@@ -340,13 +340,13 @@ export default function PersonalDetailsForm({
                 className={`flex items-center gap-3 px-4 py-3 rounded-xl cursor-pointer transition 
                   ${
                     checked
-                      ? "bg-purple-50 border border-purple-300"
+                      ? "bg-orange-50 border border-orange-300"
                       : "border border-gray-200 hover:bg-gray-50"
                   }`}
               >
                 <input
                   type="checkbox"
-                  className="h-4 w-4 accent-purple-600 cursor-pointer"
+                  className="h-4 w-4 accent-orange-600 cursor-pointer"
                   checked={checked}
                   onChange={(e) => {
                     let updated = [...(formData.personalHiddenFields || [])];

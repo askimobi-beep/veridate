@@ -68,7 +68,7 @@ export default function LoginPage() {
   if (authLoading) return null;
 
   return (
-    <div className="min-h-screen w-full bg-gradient-to-br from-white via-[#f7f9fc] to-[#eef3ff] flex items-center justify-center px-4 relative overflow-hidden">
+    <div className="min-h-screen w-full bg-gradient-to-br from-orange-200 via-[#f7f9fc] to-orange-200 flex items-center justify-center px-4 relative overflow-hidden">
       {/* Glow Layers */}
       <div className="pointer-events-none absolute -top-40 left-1/3 h-[36rem] w-[36rem] rounded-full bg-[radial-gradient(circle_at_center,rgba(56,189,248,0.12),transparent_70%)] blur-3xl" />
       <div className="pointer-events-none absolute -bottom-48 right-[-10%] h-[34rem] w-[34rem] rounded-full bg-[radial-gradient(circle_at_center,rgba(167,139,250,0.12),transparent_70%)] blur-3xl" />
@@ -81,16 +81,16 @@ export default function LoginPage() {
         className="z-10 w-full max-w-5xl grid grid-cols-1 md:grid-cols-2 bg-white/60 backdrop-blur-xl shadow-xl border border-white/20 rounded-2xl overflow-hidden"
       >
         {/* Left Side */}
-        <div className="hidden md:flex items-center justify-center bg-gradient-to-br from-purple-500/20 via-indigo-500/10 to-transparent p-6">
+        <div className="hidden md:flex items-center justify-center bg-gradient-to-br from-orange-300 via-orange-500/10 to-transparent p-6">
           <div className="text-center space-y-4">
-            <h2 className="text-4xl font-extrabold text-purple-700 drop-shadow-md">
+            <h2 className="text-4xl font-extrabold text-orange-700 drop-shadow-md">
               Welcome Back 👋
             </h2>
             <p className="text-lg text-gray-700 max-w-xs">
               Log in to access your dashboard, manage your projects, and stay
               productive.
             </p>
-            <div className="w-40 h-40 rounded-full bg-gradient-radial from-purple-400/30 to-transparent blur-2xl mx-auto" />
+            <div className="w-40 h-40 rounded-full bg-gradient-radial from-orange-400/30 to-transparent blur-2xl mx-auto" />
           </div>
         </div>
 
@@ -152,11 +152,11 @@ export default function LoginPage() {
                   type="checkbox"
                   checked={remember}
                   onChange={() => setRemember(!remember)}
-                  className="accent-purple-600"
+                  className="accent-orange-600"
                 />
                 Remember me
               </label>
-              <a href="#" className="text-purple-600 hover:underline">
+              <a href="#" className="text-orange-600 hover:underline">
                 Forgot Password?
               </a>
             </div>
@@ -165,7 +165,7 @@ export default function LoginPage() {
               type="submit"
               disabled={submitting}
               aria-busy={submitting ? "true" : "false"}
-              className="w-full bg-purple-600 hover:bg-purple-700 disabled:opacity-70 text-white font-semibold"
+              className="w-full bg-orange-600 hover:bg-orange-700 disabled:opacity-70 text-white font-semibold"
             >
               {submitting ? "Signing in…" : "Login"}
             </Button>
@@ -176,7 +176,7 @@ export default function LoginPage() {
             Don’t have an account?{" "}
             <Link
               to="/register-user"
-              className="text-purple-600 font-medium hover:underline"
+              className="text-orange-600 font-medium hover:underline"
             >
               Register
             </Link>

@@ -106,7 +106,7 @@ export default function ProfileHeader({
         </motion.p>
       </div>
 
-      <div className="pointer-events-none absolute -top-6 -right-6 h-16 w-16 rounded-full bg-gradient-to-tr from-purple-400 to-pink-300 blur-2xl opacity-40" />
+      <div className="pointer-events-none absolute -top-6 -right-6 h-16 w-16 rounded-full bg-gradient-to-tr from-orange-400 to-orange-300 blur-2xl opacity-40" />
     </motion.div>
   );
 }

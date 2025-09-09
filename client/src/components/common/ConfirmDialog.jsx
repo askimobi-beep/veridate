@@ -33,7 +33,7 @@ export default function ConfirmDialog({
         <div className="p-6">
           <DialogHeader className="mb-2">
             <div className="flex items-center gap-2">
-              <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-purple-100 text-purple-700">
+              <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-orange-100 text-orange-700">
                 <ShieldCheck className="h-4 w-4" />
               </span>
               <DialogTitle className="text-lg sm:text-xl text-gray-900">
@@ -52,7 +52,7 @@ export default function ConfirmDialog({
               </Button>
             </DialogClose>
             <Button
-              className="min-w-[120px] bg-purple-600 text-white hover:bg-purple-700"
+              className="min-w-[120px] bg-orange-600 text-white hover:bg-orange-700"
               onClick={onConfirm}
               type="button"
             >

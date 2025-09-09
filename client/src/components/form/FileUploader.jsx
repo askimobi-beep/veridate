@@ -95,7 +95,7 @@ export default forwardRef(function FileUploader(
     <div className={cn("space-y-2", className)}>
       {label && (
         <Label className="inline-flex items-center gap-2 text-gray-700 text-sm font-medium">
-          <Icon className="h-4 w-4 text-purple-600" />
+          <Icon className="h-4 w-4 text-orange-600" />
           {label}
         </Label>
       )}
@@ -106,8 +106,10 @@ export default forwardRef(function FileUploader(
           "relative border-2 border-dashed rounded-xl p-4 shadow-sm group transition",
           disabled
             ? "bg-gray-100 opacity-60 cursor-not-allowed"
-            : "bg-white/90 hover:border-purple-500 border-gray-300",
-          isDragging && !disabled ? "border-purple-500 ring-2 ring-purple-200" : ""
+            : "bg-white/90 hover:border-orange-500 border-gray-300",
+          isDragging && !disabled
+            ? "border-orange-500 ring-2 ring-orange-200"
+            : ""
         )}
         onDrop={handleDrop}
         onDragOver={handleDragOver}
@@ -127,9 +129,13 @@ export default forwardRef(function FileUploader(
         <div className="flex items-center justify-center text-center pointer-events-none min-h-[120px]">
           {!file && !previewUrl && (
             <div className="flex flex-col items-center gap-1">
-              <Icon className="w-6 h-6 text-purple-500" />
-              <p className="text-sm text-gray-500 group-hover:text-purple-600 transition">
-                {disabled ? "Upload disabled" : isDragging ? "Drop it..." : "Click or drag to upload"}
+              <Icon className="w-6 h-6 text-orange-500" />
+              <p className="text-sm text-gray-500 group-hover:text-orange-600 transition">
+                {disabled
+                  ? "Upload disabled"
+                  : isDragging
+                  ? "Drop it..."
+                  : "Click or drag to upload"}
               </p>
               {accept && <p className="text-xs text-gray-400">{accept}</p>}
             </div>
@@ -152,9 +158,11 @@ export default forwardRef(function FileUploader(
 
           {file && !isImage(file) && (
             <div className="flex flex-col items-center gap-2">
-              <FileIcon className="w-8 h-8 text-purple-500" />
+              <FileIcon className="w-8 h-8 text-orange-500" />
               <div className="text-sm text-gray-700">{file.name}</div>
-              <div className="text-xs text-gray-500">{humanFileSize(file.size)}</div>
+              <div className="text-xs text-gray-500">
+                {humanFileSize(file.size)}
+              </div>
             </div>
           )}
         </div>

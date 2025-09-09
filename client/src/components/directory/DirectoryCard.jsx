@@ -109,7 +109,7 @@ export default function DirectoryCard({ profile }) {
 
       <CardFooter className="justify-end">
         <Link to={`/dashboard/profiles/${profile.user}`}>
-          <span className="text-sm font-medium text-purple-600 hover:underline">
+          <span className="text-sm font-medium text-orange-600 hover:underline">
             View Profile →
           </span>
         </Link>

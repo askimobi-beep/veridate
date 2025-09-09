@@ -45,7 +45,7 @@ export default function AccordionSection({
         aria-controls={`accordion-content-${value}`}
       >
         <span className="flex items-center gap-2">
-          <Icon className={`h-5 w-5 ${isOpen ? "text-purple-600" : "text-purple-300"}`} />
+          <Icon className={`h-5 w-5 ${isOpen ? "text-orange-600" : "text-orange-300"}`} />
           {title}
           {locked && (
             <span className="flex items-center gap-1 ml-2">
@@ -60,7 +60,7 @@ export default function AccordionSection({
           initial={false}
           animate={{ rotate: isOpen ? 180 : 0 }}
           transition={chevronSpring}
-          className={`text-xl font-bold ${isOpen ? "text-purple-700" : "text-purple-400"}`}
+          className={`text-xl font-bold ${isOpen ? "text-orange-700" : "text-orange-400"}`}
         >
           {isOpen ? "−" : "+"}
         </motion.span>

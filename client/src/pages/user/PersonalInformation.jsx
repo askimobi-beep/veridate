@@ -236,9 +236,9 @@ export default function PersonalInformation() {
   };
 
   return (
-    <div className="min-h-screen w-full flex items-start justify-center px-4 py-10 relative overflow-hidden bg-gradient-to-br from-white via-[#eaf0ff] to-[#dfe8ff]">
-      <div className="pointer-events-none absolute -top-36 left-1/3 h-[42rem] w-[42rem] rounded-full bg-[radial-gradient(circle_at_center,rgba(56,189,248,0.22),transparent_70%)] blur-3xl" />
-      <div className="pointer-events-none absolute -bottom-40 right-[-10%] h-[40rem] w-[40rem] rounded-full bg-[radial-gradient(circle_at_center,rgba(167,139,250,0.24),transparent_70%)] blur-3xl" />
+    <div className="min-h-screen w-full flex items-start justify-center px-4 py-10 relative overflow-hidden">
+      {/* <div className="pointer-events-none absolute -top-36 left-1/3 h-[42rem] w-[42rem] rounded-full bg-[radial-gradient(circle_at_center,rgba(56,189,248,0.22),transparent_70%)] blur-3xl" /> */}
+      {/* <div className="pointer-events-none absolute -bottom-40 right-[-10%] h-[40rem] w-[40rem] rounded-full bg-[radial-gradient(circle_at_center,rgba(167,139,250,0.24),transparent_70%)] blur-3xl" /> */}
 
       <div className="relative z-10 w-full max-w-5xl">
         <ProfileHeader

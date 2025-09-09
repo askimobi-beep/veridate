@@ -37,8 +37,15 @@ export default function RegisterPage() {
     e.preventDefault();
     if (submitting) return;
 
-    if (!formData.firstName || !formData.lastName || !formData.email || !formData.password) {
-      enqueueSnackbar("Please fill all required fields.", { variant: "warning" });
+    if (
+      !formData.firstName ||
+      !formData.lastName ||
+      !formData.email ||
+      !formData.password
+    ) {
+      enqueueSnackbar("Please fill all required fields.", {
+        variant: "warning",
+      });
       return;
     }
     if (formData.password !== formData.confirmPassword) {
@@ -97,15 +104,15 @@ export default function RegisterPage() {
         transition={{ duration: 0.5 }}
         className="z-10 w-full max-w-5xl grid grid-cols-1 md:grid-cols-2 bg-white/60 backdrop-blur-xl shadow-xl border border-white/20 rounded-2xl overflow-hidden"
       >
-        <div className="hidden md:flex items-center justify-center bg-gradient-to-br from-purple-500/20 via-indigo-500/10 to-transparent p-6">
+        <div className="hidden md:flex items-center justify-center bg-gradient-to-br from-orange-500/20 via-indigo-500/10 to-transparent p-6">
           <div className="text-center space-y-4">
-            <h2 className="text-4xl font-extrabold text-purple-700 drop-shadow-md">
+            <h2 className="text-4xl font-extrabold text-orange-700 drop-shadow-md">
               Join the Community 🚀
             </h2>
             <p className="text-lg text-gray-700 max-w-xs">
               Register now to start building, collaborating, and leveling up.
             </p>
-            <div className="w-40 h-40 rounded-full bg-gradient-radial from-purple-400/30 to-transparent blur-2xl mx-auto" />
+            <div className="w-40 h-40 rounded-full bg-gradient-radial from-orange-400/30 to-transparent blur-2xl mx-auto" />
           </div>
         </div>
 
@@ -209,7 +216,7 @@ export default function RegisterPage() {
             <Button
               type="submit"
               disabled={submitting}
-              className="w-full bg-purple-600 hover:bg-purple-700 text-white font-semibold"
+              className="w-full bg-orange-600 hover:bg-orange-700 text-white font-semibold"
             >
               {submitting ? (
                 <span className="inline-flex items-center gap-2">
@@ -225,7 +232,7 @@ export default function RegisterPage() {
               Already have an account?{" "}
               <span
                 onClick={() => (window.location.href = "/")}
-                className="text-purple-600 font-medium hover:underline cursor-pointer"
+                className="text-orange-600 font-medium hover:underline cursor-pointer"
               >
                 Login
               </span>

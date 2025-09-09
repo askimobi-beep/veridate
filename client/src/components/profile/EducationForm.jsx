@@ -73,7 +73,7 @@ export default function EducationForm({
                   type="button"
                   className={`inline-flex items-center gap-2 text-xs px-3 py-1.5 rounded-full border transition
                     ${hasHidden(edu, "degreeFile")
-                      ? "bg-purple-50 text-purple-700 border-purple-200"
+                      ? "bg-orange-50 text-orange-700 border-orange-200"
                       : "bg-gray-50 text-gray-600 border-gray-200 hover:bg-gray-100"}`}
                   onClick={() =>
                     toggleHidden(edu, "degreeFile", (field, val) =>
@@ -164,7 +164,7 @@ export default function EducationForm({
       <motion.div layout>
         <Button
           type="button"
-          className="bg-purple-100 text-purple-700 hover:bg-purple-200"
+          className="bg-orange-100 text-orange-700 hover:bg-orange-200"
           onClick={addEducation}
         >
           + Add Education

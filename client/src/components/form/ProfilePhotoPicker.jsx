@@ -14,15 +14,15 @@ import { cn } from "@/lib/utils";
 export default forwardRef(function ProfilePhotoPicker(
   {
     name = "profilePic",
-    label = null,                   // hide label by default
+    label = null, // hide label by default
     defaultPreviewUrl = "",
     disabled = false,
     accept = "image/*",
-    onChange,                       // (file|null) => void
+    onChange, // (file|null) => void
     className,
-    avatarClassName = "h-14 w-14",  // control avatar size from parent
-    modalZ = 9999,                  // keep modal above your UI
-    fallbackText = "",              // initials or anything when no image
+    avatarClassName = "h-14 w-14", // control avatar size from parent
+    modalZ = 9999, // keep modal above your UI
+    fallbackText = "", // initials or anything when no image
   },
   ref
 ) {
@@ -99,7 +99,10 @@ export default forwardRef(function ProfilePhotoPicker(
       aria-modal="true"
       role="dialog"
     >
-      <div className="absolute inset-0 bg-black/60" onClick={() => setOpen(false)} />
+      <div
+        className="absolute inset-0 bg-black/60"
+        onClick={() => setOpen(false)}
+      />
 
       <div className="relative w-full max-w-lg rounded-2xl bg-[#111] text-white shadow-xl">
         <div className="flex items-center justify-between px-5 py-4 border-b border-white/10">
@@ -116,7 +119,11 @@ export default forwardRef(function ProfilePhotoPicker(
         <div className="px-6 py-6 flex flex-col items-center gap-4">
           <div className="h-44 w-44 rounded-full overflow-hidden border border-white/10">
             {previewUrl ? (
-              <img src={previewUrl} alt="Preview" className="h-full w-full object-cover" />
+              <img
+                src={previewUrl}
+                alt="Preview"
+                className="h-full w-full object-cover"
+              />
             ) : (
               <div className="h-full w-full grid place-items-center bg-white/5 text-white/70">
                 {fallbackText ? (
@@ -177,7 +184,9 @@ export default forwardRef(function ProfilePhotoPicker(
 
   return (
     <div className={cn("space-y-2", className)}>
-      {label ? <p className="text-sm font-medium text-gray-700">{label}</p> : null}
+      {label ? (
+        <p className="text-sm font-medium text-gray-700">{label}</p>
+      ) : null}
 
       {/* Avatar button in-page */}
       <button
@@ -186,7 +195,7 @@ export default forwardRef(function ProfilePhotoPicker(
         onClick={() => setOpen(true)}
         className={cn(
           "relative rounded-full overflow-hidden border-2 border-white shadow-md",
-          "ring-0 outline-none focus-visible:ring-2 focus-visible:ring-purple-500",
+          "ring-0 outline-none focus-visible:ring-2 focus-visible:ring-orange-500",
           "aspect-square object-cover",
           disabled ? "opacity-60 cursor-not-allowed" : "cursor-pointer",
           avatarClassName
@@ -194,7 +203,11 @@ export default forwardRef(function ProfilePhotoPicker(
         aria-label="Open profile photo options"
       >
         {previewUrl ? (
-          <img src={previewUrl} alt="Profile" className="h-full w-full object-cover" />
+          <img
+            src={previewUrl}
+            alt="Profile"
+            className="h-full w-full object-cover"
+          />
         ) : (
           <div className="h-full w-full grid place-items-center bg-gray-100 text-gray-700">
             {fallbackText ? (

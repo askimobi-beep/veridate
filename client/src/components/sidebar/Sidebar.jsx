@@ -11,7 +11,7 @@ export default function Sidebar() {
   };
 
   return (
-    <aside className="min-h-screen w-[230px] shrink-0 bg-gradient-to-br from-white via-[#f7f9fc] to-[#eef3ff] shadow-md flex flex-col border-r border-white/30 py-6">
+    <aside className="min-h-screen w-[230px] shrink-0 bg-gradient-to-br from-orange-200 via-orange-50 to-orange-100 shadow-md flex flex-col border-r border-white/30 py-6">
       {/* Sidebar Links */}
       <nav className="flex flex-col gap-2 px-2">
         {sidebarLinks.map((item) => (
