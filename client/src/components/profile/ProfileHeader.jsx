@@ -22,8 +22,8 @@ export default function ProfileHeader({
   uploading = false,
   profilePicRef,
 }) {
-  // const BASE_UPLOAD_URL = "https://api.veridate.store/uploads";
-  const BASE_UPLOAD_URL = "http://localhost:8000/uploads";
+  const BASE_UPLOAD_URL = "https://api.veridate.store/uploads";
+  // const BASE_UPLOAD_URL = "http://localhost:8000/uploads";
 
   // make a preview that works for: empty | filename | absolute URL | File
   const blobUrlRef = useRef(null);
