@@ -8,8 +8,11 @@ export default function AppInput({
   className,
   inputClassName,
   disabled = false,
+  endAdornment = null, // 👈 new
   ...props
 }) {
+  const hasEnd = !!endAdornment;
+
   return (
     <div className={cn("space-y-1", className)}>
       {label && (
@@ -20,18 +23,28 @@ export default function AppInput({
           {label}
         </Label>
       )}
-      <Input
-        id={name}
-        name={name}
-        disabled={disabled}
-        className={cn(
-          "bg-white/90 border border-gray-200 text-gray-900 placeholder:text-gray-400",
-          "focus-visible:ring-2 focus-visible:ring-black focus-visible:ring-offset-0",
-          disabled && "bg-gray-100 text-gray-500 cursor-not-allowed",
-          inputClassName
+
+      <div className="relative">
+        <Input
+          id={name}
+          name={name}
+          disabled={disabled}
+          className={cn(
+            "bg-white/90 border border-gray-200 text-gray-900 placeholder:text-gray-400",
+            "focus-visible:ring-2 focus-visible:ring-black focus-visible:ring-offset-0",
+            disabled && "bg-gray-100 text-gray-500 cursor-not-allowed",
+            hasEnd && "pr-10", // 👈 room for the icon
+            inputClassName
+          )}
+          {...props}
+        />
+
+        {hasEnd && (
+          <div className="absolute inset-y-0 right-2 flex items-center">
+            {endAdornment}
+          </div>
         )}
-        {...props}
-      />
+      </div>
     </div>
   );
 }

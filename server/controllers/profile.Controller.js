@@ -1,7 +1,9 @@
 // controllers/profile.Controller.js
 const Profile = require("../models/Profile");
 const mongoose = require("mongoose");
-const { Types: { ObjectId } } = mongoose;
+const {
+  Types: { ObjectId },
+} = mongoose;
 const {
   removeOldPersonalFile,
   removeOldEducationFile,
@@ -25,7 +27,10 @@ const makeFileUrl = (req, folder, filename) => {
 
 function redactPersonalFields(profileDoc) {
   if (!profileDoc) return profileDoc;
-  const p = typeof profileDoc.toObject === "function" ? profileDoc.toObject() : { ...profileDoc };
+  const p =
+    typeof profileDoc.toObject === "function"
+      ? profileDoc.toObject()
+      : { ...profileDoc };
   const hidden = new Set(p.personalHiddenFields || []);
   for (const key of PERSONAL_PRIVACY_KEYS) {
     if (hidden.has(key)) delete p[key];
@@ -41,8 +46,8 @@ function redactEduExpArrays(p) {
     p.education = p.education.map((row) => {
       const r = { ...row };
       const hidden = new Set(r.hiddenFields || []);
-      if (hidden.has("degreeFile")) delete r.degreeFile;        // hide file
-      if (hidden.has("degreeTitle")) delete r.degreeTitle;      // optional support
+      if (hidden.has("degreeFile")) delete r.degreeFile; // hide file
+      if (hidden.has("degreeTitle")) delete r.degreeTitle; // optional support
       return r;
     });
   }
@@ -58,8 +63,6 @@ function redactEduExpArrays(p) {
 
   return p;
 }
-
-
 
 /* =========================
    CREATE PROFILE (kept)
@@ -150,8 +153,10 @@ exports.savePersonalInfo = async (req, res) => {
     ]);
 
     const filesUpdate = {};
-    if (req.files?.resume?.[0]) filesUpdate.resume = req.files.resume[0].filename;
-    if (req.files?.profilePic?.[0]) filesUpdate.profilePic = req.files.profilePic[0].filename;
+    if (req.files?.resume?.[0])
+      filesUpdate.resume = req.files.resume[0].filename;
+    if (req.files?.profilePic?.[0])
+      filesUpdate.profilePic = req.files.profilePic[0].filename;
 
     const fields = [
       "name",
@@ -193,8 +198,10 @@ exports.savePersonalInfo = async (req, res) => {
     }
 
     if (profile) {
-      if (filesUpdate.resume && profile.resume) removeOldPersonalFile("resume", profile.resume);
-      if (filesUpdate.profilePic && profile.profilePic) removeOldPersonalFile("profilePic", profile.profilePic);
+      if (filesUpdate.resume && profile.resume)
+        removeOldPersonalFile("resume", profile.resume);
+      if (filesUpdate.profilePic && profile.profilePic)
+        removeOldPersonalFile("profilePic", profile.profilePic);
     }
 
     if (!profile?.personalInfoLocked) {
@@ -203,7 +210,9 @@ exports.savePersonalInfo = async (req, res) => {
         { $set: { ...bodyUpdate, ...filesUpdate, personalInfoLocked: true } },
         { new: true, upsert: true }
       );
-      return res.status(200).json({ message: "Personal info saved & locked", profile: updated });
+      return res
+        .status(200)
+        .json({ message: "Personal info saved & locked", profile: updated });
     }
 
     const lockedUpdate = {};
@@ -213,7 +222,12 @@ exports.savePersonalInfo = async (req, res) => {
     Object.assign(lockedUpdate, filesUpdate);
 
     if (!Object.keys(lockedUpdate).length) {
-      return res.status(403).json({ error: "This section is locked. Only permitted fields can be updated." });
+      return res
+        .status(403)
+        .json({
+          error:
+            "This section is locked. Only permitted fields can be updated.",
+        });
     }
 
     const updated = await Profile.findOneAndUpdate(
@@ -221,10 +235,62 @@ exports.savePersonalInfo = async (req, res) => {
       { $set: lockedUpdate },
       { new: true }
     );
-    return res.status(200).json({ message: "Personal info updated", profile: updated });
+    return res
+      .status(200)
+      .json({ message: "Personal info updated", profile: updated });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Failed to save personal info" });
+  }
+};
+
+// add next to savePersonalInfo
+exports.saveProfilePhoto = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const profile = await Profile.findOne({ user: userId });
+
+    // two supported flows:
+    // 1) upload a new image via multipart (req.file)
+    // 2) clear existing image by sending profilePic="" (FormData text field)
+    const isClearIntent =
+      typeof req.body.profilePic !== "undefined" && req.body.profilePic === "";
+
+    if (!req.file && !isClearIntent) {
+      return res
+        .status(400)
+        .json({ error: "No photo uploaded or clear intent provided" });
+    }
+
+    // compute next value
+    const nextPhoto = isClearIntent ? null : req.file?.filename;
+
+    // cleanup: if replacing/removing and old photo exists, remove it
+    if (profile && profile.profilePic && (nextPhoto || isClearIntent)) {
+      try {
+        removeOldPersonalFile("profilePic", profile.profilePic);
+      } catch (e) {
+        // don’t block user on cleanup issues
+        console.warn("Failed to remove old profile photo:", e?.message || e);
+      }
+    }
+
+    // IMPORTANT: do NOT touch personalInfoLocked here
+    const updated = await Profile.findOneAndUpdate(
+      { user: userId },
+      { $set: { profilePic: nextPhoto } },
+      { new: true, upsert: true }
+    );
+
+    return res.status(200).json({
+      message: isClearIntent
+        ? "Profile photo removed"
+        : "Profile photo updated",
+      profile: updated,
+    });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ error: "Failed to save profile photo" });
   }
 };
 
@@ -258,10 +324,16 @@ exports.saveEducation = async (req, res) => {
     // ================================
     const allIncomingFiles = Array.isArray(req.files)
       ? req.files // from upload.any()
-      : (req.files?.educationFiles ?? []); // from upload.fields()
+      : req.files?.educationFiles ?? []; // from upload.fields()
 
-    const degreeFiles = (Array.isArray(allIncomingFiles) ? allIncomingFiles : [allIncomingFiles])
-      .filter((f) => f && typeof f.fieldname === "string" && f.fieldname.startsWith("educationFiles"));
+    const degreeFiles = (
+      Array.isArray(allIncomingFiles) ? allIncomingFiles : [allIncomingFiles]
+    ).filter(
+      (f) =>
+        f &&
+        typeof f.fieldname === "string" &&
+        f.fieldname.startsWith("educationFiles")
+    );
 
     // First: exact mapping by bracketed index: educationFiles[<idx>]
     degreeFiles.forEach((f) => {
@@ -309,14 +381,18 @@ exports.saveEducation = async (req, res) => {
         { new: true, upsert: true }
       );
 
-      return res.status(200).json({ message: "Education saved & locked", profile: updated });
+      return res
+        .status(200)
+        .json({ message: "Education saved & locked", profile: updated });
     }
 
     // patch existing + append new
     const current = Array.isArray(profile.education) ? profile.education : [];
     const patched = current.map((r) => ({ ...(r.toObject?.() ?? r) }));
     const byId = new Map(
-      patched.map((r, idx) => (r?._id ? [String(r._id), idx] : null)).filter(Boolean)
+      patched
+        .map((r, idx) => (r?._id ? [String(r._id), idx] : null))
+        .filter(Boolean)
     );
 
     for (let i = 0; i < incoming.length; i++) {
@@ -355,7 +431,9 @@ exports.saveEducation = async (req, res) => {
           institute: inc?.institute || "",
           instituteWebsite: inc?.instituteWebsite || "",
           degreeFile: inc?.degreeFile || null,
-          hiddenFields: Array.isArray(inc?.hiddenFields) ? inc.hiddenFields : [],
+          hiddenFields: Array.isArray(inc?.hiddenFields)
+            ? inc.hiddenFields
+            : [],
         });
       }
     }
@@ -368,147 +446,16 @@ exports.saveEducation = async (req, res) => {
 
     return res
       .status(200)
-      .json({ message: "Education updated (existing rows locked; new rows added)", profile: updated });
+      .json({
+        message: "Education updated (existing rows locked; new rows added)",
+        profile: updated,
+      });
   } catch (err) {
     console.error(err);
     return res.status(500).json({ error: "Failed to save education" });
   }
 };
 
-/* =========================
-   SAVE EXPERIENCE (allows hiddenFields when locked)
-   ========================= */
-// exports.saveExperience = async (req, res) => {
-//   try {
-//     const userId = req.user.id;
-//     const profile = await Profile.findOne({ user: userId });
-
-//     const ALLOWED_WHEN_LOCKED = new Set([
-//       "endDate",
-//       "companyWebsite",
-//       "experienceLetterFile",
-//       "jobFunctions",
-//       "hiddenFields",
-//     ]);
-
-//     let incoming = [];
-//     try {
-//       incoming = JSON.parse(req.body.experience || "[]");
-//       if (!Array.isArray(incoming)) incoming = [];
-//     } catch {
-//       incoming = [];
-//     }
-
-//     const rawFiles = req.files?.experienceFiles ?? [];
-//     const files = Array.isArray(rawFiles) ? rawFiles : [rawFiles].filter(Boolean);
-
-//     incoming.forEach((row, idx) => {
-//       if (files[idx]?.filename) row.experienceLetterFile = files[idx].filename;
-//     });
-
-//     files.forEach((f) => {
-//       if (!f?.filename || typeof f.fieldname !== "string") return;
-//       const m = f.fieldname.match(/\[(\d+)\]/);
-//       const parsedIdx = m ? parseInt(m[1], 10) : NaN;
-//       if (!Number.isNaN(parsedIdx) && incoming[parsedIdx]) {
-//         incoming[parsedIdx].experienceLetterFile = f.filename;
-//       }
-//     });
-
-//     if (!profile?.experienceLocked) {
-//       if (Array.isArray(profile?.experience)) {
-//         for (const row of profile.experience) {
-//           if (row?.experienceLetterFile) removeOldExperienceFile(row.experienceLetterFile);
-//         }
-//       }
-
-//       const cleaned = incoming.map((e) => ({
-//         jobTitle: e?.jobTitle || "",
-//         startDate: e?.startDate || "",
-//         endDate: e?.endDate || "",
-//         company: e?.company || "",
-//         companyWebsite: e?.companyWebsite || "",
-//         experienceLetterFile: e?.experienceLetterFile || null,
-//         jobFunctions: Array.isArray(e?.jobFunctions) ? e.jobFunctions : [],
-//         industry: e?.industry || "",
-//         hiddenFields: Array.isArray(e?.hiddenFields) ? e.hiddenFields : [],
-//       }));
-
-//       const updated = await Profile.findOneAndUpdate(
-//         { user: userId },
-//         { $set: { experience: cleaned, experienceLocked: true } },
-//         { new: true, upsert: true }
-//       );
-
-//       return res.status(200).json({ message: "Experience saved & locked", profile: updated });
-//     }
-
-//     const current = Array.isArray(profile.experience) ? profile.experience : [];
-//     const patched = current.map((r) => ({ ...(r.toObject?.() ?? r) }));
-//     const byId = new Map(
-//       patched.map((r, idx) => (r?._id ? [String(r._id), idx] : null)).filter(Boolean)
-//     );
-
-//     for (let i = 0; i < incoming.length; i++) {
-//       const inc = incoming[i] || {};
-//       let targetIdx = -1;
-
-//       if (inc._id && byId.has(String(inc._id))) {
-//         targetIdx = byId.get(String(inc._id));
-//       } else if (i < patched.length && !patched[i]?._id) {
-//         targetIdx = i;
-//       }
-
-//       if (targetIdx >= 0) {
-//         const prev = patched[targetIdx];
-//         const next = { ...prev };
-
-//         for (const [k, v] of Object.entries(inc)) {
-//           if (!ALLOWED_WHEN_LOCKED.has(k)) continue;
-
-//           if (k === "experienceLetterFile" && v && v !== prev.experienceLetterFile) {
-//             if (prev.experienceLetterFile) removeOldExperienceFile(prev.experienceLetterFile);
-//           }
-
-//           if (k === "hiddenFields") {
-//             next.hiddenFields = Array.isArray(v) ? v : [];
-//           } else {
-//             next[k] = v ?? next[k];
-//           }
-//         }
-//         patched[targetIdx] = next;
-//       } else {
-//         patched.push({
-//           jobTitle: inc?.jobTitle || "",
-//           startDate: inc?.startDate || "",
-//           endDate: inc?.endDate || "",
-//           company: inc?.company || "",
-//           companyWebsite: inc?.companyWebsite || "",
-//           experienceLetterFile: inc?.experienceLetterFile || null,
-//           jobFunctions: Array.isArray(inc?.jobFunctions) ? inc.jobFunctions : [],
-//           industry: inc?.industry || "",
-//           hiddenFields: Array.isArray(inc?.hiddenFields) ? inc.hiddenFields : [],
-//         });
-//       }
-//     }
-
-//     const updated = await Profile.findOneAndUpdate(
-//       { user: userId },
-//       { $set: { experience: patched } },
-//       { new: true }
-//     );
-
-//     return res.status(200).json({
-//       message: "Experience updated (existing rows locked; new rows added)",
-//       profile: updated,
-//     });
-//   } catch (err) {
-//     console.error(err);
-//     return res.status(500).json({ error: "Failed to save experience" });
-//   }
-// };
-
-// controllers/profile.Controller.js  — FULL saveExperience function with bracketed file-index support
 exports.saveExperience = async (req, res) => {
   try {
     const userId = req.user.id;
@@ -537,10 +484,16 @@ exports.saveExperience = async (req, res) => {
     // ================================
     const allIncomingFiles = Array.isArray(req.files)
       ? req.files // from upload.any()
-      : (req.files?.experienceFiles ?? []); // from upload.fields()
+      : req.files?.experienceFiles ?? []; // from upload.fields()
 
-    const expFiles = (Array.isArray(allIncomingFiles) ? allIncomingFiles : [allIncomingFiles])
-      .filter((f) => f && typeof f.fieldname === "string" && f.fieldname.startsWith("experienceFiles"));
+    const expFiles = (
+      Array.isArray(allIncomingFiles) ? allIncomingFiles : [allIncomingFiles]
+    ).filter(
+      (f) =>
+        f &&
+        typeof f.fieldname === "string" &&
+        f.fieldname.startsWith("experienceFiles")
+    );
 
     // First: exact mapping by bracketed index: experienceFiles[<idx>]
     expFiles.forEach((f) => {
@@ -557,7 +510,8 @@ exports.saveExperience = async (req, res) => {
     expFiles
       .filter((f) => !/\[\d+\]/.test(f.fieldname))
       .forEach((f) => {
-        while (seq < incoming.length && incoming[seq]?.experienceLetterFile) seq++;
+        while (seq < incoming.length && incoming[seq]?.experienceLetterFile)
+          seq++;
         if (seq < incoming.length) {
           incoming[seq].experienceLetterFile = f.filename;
           seq++;
@@ -568,7 +522,8 @@ exports.saveExperience = async (req, res) => {
     if (!profile?.experienceLocked) {
       if (Array.isArray(profile?.experience)) {
         for (const row of profile.experience) {
-          if (row?.experienceLetterFile) removeOldExperienceFile(row.experienceLetterFile);
+          if (row?.experienceLetterFile)
+            removeOldExperienceFile(row.experienceLetterFile);
         }
       }
 
@@ -590,7 +545,9 @@ exports.saveExperience = async (req, res) => {
         { new: true, upsert: true }
       );
 
-      return res.status(200).json({ message: "Experience saved & locked", profile: updated });
+      return res
+        .status(200)
+        .json({ message: "Experience saved & locked", profile: updated });
     }
 
     // patch existing + append new
@@ -605,7 +562,9 @@ exports.saveExperience = async (req, res) => {
       let targetIdx = -1;
 
       if (inc._id && byId.has(String(inc._id))) {
-        targetIdx = patched.findIndex((x) => String(x?._id) === String(inc._id));
+        targetIdx = patched.findIndex(
+          (x) => String(x?._id) === String(inc._id)
+        );
       } else if (i < patched.length && !patched[i]?._id) {
         targetIdx = i;
       }
@@ -617,8 +576,13 @@ exports.saveExperience = async (req, res) => {
         for (const [k, v] of Object.entries(inc)) {
           if (!ALLOWED_WHEN_LOCKED.has(k)) continue;
 
-          if (k === "experienceLetterFile" && v && v !== prev.experienceLetterFile) {
-            if (prev.experienceLetterFile) removeOldExperienceFile(prev.experienceLetterFile);
+          if (
+            k === "experienceLetterFile" &&
+            v &&
+            v !== prev.experienceLetterFile
+          ) {
+            if (prev.experienceLetterFile)
+              removeOldExperienceFile(prev.experienceLetterFile);
           }
 
           if (k === "hiddenFields") {
@@ -639,9 +603,13 @@ exports.saveExperience = async (req, res) => {
           company: inc?.company || "",
           companyWebsite: inc?.companyWebsite || "",
           experienceLetterFile: inc?.experienceLetterFile || null,
-          jobFunctions: Array.isArray(inc?.jobFunctions) ? inc.jobFunctions : [],
+          jobFunctions: Array.isArray(inc?.jobFunctions)
+            ? inc.jobFunctions
+            : [],
           industry: inc?.industry || "",
-          hiddenFields: Array.isArray(inc?.hiddenFields) ? inc.hiddenFields : [],
+          hiddenFields: Array.isArray(inc?.hiddenFields)
+            ? inc.hiddenFields
+            : [],
         });
       }
     }
@@ -667,7 +635,16 @@ exports.saveExperience = async (req, res) => {
    ========================= */
 exports.listProfilesPublic = async (req, res) => {
   try {
-    let { page = 1, limit = 12, q = "", gender, country, jobTitle, industry, excludeId } = req.query;
+    let {
+      page = 1,
+      limit = 12,
+      q = "",
+      gender,
+      country,
+      jobTitle,
+      industry,
+      excludeId,
+    } = req.query;
 
     page = parseInt(page, 10);
     limit = Math.min(50, parseInt(limit, 10) || 12);
@@ -676,7 +653,13 @@ exports.listProfilesPublic = async (req, res) => {
 
     if (q) {
       const rx = new RegExp(q.trim(), "i");
-      filter.$or = [{ name: rx }, { email: rx }, { mobile: rx }, { city: rx }, { country: rx }];
+      filter.$or = [
+        { name: rx },
+        { email: rx },
+        { mobile: rx },
+        { city: rx },
+        { country: rx },
+      ];
     }
     if (gender) filter.gender = gender;
     if (country) filter.country = country;
@@ -717,7 +700,8 @@ exports.listProfilesPublic = async (req, res) => {
 
     const data = rows.map((p) => {
       const isHidden = (k) =>
-        Array.isArray(p.personalHiddenFields) && p.personalHiddenFields.includes(k);
+        Array.isArray(p.personalHiddenFields) &&
+        p.personalHiddenFields.includes(k);
 
       const pickLatest = (arr, endKey = "endDate", startKey = "startDate") => {
         if (!Array.isArray(arr) || !arr.length) return null;
@@ -739,13 +723,16 @@ exports.listProfilesPublic = async (req, res) => {
               Array.isArray(latestEdu.hiddenFields) &&
               latestEdu.hiddenFields.includes("degreeTitle")
                 ? ""
-                : (latestEdu.degreeTitle || ""),
+                : latestEdu.degreeTitle || "",
           }
         : null;
 
       return {
         _id: p._id,
-        user: typeof p.user === "object" && p.user?.toString ? p.user.toString() : p.user || "",
+        user:
+          typeof p.user === "object" && p.user?.toString
+            ? p.user.toString()
+            : p.user || "",
         name: p.name || "Unnamed",
         email: isHidden("email") ? "" : p.email || "",
         mobile: isHidden("mobile") ? "" : p.mobile || "",
@@ -755,7 +742,10 @@ exports.listProfilesPublic = async (req, res) => {
         profilePicUrl: makeFileUrl(req, "profile", p.profilePic),
         education: educationCard,
         experience: latestExp
-          ? { jobTitle: latestExp.jobTitle || "", company: latestExp.company || "" }
+          ? {
+              jobTitle: latestExp.jobTitle || "",
+              company: latestExp.company || "",
+            }
           : null,
       };
     });

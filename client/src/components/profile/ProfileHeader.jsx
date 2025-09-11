@@ -5,26 +5,25 @@ import { motion } from "framer-motion";
 import ProfilePhotoPicker from "../form/ProfilePhotoPicker";
 import axiosInstance from "@/utils/axiosInstance";
 
-
 const initials = (name = "") =>
-  name.split(" ").slice(0, 2).map((s) => (s && s[0]) || "").join("").toUpperCase();
+  name
+    .split(" ")
+    .slice(0, 2)
+    .map((s) => (s && s[0]) || "")
+    .join("")
+    .toUpperCase();
 
 const isAbsolute = (v) => typeof v === "string" && /^(https?:)?\/\//i.test(v);
 
 export default function ProfileHeader({
   user,
-  onPhotoChange,      // (file|null) => void
+  onPhotoChange,
+  onPhotoSave,
   uploading = false,
   profilePicRef,
 }) {
-
-  const BASE_UPLOAD_URL = "https://api.veridate.store/uploads";
-
-   const baseURL = useMemo(
-  () => axiosInstance.defaults.baseURL?.replace(/\/$/, ""),
-  []
-);
-
+  // const BASE_UPLOAD_URL = "https://api.veridate.store/uploads";
+  const BASE_UPLOAD_URL = "http://localhost:8000/uploads";
 
   // make a preview that works for: empty | filename | absolute URL | File
   const blobUrlRef = useRef(null);
@@ -65,27 +64,26 @@ export default function ProfileHeader({
       initial={{ opacity: 0, y: -20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.6, ease: "easeOut" }}
-      className="relative mb-8 flex items-center gap-4 rounded-2xl border border-white/20 bg-white/50 backdrop-blur-md p-4 shadow-xl"
+      className="relative mb-8 flex items-center gap-4 rounded-2xl border border-black/20 bg-gray-100 backdrop-blur-md p-4 shadow-xl"
     >
-      
-        <ProfilePhotoPicker
-          ref={profilePicRef}
-          label={null}
-          showInnerBorder={false}
-          defaultPreviewUrl={defaultPreview}
-          fallbackText={initials(user?.name)}
-          onChange={onPhotoChange}
-          avatarClassName="size-25"
-          modalZ={9999}
-          accept="image/*"
-          disabled={uploading}
-        />
-        {uploading ? (
-          <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 text-[10px] px-1.5 py-0.5 rounded bg-black/70 text-white">
-            uploading…
-          </span>
-        ) : null}
- 
+      <ProfilePhotoPicker
+        ref={profilePicRef}
+        label={null}
+        showInnerBorder={false}
+        defaultPreviewUrl={defaultPreview}
+        fallbackText={initials(user?.name)}
+        onChange={onPhotoChange}
+        avatarClassName="size-25"
+        onSave={onPhotoSave}
+        modalZ={9999}
+        accept="image/*"
+        disabled={uploading}
+      />
+      {uploading ? (
+        <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 text-[10px] px-1.5 py-0.5 rounded bg-black/70 text-white">
+          uploading…
+        </span>
+      ) : null}
 
       <div className="flex flex-col">
         <motion.h1

@@ -1,9 +1,12 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react"; // ⬅️ add useMemo
 import { useSnackbar } from "notistack";
 import {
   BriefcaseBusiness as Briefcase,
   FileText,
   UserRound,
+  Share2, // ⬅️ add icons
+  Copy,
+  Check,
 } from "lucide-react";
 
 import AccordionSection from "@/components/common/AccordionSection";
@@ -16,7 +19,8 @@ import ConfirmDialog from "@/components/common/ConfirmDialog";
 import usePersonalInformationForm from "@/hooks/usePersonalInformationForm";
 import { toYMD } from "@/lib/dates";
 import { getProfileMe } from "@/lib/profileApi";
-import { useAuth } from "@/context/AuthContext"; // ✅ NEW
+import { useAuth } from "@/context/AuthContext";
+import InfoTip from "@/components/form/InfoTip";
 
 export default function PersonalInformation() {
   const {
@@ -36,6 +40,7 @@ export default function PersonalInformation() {
     saveExperience,
     // personal
     savePersonalInfo,
+    saveProfilePhoto,
     saving,
     submit,
     resetForm,
@@ -48,7 +53,6 @@ export default function PersonalInformation() {
   const [open, setOpen] = useState("pi");
   const [locked, setLocked] = useState({});
 
-  // ✅ auth context (logged-in user)
   const { user, loading: authLoading } = useAuth();
 
   // uploader refs
@@ -75,7 +79,6 @@ export default function PersonalInformation() {
     setFormData((prev) => ({
       ...prev,
       ...data,
-      // ✅ also make sure name/email are always in sync with auth when available
       name: `${user?.firstName ?? data.firstName ?? ""} ${
         user?.lastName ?? data.lastName ?? ""
       }`.trim(),
@@ -149,7 +152,7 @@ export default function PersonalInformation() {
     setPendingValue(null);
   };
 
-  // ✅ 1) Immediately reflect auth user into the form (fast UI), even before /profile call
+  // reflect auth user into the form fast
   useEffect(() => {
     if (!authLoading && user) {
       setFormData((prev) => ({
@@ -158,10 +161,9 @@ export default function PersonalInformation() {
         email: user.email || prev.email || "",
       }));
     }
-    // if user is null we don't clear fields; keep whatever is there
   }, [authLoading, user, setFormData]);
 
-  // ✅ 2) Fetch full profile + normalize; also respects auth user for name/email
+  // fetch full profile
   useEffect(() => {
     const load = async () => {
       try {
@@ -170,7 +172,6 @@ export default function PersonalInformation() {
         setFormData((prev) => ({
           ...prev,
           ...data,
-          // ensure name/email come from auth if available, else from profile
           name: `${user?.firstName ?? data.firstName ?? ""} ${
             user?.lastName ?? data.lastName ?? ""
           }`.trim(),
@@ -214,7 +215,6 @@ export default function PersonalInformation() {
       }
     };
 
-    // only load after auth check finishes (prevents flicker/race)
     if (!authLoading) load();
   }, [authLoading, user, setFormData]);
 
@@ -235,31 +235,109 @@ export default function PersonalInformation() {
     }
   };
 
+  // ===== Share Button logic (moved here) =====
+  const baseUrl =
+    import.meta.env.VITE_PROFILE_BASE_URL ||
+    (typeof window !== "undefined" && window.location?.origin) ||
+    "http://localhost:5173";
+
+  const shareUrl = useMemo(() => {
+    const id = user?._id || formData?.id || "UNKNOWN_ID";
+    return `${baseUrl}/dashboard/profiles/${id}`;
+  }, [baseUrl, user?._id, formData?.id]);
+
+  const [copied, setCopied] = useState(false);
+
+  const handleShare = async () => {
+    try {
+      if (navigator.share) {
+        await navigator.share({
+          title: "My Profile",
+          text: "Check out my profile",
+          url: shareUrl,
+        });
+        return;
+      }
+      await navigator.clipboard.writeText(shareUrl);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1200);
+    } catch (err) {
+      window.prompt("Copy this URL:", shareUrl);
+    }
+  };
+  // ===========================================
+
   return (
     <div className="min-h-screen w-full flex items-start justify-center px-4 py-10 relative overflow-hidden">
-      {/* <div className="pointer-events-none absolute -top-36 left-1/3 h-[42rem] w-[42rem] rounded-full bg-[radial-gradient(circle_at_center,rgba(56,189,248,0.22),transparent_70%)] blur-3xl" /> */}
-      {/* <div className="pointer-events-none absolute -bottom-40 right-[-10%] h-[40rem] w-[40rem] rounded-full bg-[radial-gradient(circle_at_center,rgba(167,139,250,0.24),transparent_70%)] blur-3xl" /> */}
-
       <div className="relative z-10 w-full max-w-5xl">
+        {/* 👉 Share Button BEFORE ProfileHeader */}
+        <div className="mb-4 flex justify-end">
+          <button
+            type="button"
+            onClick={handleShare}
+            className="inline-flex items-center gap-2 rounded-xl border border-orange-600 px-4 py-2 text-sm font-medium text-white bg-orange-600 hover:bg-orange-700 active:scale-[0.98] transition"
+            aria-label="Share profile link"
+          >
+            {copied ? (
+              <Check className="h-4 w-4" />
+            ) : (
+              <Share2 className="h-4 w-4" />
+            )}
+            {copied ? "Copied!" : "Share"}
+          </button>
+
+          {!navigator.share && (
+            <button
+              type="button"
+              onClick={async () => {
+                await navigator.clipboard.writeText(shareUrl);
+                setCopied(true);
+                setTimeout(() => setCopied(false), 1200);
+              }}
+              className="ml-2 inline-flex items-center gap-2 rounded-xl border px-3 py-2 text-sm text-gray-700 hover:bg-gray-50"
+              aria-label="Copy profile link"
+              title="Copy link"
+            >
+              <Copy className="h-4 w-4" />
+            </button>
+          )}
+        </div>
+
         <ProfileHeader
           user={formData}
           profilePicRef={profilePicRef}
           uploading={saving && open === "pi"}
           onPhotoChange={(file) => {
-            // file can be null (Delete)
-            // use the SAME key that works with your FileUploader:
-            //   <FileUploader onChange={(file) => handleCustomChange("profilePic", file)} />
             if (file) {
-              handleCustomChange("profilePic", file); // << key al  igned
+              handleCustomChange("profilePic", file);
             } else {
-              handleCustomChange("profilePic", ""); // clear
+              handleCustomChange("profilePic", "");
+            }
+          }}
+          onPhotoSave={async () => {
+            const res = await saveProfilePhoto();
+            if (res?.ok) {
+              enqueueSnackbar("Profile photo saved", { variant: "success" });
+              profilePicRef.current?.reset?.();
+            } else {
+              enqueueSnackbar(res?.error || "Failed to save photo", {
+                variant: "error",
+              });
             }
           }}
         />
 
         <form onSubmit={handleSubmit} className="space-y-6">
           <AccordionSection
-            title="Personal Details"
+            title={
+              <span className="inline-flex items-center gap-2">
+                Personal Details
+                <InfoTip>
+                  We use this to generate your public profile. Only fields you
+                  set visible will be shown.
+                </InfoTip>
+              </span>
+            }
             icon={UserRound}
             value="pi"
             openValue={open}
@@ -276,12 +354,20 @@ export default function PersonalInformation() {
               locked={!!locked.pi}
               resumeRef={resumeRef}
               profilePicRef={profilePicRef}
-              userId={user._id} // or whatever your user id is
+              userId={user?._id}
             />
           </AccordionSection>
 
           <AccordionSection
-            title="Education"
+            title={
+              <span className="inline-flex items-center gap-2">
+                Education
+                <InfoTip>
+                  Upload degree files and choose which ones to hide/show with
+                  the switch.
+                </InfoTip>
+              </span>
+            }
             icon={FileText}
             value="education"
             openValue={open}
@@ -302,7 +388,15 @@ export default function PersonalInformation() {
           </AccordionSection>
 
           <AccordionSection
-            title="Experience"
+            title={
+              <span className="inline-flex items-center gap-2">
+                Experience
+                <InfoTip>
+                  Job functions and letters help verify work history; you
+                  control visibility.
+                </InfoTip>
+              </span>
+            }
             icon={Briefcase}
             value="experience"
             openValue={open}

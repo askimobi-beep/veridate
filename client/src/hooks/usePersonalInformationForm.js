@@ -95,14 +95,14 @@ export default function usePersonalInformationForm() {
       return { ...prev, education: updated };
     });
   };
-    const updateExperience = (index, field, value) => {
+
+  const updateExperience = (index, field, value) => {
     setFormData((prev) => {
       const updated = [...prev.experience];
       updated[index][field] = value;
       return { ...prev, experience: updated };
     });
   };
-
 
   const removeEducation = (index) => {
     setFormData((prev) => {
@@ -164,163 +164,197 @@ export default function usePersonalInformationForm() {
 
   // ===== APIs =====
   const savePersonalInfo = async () => {
-  setSaving(true);
-  try {
-    const fd = new FormData();
-    fd.append("name", formData.name || "");
-    fd.append("email", formData.email || "");
-    fd.append("fatherName", formData.fatherName || "");
-    fd.append("mobile", formData.mobile || "");
-    fd.append("cnic", formData.cnic || "");
-    fd.append("city", formData.city || "");
-    fd.append("country", formData.country || "");
-    fd.append("gender", formData.gender || "");
-    fd.append("maritalStatus", formData.maritalStatus || "");
-    fd.append("residentStatus", formData.residentStatus || "");
-    fd.append("nationality", formData.nationality || "");
-    fd.append("dob", formData.dob || "");
-    fd.append(
-      "shiftPreferences",
-      JSON.stringify(formData.shiftPreferences || [])
-    );
-    fd.append(
-      "workAuthorization",
-      JSON.stringify(formData.workAuthorization || [])
-    );
-    fd.append(
-      "personalHiddenFields",
-      JSON.stringify(formData.personalHiddenFields || [])
-    );
+    setSaving(true);
+    try {
+      const fd = new FormData();
+      fd.append("name", formData.name || "");
+      fd.append("email", formData.email || "");
+      fd.append("fatherName", formData.fatherName || "");
+      fd.append("mobile", formData.mobile || "");
+      fd.append("cnic", formData.cnic || "");
+      fd.append("city", formData.city || "");
+      fd.append("country", formData.country || "");
+      fd.append("gender", formData.gender || "");
+      fd.append("maritalStatus", formData.maritalStatus || "");
+      fd.append("residentStatus", formData.residentStatus || "");
+      fd.append("nationality", formData.nationality || "");
+      fd.append("dob", formData.dob || "");
+      fd.append(
+        "shiftPreferences",
+        JSON.stringify(formData.shiftPreferences || [])
+      );
+      fd.append(
+        "workAuthorization",
+        JSON.stringify(formData.workAuthorization || [])
+      );
+      fd.append(
+        "personalHiddenFields",
+        JSON.stringify(formData.personalHiddenFields || [])
+      );
 
-    if (formData.resume instanceof File) {
-      fd.append("resume", formData.resume);
-    }
-    if (formData.profilePic instanceof File) {
-      fd.append("profilePic", formData.profilePic);
-    } else if (formData.profilePic === "") {
-      // allow clearing the avatar
-      fd.append("profilePic", "");
-    }
+      if (formData.resume instanceof File) {
+        fd.append("resume", formData.resume);
+      }
+      if (formData.profilePic instanceof File) {
+        fd.append("profilePic", formData.profilePic);
+      } else if (formData.profilePic === "") {
+        fd.append("profilePic", "");
+      }
 
-    const res = await axiosInstance.post("/profile/save-personal-info", fd, {
-      headers: { "Content-Type": "multipart/form-data" },
-    });
-
-    if (res?.status === 200) {
-      // ✅ refresh page once after successful save
-      window.location.reload();
-    }
-
-    return { ok: true, data: res.data };
-  } catch (err) {
-    return {
-      ok: false,
-      error:
-        err?.response?.data?.error ||
-        err?.message ||
-        "Failed to save personal info",
-    };
-  } finally {
-    setSaving(false);
-  }
-};
-
-
- const saveEducation = async () => {
-  setSaving(true);
-  const data = new FormData();
-
-  const eduList = formData.education.map((edu, i) => {
-    if (edu.degreeFile instanceof File) data.append(`educationFiles[${i}]`, edu.degreeFile); // CHANGED
-    const { degreeFile, ...rest } = edu;
-    return rest;
-  });
-
-  data.append("education", JSON.stringify(eduList));
-
-  try {
-    const res = await axiosInstance.post("/profile/save-education", data, {
-      headers: { "Content-Type": "multipart/form-data" }, // CHANGED: ensure header
-    });
-    return { ok: true, data: res.data };
-  } catch (err) {
-    return {
-      ok: false,
-      error: err?.response?.data?.error || err?.message || "Failed to save education",
-    };
-  } finally {
-    setSaving(false);
-  }
-};
-
- const saveExperience = async () => {
-  setSaving(true);
-  const data = new FormData();
-
-  const expList = formData.experience.map((exp, i) => {
-    // CHANGED: send files with explicit index so backend can map to the right row
-    if (exp.experienceLetterFile instanceof File) {
-      data.append(`experienceFiles[${i}]`, exp.experienceLetterFile);
-    }
-    const { experienceLetterFile, ...rest } = exp;
-    return rest;
-  });
-
-  data.append("experience", JSON.stringify(expList));
-
-  try {
-    const res = await axiosInstance.post("/profile/save-experience", data, {
-      headers: { "Content-Type": "multipart/form-data" }, // ensure multipart
-    });
-    return { ok: true, data: res.data };
-  } catch (err) {
-    return {
-      ok: false,
-      error: err?.response?.data?.error || err?.message || "Failed to save experience",
-    };
-  } finally {
-    setSaving(false);
-  }
-};
-
-const submit = async () => {
-  setSubmitting(true);
-  const data = new FormData();
-
-  Object.entries(formData).forEach(([key, value]) => {
-    if (key === "education") {
-      const eduList = value.map((edu, i) => {
-        if (edu.degreeFile instanceof File) data.append(`educationFiles[${i}]`, edu.degreeFile); // CHANGED
-        const { degreeFile, ...rest } = edu;
-        return rest;
+      const res = await axiosInstance.post("/profile/save-personal-info", fd, {
+        headers: { "Content-Type": "multipart/form-data" },
       });
-      data.append("education", JSON.stringify(eduList));
-    } else if (key === "experience") {
-      const expList = value.map((exp, i) => {
-        if (exp.experienceLetterFile instanceof File) data.append(`experienceFiles[${i}]`, exp.experienceLetterFile); // (optional symmetry)
-        const { experienceLetterFile, ...rest } = exp;
-        return rest;
-      });
-      data.append("experience", JSON.stringify(expList));
-    } else if (Array.isArray(value)) {
-      data.append(key, JSON.stringify(value));
-    } else {
-      data.append(key, value ?? "");
-    }
-  });
 
-  try {
-    const res = await axiosInstance.post("/profile/create", data);
-    return { ok: true, data: res.data };
-  } catch (error) {
-    return {
-      ok: false,
-      error: error?.response?.data?.error || error?.message || "Something went wrong",
-    };
-  } finally {
-    setSubmitting(false);
-  }
-};
+      return { ok: true, data: res.data };
+    } catch (err) {
+      return {
+        ok: false,
+        error:
+          err?.response?.data?.error ||
+          err?.message ||
+          "Failed to save personal info",
+      };
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const saveProfilePhoto = async () => {
+    setSaving(true);
+    try {
+      const fd = new FormData();
+      if (formData.profilePic instanceof File) {
+        fd.append("profilePic", formData.profilePic);
+      } else if (formData.profilePic === "") {
+        fd.append("profilePic", "");
+      }
+
+      const res = await axiosInstance.post("/profile/save-profile-photo", fd, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+      if (res?.status === 200) {
+        window.location.reload();
+      }
+      return { ok: true, data: res.data };
+    } catch (err) {
+      return {
+        ok: false,
+        error:
+          err?.response?.data?.error ||
+          err?.message ||
+          "Failed to save profile photo",
+      };
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const saveEducation = async () => {
+    setSaving(true);
+    const data = new FormData();
+
+    const eduList = formData.education.map((edu, i) => {
+      if (edu.degreeFile instanceof File)
+        data.append(`educationFiles[${i}]`, edu.degreeFile);
+      const { degreeFile, ...rest } = edu;
+      return rest;
+    });
+
+    data.append("education", JSON.stringify(eduList));
+
+    try {
+      const res = await axiosInstance.post("/profile/save-education", data, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+      return { ok: true, data: res.data };
+    } catch (err) {
+      return {
+        ok: false,
+        error:
+          err?.response?.data?.error ||
+          err?.message ||
+          "Failed to save education",
+      };
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const saveExperience = async () => {
+    setSaving(true);
+    const data = new FormData();
+
+    const expList = formData.experience.map((exp, i) => {
+      if (exp.experienceLetterFile instanceof File) {
+        data.append(`experienceFiles[${i}]`, exp.experienceLetterFile);
+      }
+      const { experienceLetterFile, ...rest } = exp;
+      return rest;
+    });
+
+    data.append("experience", JSON.stringify(expList));
+
+    try {
+      const res = await axiosInstance.post("/profile/save-experience", data, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+      return { ok: true, data: res.data };
+    } catch (err) {
+      return {
+        ok: false,
+        error:
+          err?.response?.data?.error ||
+          err?.message ||
+          "Failed to save experience",
+      };
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const submit = async () => {
+    setSubmitting(true);
+    const data = new FormData();
+
+    Object.entries(formData).forEach(([key, value]) => {
+      if (key === "education") {
+        const eduList = value.map((edu, i) => {
+          if (edu.degreeFile instanceof File)
+            data.append(`educationFiles[${i}]`, edu.degreeFile);
+          const { degreeFile, ...rest } = edu;
+          return rest;
+        });
+        data.append("education", JSON.stringify(eduList));
+      } else if (key === "experience") {
+        const expList = value.map((exp, i) => {
+          if (exp.experienceLetterFile instanceof File)
+            data.append(`experienceFiles[${i}]`, exp.experienceLetterFile);
+          const { experienceLetterFile, ...rest } = exp;
+          return rest;
+        });
+        data.append("experience", JSON.stringify(expList));
+      } else if (Array.isArray(value)) {
+        data.append(key, JSON.stringify(value));
+      } else {
+        data.append(key, value ?? "");
+      }
+    });
+
+    try {
+      const res = await axiosInstance.post("/profile/create", data);
+      return { ok: true, data: res.data };
+    } catch (error) {
+      return {
+        ok: false,
+        error:
+          error?.response?.data?.error ||
+          error?.message ||
+          "Something went wrong",
+      };
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
   return {
     formData,
@@ -328,21 +362,18 @@ const submit = async () => {
     handleChange,
     handleFileChange,
     handleCustomChange,
-    // education
     updateEducation,
     addEducation,
     removeEducation,
     saveEducation,
     clearEducationFiles,
-    // experience
     addExperience,
     updateExperience,
     removeExperience,
     saveExperience,
     clearExperienceFiles,
-    // personal
     savePersonalInfo,
-    // global
+    saveProfilePhoto,
     submit,
     resetForm,
     clearPersonalFiles,

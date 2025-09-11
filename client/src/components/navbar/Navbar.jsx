@@ -23,11 +23,11 @@ export default function Navbar() {
   };
 
   return (
-    <header className="w-full sticky top-0 z-50 bg-gradient-to-br from-white via-[#f7f9fc] to-[#eef3ff] border-b border-white/60 backdrop-blur">
+    <header className="w-full sticky top-0 z-50 bg-transparent  backdrop-blur">
       <div className="w-full mx-auto px-3 sm:px-4 md:px-6">
         <div className="h-16 flex items-center justify-center">
           <div className="flex items-center gap-3 sm:gap-4">
-            <img src={logo} alt="Veridate Logo" className="h-10 w-auto" />
+            <img src={logo} alt="Veridate Logo" className="h-12 w-auto" />
 
             {/* Add other centered content here, like search bar if needed */}
           </div>

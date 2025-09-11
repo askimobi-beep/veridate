@@ -8,6 +8,7 @@ const {
   saveExperience,
   listProfilesPublic,
   getProfileByUserId,
+  saveProfilePhoto,
 } = require("../controllers/profile.Controller");
 
 const upload = require("../middlewares/uploadMiddleware");
@@ -36,6 +37,13 @@ router.post(
 );
 
 router.post(
+  "/save-profile-photo",
+  protect,
+  upload.single("profilePic"), // <— just one file
+  saveProfilePhoto
+);
+
+router.post(
   "/save-education",
   protect,
   upload.any(), // ✅ ACCEPT ANY FIELD NAMES, we'll filter by prefix server-side
@@ -49,7 +57,7 @@ router.post(
   saveExperience
 );
 
-router.get("/directory", softAuth , listProfilesPublic);
+router.get("/directory", softAuth, listProfilesPublic);
 
 router.get("/getonid/:userId", getProfileByUserId);
 router.get("/me", protect, getProfile);

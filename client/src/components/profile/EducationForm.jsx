@@ -1,13 +1,14 @@
 // components/profile/EducationForm.jsx
-// FULL component (only button label text changed)
-
+// FULL component — FileUploader full row + Hide toggle as a switch above it
 import React from "react";
 import AppInput from "@/components/form/AppInput";
 import AppSelect from "@/components/form/AppSelect";
 import FileUploader from "@/components/form/FileUploader";
 import { Button } from "@/components/ui/button";
-import { FileText, EyeOff } from "lucide-react";
+import { FileText } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+// ⬇️ update this path to wherever you placed BlockSwitch
+import BlockSwitch from "@/components/form/Switch";
 
 const degreeOptions = [
   "Bachelor of Science",
@@ -52,7 +53,17 @@ export default function EducationForm({
   removeEducation,
   locked,
   degreeRefs,
+  // optional: parent save handler
+  saveEducation,
 }) {
+  const handleSave = (index) => {
+    if (typeof saveEducation === "function") {
+      saveEducation(index, educationList[index]);
+    } else {
+      console.warn("saveEducation prop not provided. Provide saveEducation(index, data).");
+    }
+  };
+
   return (
     <>
       <AnimatePresence initial={false}>
@@ -65,27 +76,9 @@ export default function EducationForm({
               layout
               className="origin-top mb-6 p-5 rounded-2xl border border-gray-200 bg-white shadow-sm space-y-4"
             >
-              {/* Row header with privacy toggle */}
+              {/* Row header */}
               <div className="flex items-center justify-between">
                 <div className="text-sm font-semibold text-gray-700">Education {index + 1}</div>
-
-                <button
-                  type="button"
-                  className={`inline-flex items-center gap-2 text-xs px-3 py-1.5 rounded-full border transition
-                    ${hasHidden(edu, "degreeFile")
-                      ? "bg-orange-50 text-orange-700 border-orange-200"
-                      : "bg-gray-50 text-gray-600 border-gray-200 hover:bg-gray-100"}`}
-                  onClick={() =>
-                    toggleHidden(edu, "degreeFile", (field, val) =>
-                      updateEducation(index, field, val)
-                    )
-                  }
-                  disabled={rowLocked && !EDUCATION_UNLOCKED.has("hiddenFields")}
-                >
-                  <EyeOff className="h-3.5 w-3.5" />
-                  {/* CHANGED: label reflects the actual hidden key */}
-                  {hasHidden(edu, "degreeFile") ? "Degree file hidden" : "Hide degree file"}
-                </button>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -138,24 +131,53 @@ export default function EducationForm({
                   disabled={isEduDisabled(rowLocked, "instituteWebsite")}
                 />
 
-                <FileUploader
-                  ref={(el) => (degreeRefs.current[index] = el)}
-                  label="Degree File (PDF / Image)"
-                  name={`degreeFile-${index}`}
-                  accept="application/pdf,image/*"
-                  icon={FileText}
-                  onChange={(file) => updateEducation(index, "degreeFile", file)}
-                  disabled={isEduDisabled(rowLocked, "degreeFile")}
-                />
+                {/* Full-width uploader with a switch row above it */}
+                <div className="md:col-span-2">
+                  <div className="flex items-center justify-between mb-2">
+                    <label className="text-sm font-medium text-gray-700 flex items-center gap-2">
+                      <FileText className="h-4 w-4 text-orange-600" />
+                      Degree File (PDF / Image)
+                    </label>
+
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs text-gray-500 select-none">
+                        {hasHidden(edu, "degreeFile") ? "Hidden" : "Visible"}
+                      </span>
+                      <BlockSwitch
+                        checked={hasHidden(edu, "degreeFile")}
+                        onChange={() =>
+                          toggleHidden(edu, "degreeFile", (field, val) =>
+                            updateEducation(index, field, val)
+                          )
+                        }
+                        className={rowLocked && !EDUCATION_UNLOCKED.has("hiddenFields") ? "opacity-50 pointer-events-none" : ""}
+                      />
+                    </div>
+                  </div>
+
+                  <FileUploader
+                    ref={(el) => (degreeRefs?.current ? (degreeRefs.current[index] = el) : null)}
+                    name={`degreeFile-${index}`}
+                    accept="application/pdf,image/*"
+                    icon={FileText}
+                    onChange={(file) => updateEducation(index, "degreeFile", file)}
+                    disabled={isEduDisabled(rowLocked, "degreeFile")}
+                    className="w-full"
+                    // if your FileUploader **requires** a label prop and renders it,
+                    // pass label="Degree File (PDF / Image)" and add a prop to hide it,
+                    // or keep as-is to avoid double labels.
+                  />
+                </div>
               </div>
 
-              {!rowLocked && (
-                <div className="flex justify-end">
+              {/* Row actions */}
+              <div className="flex justify-end gap-3 pt-1">
+                {!rowLocked && (
                   <Button variant="destructive" type="button" onClick={() => removeEducation(index)}>
                     Remove
                   </Button>
-                </div>
-              )}
+                )}
+              </div>
             </motion.div>
           );
         })}

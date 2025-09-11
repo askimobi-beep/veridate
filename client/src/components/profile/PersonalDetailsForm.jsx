@@ -3,15 +3,9 @@ import AppInput from "@/components/form/AppInput";
 import AppSelect from "@/components/form/AppSelect";
 import FileUploader from "@/components/form/FileUploader";
 import CheckboxGroup from "@/components/form/CheckboxGroup";
-import {
-  UserRound,
-  Mail,
-  FileText,
-  Image as ImageIcon,
-  Share2,
-  Copy,
-  Check,
-} from "lucide-react";
+// import { FileText, Save } from "lucide-react";
+import { Check, CircleHelp } from "lucide-react";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import {
   countries,
   genders,
@@ -60,12 +54,9 @@ export default function PersonalDetailsForm({
   handleChange,
   handleCustomChange,
   locked,
-  resumeRef, // ref from parent for reset()
-  profilePicRef, // ref from parent for reset()
-  userId, // <-- pass the current user's id down to this component
+  resumeRef,
+  userId,
 }) {
-  // Prefer env base, else current origin, else fallback to localhost:5173
-  // Prefer env base, else current origin, else fallback
   const baseUrl =
     import.meta.env.VITE_PROFILE_BASE_URL ||
     (typeof window !== "undefined" && window.location?.origin) ||
@@ -97,65 +88,18 @@ export default function PersonalDetailsForm({
     }
   };
 
+  const emailValid =
+    !!formData.email && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email);
+
   return (
     <>
-      {/* Share block */}
-      <div className="mb-6 rounded-2xl border border-gray-200 bg-white shadow-sm p-6">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <h3 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
-              <span className="inline-block h-2 w-2 rounded-full bg-orange-500"></span>
-              Share your profile
-            </h3>
-            <p className="text-sm text-gray-500">
-              One tap to share, fallback copies the link.
-            </p>
-          </div>
-          <div className="flex items-center gap-2">
-            <input
-              readOnly
-              value={shareUrl}
-              className="w-[320px] max-w-full rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-700"
-            />
-            <button
-              type="button"
-              onClick={handleShare}
-              className="inline-flex items-center gap-2 rounded-xl border border-orange-600 px-4 py-2 text-sm font-medium text-white bg-orange-600 hover:bg-orange-700 active:scale-[0.98] transition"
-              aria-label="Share profile link"
-            >
-              {copied ? (
-                <Check className="h-4 w-4" />
-              ) : (
-                <Share2 className="h-4 w-4" />
-              )}
-              {copied ? "Copied!" : "Share"}
-            </button>
-            {!navigator.share && (
-              <button
-                type="button"
-                onClick={async () => {
-                  await navigator.clipboard.writeText(shareUrl);
-                  setCopied(true);
-                  setTimeout(() => setCopied(false), 1200);
-                }}
-                className="inline-flex items-center gap-2 rounded-xl border px-3 py-2 text-sm text-gray-700 hover:bg-gray-50"
-                aria-label="Copy profile link"
-                title="Copy link"
-              >
-                <Copy className="h-4 w-4" />
-              </button>
-            )}
-          </div>
-        </div>
-      </div>
-
       {/* The rest of your form exactly as you had it */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <AppInput
           label={
             <>
-              <UserRound className="h-4 w-4 text-orange-600" />
-              <span>Name</span>
+              {/* <UserRound className="h-4 w-4 text-orange-600" /> */}
+              <span>Legal Name</span>
             </>
           }
           name="name"
@@ -168,7 +112,6 @@ export default function PersonalDetailsForm({
         <AppInput
           label={
             <>
-              <Mail className="h-4 w-4 text-orange-600" />
               <span>Email</span>
             </>
           }
@@ -179,6 +122,9 @@ export default function PersonalDetailsForm({
           placeholder="you@example.com"
           autoComplete="email"
           disabled
+          endAdornment={
+            emailValid ? <Check className="h-4 w-4 text-green-600" /> : null
+          }
         />
 
         <AppInput
@@ -191,12 +137,31 @@ export default function PersonalDetailsForm({
         />
 
         <AppInput
-          label="Mobile"
           name="mobile"
-          value={formData.mobile}
+          label="Mobile Number"
+          type="tel"
+          value={formData.mobile || ""}
           onChange={handleChange}
-          placeholder="03XXXXXXXXX"
-          disabled={isDisabled(locked, "mobile")}
+          disabled={locked}
+          endAdornment={
+            <TooltipProvider delayDuration={100}>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button
+                    type="button"
+                    aria-label="Mobile number help"
+                    className="text-gray-400 hover:text-gray-600"
+                  >
+                    <CircleHelp className="h-4 w-4" />
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent side="left" className="text-sm">
+                  Add your primary contact number (with country code). This
+                  isn’t shown unless you mark it visible.
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          }
         />
 
         <AppInput
@@ -278,7 +243,7 @@ export default function PersonalDetailsForm({
       </div>
 
       <div className="mt-6 grid grid-cols-1 md:grid-cols-1 gap-4">
-        <FileUploader
+        {/* <FileUploader
           ref={resumeRef}
           label="Resume (PDF)"
           name="resume"
@@ -287,15 +252,7 @@ export default function PersonalDetailsForm({
           onChange={(file) => handleCustomChange("resume", file)}
           disabled={isDisabled(locked, "resume")}
         />
-        {/* <FileUploader
-          ref={profilePicRef}
-          label="Profile Picture (Image)"
-          name="profilePic"
-          accept="image/*"
-          icon={ImageIcon}
-          onChange={(file) => handleCustomChange("profilePic", file)}
-          disabled={isDisabled(locked, "profilePic")}
-        /> */}
+         */}
 
         <CheckboxGroup
           title="Shift Preferences"

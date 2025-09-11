@@ -7,6 +7,7 @@ import { Mail, Lock } from "lucide-react";
 import { motion } from "framer-motion";
 import GoogleSignIn from "@/components/auth/GoogleSignIn";
 import FacebookSignIn from "@/components/auth/FacebookSignIn";
+import logo from "@/assets/logo/logo.png";
 
 export default function LoginPage() {
   const { user, login, loading: authLoading } = useAuth();
@@ -68,84 +69,77 @@ export default function LoginPage() {
   if (authLoading) return null;
 
   return (
-    <div className="min-h-screen w-full bg-gradient-to-br from-orange-200 via-[#f7f9fc] to-orange-200 flex items-center justify-center px-4 relative overflow-hidden">
+    <div className="min-h-screen w-full flex items-center justify-center px-4 relative overflow-hidden">
       {/* Glow Layers */}
-      <div className="pointer-events-none absolute -top-40 left-1/3 h-[36rem] w-[36rem] rounded-full bg-[radial-gradient(circle_at_center,rgba(56,189,248,0.12),transparent_70%)] blur-3xl" />
-      <div className="pointer-events-none absolute -bottom-48 right-[-10%] h-[34rem] w-[34rem] rounded-full bg-[radial-gradient(circle_at_center,rgba(167,139,250,0.12),transparent_70%)] blur-3xl" />
 
-      {/* Wrapper */}
+      {/* Card: Only Right Side */}
       <motion.div
         initial={{ opacity: 0, y: 40 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
-        className="z-10 w-full max-w-5xl grid grid-cols-1 md:grid-cols-2 bg-white/60 backdrop-blur-xl shadow-xl border border-white/20 rounded-2xl overflow-hidden"
+        className="z-10 w-full max-w-md bg-white/60 backdrop-blur-xl shadow-xl border border-white/20 rounded-2xl overflow-hidden"
       >
-        {/* Left Side */}
-        <div className="hidden md:flex items-center justify-center bg-gradient-to-br from-orange-300 via-orange-500/10 to-transparent p-6">
-          <div className="text-center space-y-4">
-            <h2 className="text-4xl font-extrabold text-orange-700 drop-shadow-md">
-              Welcome Back 👋
-            </h2>
-            <p className="text-lg text-gray-700 max-w-xs">
-              Log in to access your dashboard, manage your projects, and stay
-              productive.
-            </p>
-            <div className="w-40 h-40 rounded-full bg-gradient-radial from-orange-400/30 to-transparent blur-2xl mx-auto" />
-          </div>
-        </div>
-
-        {/* Right Side: Form */}
-        <div className="p-8">
-          <div className="flex justify-center mb-6 md:hidden">
-            <img src="" alt="Logo" className="h-14 w-auto" />
+        <div className="p-8 flex flex-col items-center">
+          
+          <div className="flex justify-center mb-6">
+          <img src={logo} alt="Logo" className="h-14 w-auto" />
           </div>
 
-          <h2 className="text-2xl font-bold text-center text-gray-800 mb-2">
+          {/* <h2 className="text-2xl font-bold text-center text-gray-800 mb-2">
             Login to Your Account
-          </h2>
+          </h2> */}
+
+          {/* Only show error if exists */}
           {error ? (
             <p className="text-center text-sm text-red-600 mb-4">{error}</p>
-          ) : (
-            <p className="text-center text-sm text-gray-500 mb-4">
-              Use your email and password or sign in with Google.
-            </p>
-          )}
-
-          {/* Social Login */}
-          <div className="w-full flex justify-center">
-            <div className="w-full max-w-[400px]">
-              <GoogleSignIn onError={setError} />
-            </div>
-          </div>
-
-          {/* Divider */}
-          <div className="my-6 flex items-center gap-2">
-            <div className="h-px bg-gray-300 flex-1" />
-            <span className="text-gray-500 text-sm">or</span>
-            <div className="h-px bg-gray-300 flex-1" />
-          </div>
+          ) : null}
 
           {/* Email/Password Form */}
-          <form onSubmit={handleLogin} className="space-y-4">
-            <AppInput
-              icon={Mail}
-              type="email"
-              placeholder="Email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-              autoComplete="email"
-            />
-            <AppInput
-              icon={Lock}
-              type="password"
-              placeholder="Password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              autoComplete="current-password"
-            />
+          <form
+            onSubmit={handleLogin}
+            className="w-full max-w-[400px] space-y-4"
+          >
+            {/* Email field */}
+            <div className="flex flex-col space-y-1">
+              <label
+                htmlFor="email"
+                className="text-sm font-medium text-gray-700 flex items-center gap-2"
+              >
+                <Mail className="w-4 h-4 text-orange-600" />
+                Email
+              </label>
+              <AppInput
+                id="email"
+                type="email"
+                placeholder="Enter your email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+                autoComplete="email"
+              />
+            </div>
 
+            {/* Password field */}
+            <div className="flex flex-col space-y-1">
+              <label
+                htmlFor="password"
+                className="text-sm font-medium text-gray-700 flex items-center gap-2"
+              >
+                <Lock className="w-4 h-4 text-orange-600" />
+                Password
+              </label>
+              <AppInput
+                id="password"
+                type="password"
+                placeholder="Enter your password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                autoComplete="current-password"
+              />
+            </div>
+
+            {/* Remember & Forgot */}
             <div className="flex items-center justify-between text-sm text-gray-600">
               <label className="flex items-center gap-2">
                 <input
@@ -161,6 +155,7 @@ export default function LoginPage() {
               </a>
             </div>
 
+            {/* Submit */}
             <Button
               type="submit"
               disabled={submitting}
@@ -171,7 +166,21 @@ export default function LoginPage() {
             </Button>
           </form>
 
-          {/* ---- Register CTA ---- */}
+          {/* Divider */}
+          <div className="my-6 w-full max-w-[400px] flex items-center gap-2">
+            <div className="h-px bg-gray-300 flex-1" />
+            <span className="text-gray-500 text-sm">or</span>
+            <div className="h-px bg-gray-300 flex-1" />
+          </div>
+
+          {/* Social Login */}
+          <div className="w-full flex justify-center">
+            <div className="w-full max-w-[400px]">
+              <GoogleSignIn onError={setError} />
+            </div>
+          </div>
+
+          {/* Register CTA */}
           <div className="mt-6 text-center text-sm text-gray-600">
             Don’t have an account?{" "}
             <Link
@@ -181,7 +190,6 @@ export default function LoginPage() {
               Register
             </Link>
           </div>
-          {/* ---------------------- */}
         </div>
       </motion.div>
     </div>
