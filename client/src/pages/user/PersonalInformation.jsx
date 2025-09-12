@@ -270,39 +270,6 @@ export default function PersonalInformation() {
   return (
     <div className="min-h-screen w-full flex items-start justify-center px-4 py-10 relative overflow-hidden">
       <div className="relative z-10 w-full max-w-5xl">
-        {/* 👉 Share Button BEFORE ProfileHeader */}
-        <div className="mb-4 flex justify-end">
-          <button
-            type="button"
-            onClick={handleShare}
-            className="inline-flex items-center gap-2 rounded-xl border border-orange-600 px-4 py-2 text-sm font-medium text-white bg-orange-600 hover:bg-orange-700 active:scale-[0.98] transition"
-            aria-label="Share profile link"
-          >
-            {copied ? (
-              <Check className="h-4 w-4" />
-            ) : (
-              <Share2 className="h-4 w-4" />
-            )}
-            {copied ? "Copied!" : "Share"}
-          </button>
-
-          {!navigator.share && (
-            <button
-              type="button"
-              onClick={async () => {
-                await navigator.clipboard.writeText(shareUrl);
-                setCopied(true);
-                setTimeout(() => setCopied(false), 1200);
-              }}
-              className="ml-2 inline-flex items-center gap-2 rounded-xl border px-3 py-2 text-sm text-gray-700 hover:bg-gray-50"
-              aria-label="Copy profile link"
-              title="Copy link"
-            >
-              <Copy className="h-4 w-4" />
-            </button>
-          )}
-        </div>
-
         <ProfileHeader
           user={formData}
           profilePicRef={profilePicRef}
@@ -325,19 +292,14 @@ export default function PersonalInformation() {
               });
             }
           }}
+          onShare={handleShare} 
+          copied={copied} 
+          shareUrl={shareUrl}
         />
 
         <form onSubmit={handleSubmit} className="space-y-6">
           <AccordionSection
-            title={
-              <span className="inline-flex items-center gap-2">
-                Personal Details
-                <InfoTip>
-                  We use this to generate your public profile. Only fields you
-                  set visible will be shown.
-                </InfoTip>
-              </span>
-            }
+            title="Personal Details"
             icon={UserRound}
             value="pi"
             openValue={open}
@@ -359,15 +321,7 @@ export default function PersonalInformation() {
           </AccordionSection>
 
           <AccordionSection
-            title={
-              <span className="inline-flex items-center gap-2">
-                Education
-                <InfoTip>
-                  Upload degree files and choose which ones to hide/show with
-                  the switch.
-                </InfoTip>
-              </span>
-            }
+            title="Education"
             icon={FileText}
             value="education"
             openValue={open}
@@ -388,15 +342,7 @@ export default function PersonalInformation() {
           </AccordionSection>
 
           <AccordionSection
-            title={
-              <span className="inline-flex items-center gap-2">
-                Experience
-                <InfoTip>
-                  Job functions and letters help verify work history; you
-                  control visibility.
-                </InfoTip>
-              </span>
-            }
+            title="Experience"
             icon={Briefcase}
             value="experience"
             openValue={open}

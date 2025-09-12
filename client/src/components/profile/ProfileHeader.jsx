@@ -3,7 +3,7 @@
 import React, { useMemo, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
 import ProfilePhotoPicker from "../form/ProfilePhotoPicker";
-import axiosInstance from "@/utils/axiosInstance";
+import { Share2, Copy, Check } from "lucide-react";
 
 const initials = (name = "") =>
   name
@@ -21,6 +21,9 @@ export default function ProfileHeader({
   onPhotoSave,
   uploading = false,
   profilePicRef,
+  onShare,
+  copied,
+  shareUrl,
 }) {
   const BASE_UPLOAD_URL = "https://api.veridate.store/uploads";
   // const BASE_UPLOAD_URL = "http://localhost:8000/uploads";
@@ -64,47 +67,80 @@ export default function ProfileHeader({
       initial={{ opacity: 0, y: -20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.6, ease: "easeOut" }}
-      className="relative mb-8 flex items-center gap-4 rounded-2xl border border-black/20 bg-gray-100 backdrop-blur-md p-4 shadow-xl"
+      className="relative mb-8 w-full flex items-center gap-4 rounded-2xl border border-black/20 bg-gray-100 backdrop-blur-md p-4 shadow-xl"
     >
-      <ProfilePhotoPicker
-        ref={profilePicRef}
-        label={null}
-        showInnerBorder={false}
-        defaultPreviewUrl={defaultPreview}
-        fallbackText={initials(user?.name)}
-        onChange={onPhotoChange}
-        avatarClassName="size-25"
-        onSave={onPhotoSave}
-        modalZ={9999}
-        accept="image/*"
-        disabled={uploading}
-      />
+      {/* LEFT: avatar + text */}
+      <div className="flex items-center gap-4 flex-1 min-w-0">
+        <ProfilePhotoPicker
+          ref={profilePicRef}
+          label={null}
+          showInnerBorder={false}
+          defaultPreviewUrl={defaultPreview}
+          fallbackText={initials(user?.name)}
+          onChange={onPhotoChange}
+          avatarClassName="size-25"
+          onSave={onPhotoSave}
+          modalZ={9999}
+          accept="image/*"
+          disabled={uploading}
+        />
+
+        <div className="flex flex-col overflow-hidden">
+          <motion.h1
+            initial={{ opacity: 0, x: -15 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: 0.2, duration: 0.5 }}
+            className="text-2xl font-bold text-gray-900 tracking-tight truncate text-start"
+          >
+            {user?.name || "Professional Profile"}
+          </motion.h1>
+
+          <motion.p
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.3, duration: 0.5 }}
+            className="text-sm text-gray-600"
+          >
+            Fill in your details and upload required documents.
+          </motion.p>
+        </div>
+      </div>
+
+      {/* RIGHT: share controls (goes to the far-right) */}
+      <div className="ml-auto flex items-center gap-2">
+        <button
+          type="button"
+          onClick={onShare}
+          className="inline-flex items-center gap-2 rounded px-4 py-2 text-sm font-semibold text-white bg-orange-600 hover:bg-orange-700 active:scale-[0.98] shadow-sm transition"
+          aria-label="Share profile link"
+        >
+          {copied ? <Check className="h-4 w-4" /> : <Share2 className="h-4 w-4" />}
+          {copied ? "Copied!" : "Share"}
+        </button>
+
+        {!navigator.share && (
+          <button
+            type="button"
+            onClick={async () => {
+              await navigator.clipboard.writeText(shareUrl);
+            }}
+            className="inline-flex items-center gap-2 rounded-full border px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 transition"
+            aria-label="Copy profile link"
+            title="Copy link"
+          >
+            <Copy className="h-4 w-4" />
+          </button>
+        )}
+      </div>
+
+      {/* glow */}
+      <div className="pointer-events-none absolute -top-6 -right-6 h-16 w-16 rounded-full bg-gradient-to-tr from-orange-400 to-orange-300 blur-2xl opacity-40" />
+
       {uploading ? (
         <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 text-[10px] px-1.5 py-0.5 rounded bg-black/70 text-white">
           uploading…
         </span>
       ) : null}
-
-      <div className="flex flex-col">
-        <motion.h1
-          initial={{ opacity: 0, x: -15 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ delay: 0.2, duration: 0.5 }}
-          className="text-2xl font-bold text-gray-900 tracking-tight text-left"
-        >
-          {user?.name || "Professional Profile"}
-        </motion.h1>
-        <motion.p
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.3, duration: 0.5 }}
-          className="text-sm text-gray-600"
-        >
-          Fill in your details and upload required documents.
-        </motion.p>
-      </div>
-
-      <div className="pointer-events-none absolute -top-6 -right-6 h-16 w-16 rounded-full bg-gradient-to-tr from-orange-400 to-orange-300 blur-2xl opacity-40" />
     </motion.div>
   );
 }

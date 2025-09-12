@@ -20,6 +20,7 @@ import {
 } from "@/components/directory/DetailBlocks";
 
 import { useSnackbar } from "notistack";
+import { useAuth } from "@/context/AuthContext";
 
 const fmtDate = (d) => (d ? new Date(d).toLocaleDateString() : "");
 const joinArr = (a) => (Array.isArray(a) && a.length ? a.join(", ") : "");
@@ -27,7 +28,7 @@ const joinArr = (a) => (Array.isArray(a) && a.length ? a.join(", ") : "");
 export default function DetailPage() {
   const { userId } = useParams();
   const { enqueueSnackbar } = useSnackbar();
-
+  const { checkAuth } = useAuth();
   const [profile, setProfile] = useState(null);
   const [openValue, setOpenValue] = useState("personal");
   const [loading, setLoading] = useState(true);
@@ -35,22 +36,19 @@ export default function DetailPage() {
   const [busyEdu, setBusyEdu] = useState("");
   const [busyExp, setBusyExp] = useState("");
 
- const baseURL = useMemo(
-  () => axiosInstance.defaults.baseURL?.replace(/\/$/, ""),
-  []
-);
+  const baseURL = useMemo(
+    () => axiosInstance.defaults.baseURL?.replace(/\/$/, ""),
+    []
+  );
 
-// remove `/api/v1` if present
-const fileBaseURL = useMemo(() => {
-  if (!baseURL) return "";
-  return baseURL.replace(/\/api\/v1$/, "");
-}, [baseURL]);
+  // remove `/api/v1` if present
+  const fileBaseURL = useMemo(() => {
+    if (!baseURL) return "";
+    return baseURL.replace(/\/api\/v1$/, "");
+  }, [baseURL]);
 
-const fileUrl = (type, name) =>
-  name && fileBaseURL ? `${fileBaseURL}/uploads/${type}/${name}` : undefined;
-
-
- 
+  const fileUrl = (type, name) =>
+    name && fileBaseURL ? `${fileBaseURL}/uploads/${type}/${name}` : undefined;
 
   useEffect(() => {
     if (!userId) return;
@@ -92,6 +90,7 @@ const fileUrl = (type, name) =>
       enqueueSnackbar("Education verified. Thanks for contributing!", {
         variant: "success",
       });
+      await checkAuth();
     } catch (e) {
       enqueueSnackbar(
         e?.response?.data?.message ||
@@ -123,6 +122,7 @@ const fileUrl = (type, name) =>
       enqueueSnackbar("Experience verified. Appreciate it!", {
         variant: "success",
       });
+      await checkAuth();
     } catch (e) {
       enqueueSnackbar(
         e?.response?.data?.message ||
@@ -148,9 +148,6 @@ const fileUrl = (type, name) =>
   const avatarUrl =
     profile?.profilePicUrl ||
     (profile?.profilePic ? fileUrl("profile", profile.profilePic) : undefined);
-
-
-    
 
   return (
     <div className="mx-auto max-w-5xl p-4 md:p-6">
@@ -190,7 +187,7 @@ const fileUrl = (type, name) =>
         openValue={openValue}
         setOpenValue={setOpenValue}
         locked={!!profile?.personalInfoLocked}
-        contentClassName="text-left" 
+        contentClassName="text-left"
       >
         <SectionWrapper>
           <DefinitionList className="!text-left !grid-cols-1 space-y-2">

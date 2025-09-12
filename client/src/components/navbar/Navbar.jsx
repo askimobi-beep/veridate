@@ -1,105 +1,74 @@
-import { Input } from "@/components/ui/input";
+// Navbar.jsx
 import { Button } from "@/components/ui/button";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Bell, Search, LogOut, Settings, User } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
-import { useState } from "react";
-import { AnimatePresence, motion } from "framer-motion";
-import { useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import { useCallback } from "react";
 import logo from "@/assets/logo/logo.png";
+import UserMenu from "@/components/navbar/UserMenu";
+import CreditsPill from "@/components/navbar/CreditsPill";
 
 export default function Navbar() {
-  const { user, logout } = useAuth();
-  const [open, setOpen] = useState(false);
+  const { user, logout, authLoading } = useAuth(); // ⬅️ get loading
   const navigate = useNavigate();
+  const { pathname } = useLocation();
 
-  const handleLogout = async () => {
+  const handleLogout = useCallback(async () => {
     try {
       await logout();
       navigate("/login", { replace: true, state: null });
     } catch (err) {
       console.error("Logout failed", err);
     }
+  }, [logout, navigate]);
+
+  const NavItem = ({ to, label }) => {
+    const active = pathname === to;
+    return (
+      <Link to={to}>
+        <Button
+          variant={active ? "default" : "ghost"}
+          className={`rounded-full px-4 ${active ? "bg-orange-600 text-white hover:bg-orange-700" : "text-gray-700 hover:bg-white/70"}`}
+        >
+          {label}
+        </Button>
+      </Link>
+    );
   };
 
   return (
-    <header className="w-full sticky top-0 z-50 bg-transparent  backdrop-blur">
+    <header className="w-full bg-transparent backdrop-blur">
       <div className="w-full mx-auto px-3 sm:px-4 md:px-6">
-        <div className="h-16 flex items-center justify-center">
-          <div className="flex items-center gap-3 sm:gap-4">
+        <div className="h-16 flex items-center justify-between gap-3">
+          <Link to="/" className="inline-flex items-center">
             <img src={logo} alt="Veridate Logo" className="h-12 w-auto" />
+          </Link>
 
-            {/* Add other centered content here, like search bar if needed */}
-          </div>
-
-          {user && (
-            <div className="ml-4 flex items-center gap-2 sm:gap-3 relative">
-              <Button
-                variant="ghost"
-                size="icon"
-                className="rounded-full hover:bg-white/70"
-                aria-label="Notifications"
-              >
-                {/* <Bell className="h-5 w-5 text-gray-700" /> */}
-              </Button>
-
-              <button
-                className="flex items-center gap-3 rounded-full px-2 py-1.5 hover:bg-white/70 transition"
-                onClick={() => setOpen((prev) => !prev)}
-              >
-                <Avatar className="h-8 w-8 ring-1 ring-black/5">
-                  <AvatarImage src={user.avatarUrl} alt={user.firstName} />
-                  <AvatarFallback>
-                    {user.firstName?.charAt(0) ?? "U"}
-                  </AvatarFallback>
-                </Avatar>
-
-                <div className="hidden sm:flex flex-col items-end leading-tight">
-                  <span className="text-sm font-medium text-gray-800">
-                    {user.firstName}
-                  </span>
-                  <span className="text-xs text-gray-500 truncate max-w-[180px]">
-                    {user.email}
-                  </span>
-                </div>
-              </button>
-
-              {/* AnimatePresence Dropdown */}
-              <AnimatePresence>
-                {open && (
-                  <motion.div
-                    initial={{ opacity: 0, y: -10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -10 }}
-                    transition={{ duration: 0.2 }}
-                    className="absolute right-0 top-14 w-56 bg-white shadow-xl rounded-xl ring-1 ring-black/5 py-2 z-50"
-                  >
-                    <div className="px-4 py-2 border-b text-sm font-semibold text-gray-700">
-                      {user.firstName}
-                    </div>
-                    <div className="flex flex-col">
-                      <button className="flex items-center px-4 py-2 text-sm hover:bg-gray-100 transition text-gray-700 gap-2">
-                        <User className="w-4 h-4" />
-                        Profile
-                      </button>
-                      <button className="flex items-center px-4 py-2 text-sm hover:bg-gray-100 transition text-gray-700 gap-2">
-                        <Settings className="w-4 h-4" />
-                        Settings
-                      </button>
-                      <hr className="my-1" />
-                      <button
-                        onClick={handleLogout}
-                        className="flex items-center px-4 py-2 text-sm hover:bg-red-50 text-red-600 gap-2 transition"
-                      >
-                        <LogOut className="w-4 h-4" />
-                        Logout
-                      </button>
-                    </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
+          <nav className="flex-1 flex items-center justify-center">
+            <div className="flex items-center gap-1 sm:gap-2">
+              <NavItem to="/dashboard/directory" label="Directory" />
+              <NavItem to="/" label="Home" />
+              <NavItem to="/about" label="About" />
+              <NavItem to="/contact" label="Contact" />
             </div>
-          )}
+          </nav>
+
+          <div className="flex items-center gap-3">
+            {/* show skeleton while loading to avoid 0/0 flash */}
+            {!authLoading && user && (
+              <CreditsPill credit={user.verifyCredits || user.credit} />
+            )}
+            {!authLoading && user ? (
+              <UserMenu user={user} onLogout={handleLogout} />
+            ) : (
+              !authLoading && (
+                <Link to="/login">
+                  <Button className="rounded-full bg-orange-600 hover:bg-orange-700 text-white px-4">
+                    Login
+                  </Button>
+                </Link>
+              )
+            )}
+          </div>
         </div>
       </div>
     </header>

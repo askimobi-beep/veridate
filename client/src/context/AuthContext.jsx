@@ -11,13 +11,13 @@ export const AuthProvider = ({ children }) => {
 
   const login = async (credentials) => {
     const res = await axiosInstance.post("auth/login-user", credentials);
-    setUser(res.data.user);
+    await checkAuth(); 
     return res;
   };
 
   const googleLogin = async (credential) => {
     const res = await axiosInstance.post("auth/google", { credential });
-    setUser(res.data.user);
+    await checkAuth();
     return res;
   };
 
@@ -50,7 +50,7 @@ export const AuthProvider = ({ children }) => {
 
   return (
     <AuthContext.Provider value={{
-      user, loading, login, googleLogin, facebookLogin, logout, isLoggingOutRef
+      user, loading, login, googleLogin, facebookLogin, logout, isLoggingOutRef , checkAuth
     }}>
       {children}
     </AuthContext.Provider>
