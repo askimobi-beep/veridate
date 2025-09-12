@@ -47,8 +47,8 @@ export default function Navbar() {
             <div className="flex items-center gap-1 sm:gap-2">
               <NavItem to="/dashboard/directory" label="Directory" />
               <NavItem to="/" label="Home" />
-              <NavItem to="/about" label="About" />
-              <NavItem to="/contact" label="Contact" />
+              {/* <NavItem to="/about" label="About" />
+              <NavItem to="/contact" label="Contact" /> */}
             </div>
           </nav>
 
