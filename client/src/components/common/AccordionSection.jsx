@@ -20,6 +20,7 @@ export default function AccordionSection({
   contentClassName = "",
   headerClassName = "",
   className = "",
+  verifyCredits, // 👈 new
 }) {
   const isOpen = openValue === value;
 
@@ -49,6 +50,20 @@ export default function AccordionSection({
             }`}
           />
           {title}
+
+          {/* 👇 verifyCredits pill */}
+          {typeof verifyCredits !== "undefined" && (
+            <span
+              className={`ml-2 inline-flex items-center rounded px-2 py-0.5 text-xs font-semibold ${
+                verifyCredits > 0
+                  ? "bg-green-600 text-white"
+                  : "bg-gray-300 text-gray-800"
+              }`}
+            >
+              Credits: {verifyCredits}
+            </span>
+          )}
+
           {/* Optional locked badge */}
           {/* {locked && (
             <span className="flex items-center gap-1 ml-2">

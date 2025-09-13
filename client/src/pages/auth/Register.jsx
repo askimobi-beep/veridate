@@ -190,7 +190,7 @@ export default function RegisterPage() {
             Sign up with Google
           </button>
 
-          <button
+          {/* <button
             type="button"
             className="w-full flex items-center justify-center gap-2 bg-[#3b5998] text-white py-2 rounded-md hover:bg-[#314e89] transition"
           >
@@ -200,7 +200,7 @@ export default function RegisterPage() {
               className="h-5 w-5"
             />
             Sign up with Facebook
-          </button>
+          </button> */}
         </div>
 
         {/* Already have account */}

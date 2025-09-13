@@ -4,9 +4,6 @@ import {
   BriefcaseBusiness as Briefcase,
   FileText,
   UserRound,
-  Share2, // ⬅️ add icons
-  Copy,
-  Check,
 } from "lucide-react";
 
 import AccordionSection from "@/components/common/AccordionSection";
@@ -20,7 +17,6 @@ import usePersonalInformationForm from "@/hooks/usePersonalInformationForm";
 import { toYMD } from "@/lib/dates";
 import { getProfileMe } from "@/lib/profileApi";
 import { useAuth } from "@/context/AuthContext";
-import InfoTip from "@/components/form/InfoTip";
 
 export default function PersonalInformation() {
   const {
@@ -54,6 +50,9 @@ export default function PersonalInformation() {
   const [locked, setLocked] = useState({});
 
   const { user, loading: authLoading } = useAuth();
+
+  const eduCredits = Number(user?.verifyCredits?.education ?? 0);
+  const expCredits = Number(user?.verifyCredits?.experience ?? 0);
 
   // uploader refs
   const resumeRef = useRef(null);
@@ -292,8 +291,8 @@ export default function PersonalInformation() {
               });
             }
           }}
-          onShare={handleShare} 
-          copied={copied} 
+          onShare={handleShare}
+          copied={copied}
           shareUrl={shareUrl}
         />
 
@@ -330,6 +329,7 @@ export default function PersonalInformation() {
             saving={saving}
             onAskConfirm={onAskConfirm}
             locked={!!locked.education}
+            verifyCredits={eduCredits}
           >
             <EducationForm
               educationList={formData.education}
@@ -351,6 +351,7 @@ export default function PersonalInformation() {
             saving={saving}
             onAskConfirm={onAskConfirm}
             locked={!!locked.experience}
+            verifyCredits={expCredits}
           >
             <ExperienceForm
               experienceList={formData.experience}
