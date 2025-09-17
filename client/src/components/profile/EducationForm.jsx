@@ -192,7 +192,7 @@ export default function EducationForm({
                   <div className="flex items-center justify-between mb-2">
                     <label className="text-sm font-medium text-gray-700 flex items-center gap-2">
                       <FileText className="h-4 w-4 text-orange-600" />
-                       Upload Degree  (PDF / Image)
+                      Upload Degree (PDF / Image)
                     </label>
 
                     <div className="flex items-center gap-2">
@@ -236,46 +236,44 @@ export default function EducationForm({
                 </div>
               </div>
 
+              
               {/* Row actions */}
               <div className="flex justify-end gap-3 pt-1">
+                {/* Remove only when not locked */}
                 {!rowLocked && (
-                  <>
-                    <Button
-                      variant="destructive"
-                      type="button"
-                      onClick={() => removeEducation(index)}
-                    >
-                      Remove
-                    </Button>
-
-                    <Button
-                      type="button"
-                      disabled={saving || !isWebsiteValid}
-                      onClick={() => {
-                        const val = (edu.instituteWebsite || "").trim();
-                        if (!websiteRegex.test(val)) {
-                          updateEducation(
-                            index,
-                            "error_instituteWebsite",
-                            "Only valid website URLs allowed (e.g. https://ucp.edu.pk/)"
-                          );
-                          return; // ⛔ stop — do not open confirm, do not save
-                        }
-
-                        // clear error (in case they fixed it)
-                        updateEducation(index, "error_instituteWebsite", "");
-
-                        onAskConfirm?.("education", "Education", () =>
-                          saveEducation(index, educationList[index])
-                        );
-                      }}
-                      className="inline-flex items-center gap-2 bg-orange-600 hover:bg-orange-700 text-white"
-                    >
-                      <Save className="h-4 w-4" />
-                      {saving ? "Saving..." : "Save"}
-                    </Button>
-                  </>
+                  <Button
+                    variant="destructive"
+                    type="button"
+                    onClick={() => removeEducation(index)}
+                  >
+                    Remove
+                  </Button>
                 )}
+
+                {/* Save is ALWAYS visible */}
+                <Button
+                  type="button"
+                  disabled={saving || !isWebsiteValid } // show but disable if locked/invalid
+                  onClick={() => {
+                    const val = (edu.instituteWebsite || "").trim();
+                    if (!websiteRegex.test(val)) {
+                      updateEducation(
+                        index,
+                        "error_instituteWebsite",
+                        "Only valid website URLs allowed (e.g. https://ucp.edu.pk/)"
+                      );
+                      return;
+                    }
+                    updateEducation(index, "error_instituteWebsite", "");
+                    onAskConfirm?.("education", "Education", () =>
+                      saveEducation(index, educationList[index])
+                    );
+                  }}
+                  className="inline-flex items-center gap-2 bg-orange-600 hover:bg-orange-700 text-white"
+                >
+                  <Save className="h-4 w-4" />
+                  {saving ? "Saving..." : "Save"}
+                </Button>
               </div>
             </motion.div>
           );

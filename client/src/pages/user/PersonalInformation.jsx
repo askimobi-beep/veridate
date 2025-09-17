@@ -349,6 +349,9 @@ export default function PersonalInformation() {
               resumeRef={resumeRef}
               profilePicRef={profilePicRef}
               userId={user?._id}
+              onAskConfirm={onAskConfirm}
+              savePersonalInfo={savePersonalInfo}
+              saving={saving}
             />
           </AccordionSection>
 
@@ -373,9 +376,9 @@ export default function PersonalInformation() {
               locked={!!locked.education}
               degreeRefs={degreeRefs}
               eduCreditByKey={eduCreditByKey}
-              saveEducation={saveEducation} 
-              onAskConfirm={onAskConfirm} 
-              saving={saving} 
+              saveEducation={saveEducation}
+              onAskConfirm={onAskConfirm}
+              saving={saving}
             />
           </AccordionSection>
 

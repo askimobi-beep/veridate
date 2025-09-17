@@ -4,6 +4,7 @@ import { cn } from "@/lib/utils";
 const AppSelect = ({
   label,
   labelText,
+  placeholder,
   name,
   value,
   onChange,
@@ -35,7 +36,7 @@ const AppSelect = ({
           selectClassName
         )}
       >
-        <option value="">{`Select ${labelText ?? name}`}</option>
+        <option value="">{`Select ${placeholder}`}</option>
         {options.map((opt) => (
           <option key={opt} value={opt}>
             {opt}

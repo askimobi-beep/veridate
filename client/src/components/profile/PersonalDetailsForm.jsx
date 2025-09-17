@@ -2,7 +2,7 @@ import React, { useMemo, useState, useEffect } from "react";
 import AppInput from "@/components/form/AppInput";
 import AppSelect from "@/components/form/AppSelect";
 import CheckboxGroup from "@/components/form/CheckboxGroup";
-import { Check, CircleHelp } from "lucide-react";
+import { Check, CircleHelp, Save } from "lucide-react";
 import {
   Tooltip,
   TooltipContent,
@@ -57,7 +57,9 @@ export default function PersonalDetailsForm({
   handleChange,
   handleCustomChange,
   locked,
-  resumeRef,
+  onAskConfirm,
+  savePersonalInfo,
+  saving,
   userId,
 }) {
   const baseUrl =
@@ -199,6 +201,28 @@ export default function PersonalDetailsForm({
 
   return (
     <>
+      <div className="mt-4 flex justify-end">
+        <button
+          type="button"
+          onClick={() => {
+            // basic guard example: email must be valid if present
+            if (
+              !formData.email ||
+              !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)
+            ) {
+              // if you use a snackbar, you can show an error; otherwise noop
+              // enqueueSnackbar?.("Please enter a valid email", { variant: "error" });
+              return;
+            }
+            onAskConfirm?.("pi", "Personal Details", () => savePersonalInfo());
+          }}
+          disabled={!!saving}
+          className="inline-flex items-center gap-2 rounded-xl border border-orange-600 px-4 py-2 text-sm font-medium text-white bg-orange-600 hover:bg-orange-700 active:scale-[0.98] transition"
+        >
+          <Save className="h-4 w-4" />
+          {saving ? "Saving..." : "Save"}
+        </button>
+      </div>
       {/* The rest of your form exactly as you had it */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <AppInput
@@ -317,7 +341,7 @@ export default function PersonalDetailsForm({
           value={formData.maritalStatus}
           onChange={handleChange}
           options={maritalStatuses}
-          placeholder="Select marital status"
+          placeholder="Martial Status"
           disabled={isDisabled(locked, "maritalStatus")}
         />
 
@@ -327,7 +351,7 @@ export default function PersonalDetailsForm({
           value={formData.residentStatus}
           onChange={handleChange}
           options={residentStatuses}
-          placeholder="Select resident status"
+          placeholder="Resident Status"
           disabled={isDisabled(locked, "residentStatus")}
         />
 
@@ -432,6 +456,30 @@ export default function PersonalDetailsForm({
             );
           })}
         </div>
+      </div>
+      {/* Actions */}
+
+      <div className="mt-4 flex justify-end">
+        <button
+          type="button"
+          onClick={() => {
+            // basic guard example: email must be valid if present
+            if (
+              !formData.email ||
+              !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)
+            ) {
+              // if you use a snackbar, you can show an error; otherwise noop
+              // enqueueSnackbar?.("Please enter a valid email", { variant: "error" });
+              return;
+            }
+            onAskConfirm?.("pi", "Personal Details", () => savePersonalInfo());
+          }}
+          disabled={!!saving}
+          className="inline-flex items-center gap-2 rounded-xl border border-orange-600 px-4 py-2 text-sm font-medium text-white bg-orange-600 hover:bg-orange-700 active:scale-[0.98] transition"
+        >
+          <Save className="h-4 w-4" />
+          {saving ? "Saving..." : "Save"}
+        </button>
       </div>
     </>
   );
