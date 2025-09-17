@@ -51,8 +51,41 @@ export default function PersonalInformation() {
 
   const { user, loading: authLoading } = useAuth();
 
-  const eduCredits = Number(user?.verifyCredits?.education ?? 0);
-  const expCredits = Number(user?.verifyCredits?.experience ?? 0);
+  const norm = (s) => (s || "").trim().toLowerCase().replace(/\s+/g, " ");
+  const eduBuckets = Array.isArray(user?.verifyCredits?.education)
+    ? user.verifyCredits.education
+    : [];
+  const expBuckets = Array.isArray(user?.verifyCredits?.experience)
+    ? user.verifyCredits.experience
+    : [];
+  const eduTotalAvailable = eduBuckets.reduce(
+    (a, b) => a + (b?.available || 0),
+    0
+  );
+  const expTotalAvailable = expBuckets.reduce(
+    (a, b) => a + (b?.available || 0),
+    0
+  );
+
+  const eduCreditByKey = useMemo(() => {
+    const m = new Map();
+    for (const b of eduBuckets) {
+      if (!b) continue;
+      const key = b.instituteKey || norm(b.institute);
+      if (key) m.set(key, b);
+    }
+    return m;
+  }, [user?.verifyCredits?.education]);
+
+  const expCreditByKey = useMemo(() => {
+    const m = new Map();
+    for (const b of expBuckets) {
+      if (!b) continue;
+      const key = b.companyKey || norm(b.company);
+      if (key) m.set(key, b);
+    }
+    return m;
+  }, [user?.verifyCredits?.experience]);
 
   // uploader refs
   const resumeRef = useRef(null);
@@ -329,7 +362,8 @@ export default function PersonalInformation() {
             saving={saving}
             onAskConfirm={onAskConfirm}
             locked={!!locked.education}
-            verifyCredits={eduCredits}
+            verifyCredits={eduTotalAvailable}
+            hideSave
           >
             <EducationForm
               educationList={formData.education}
@@ -338,6 +372,10 @@ export default function PersonalInformation() {
               updateEducation={updateEducation}
               locked={!!locked.education}
               degreeRefs={degreeRefs}
+              eduCreditByKey={eduCreditByKey}
+              saveEducation={saveEducation} 
+              onAskConfirm={onAskConfirm} 
+              saving={saving} 
             />
           </AccordionSection>
 
@@ -351,7 +389,7 @@ export default function PersonalInformation() {
             saving={saving}
             onAskConfirm={onAskConfirm}
             locked={!!locked.experience}
-            verifyCredits={expCredits}
+            verifyCredits={expTotalAvailable}
           >
             <ExperienceForm
               experienceList={formData.experience}
@@ -360,6 +398,10 @@ export default function PersonalInformation() {
               updateExperience={updateExperience}
               locked={!!locked.experience}
               letterRefs={letterRefs}
+              expCreditByKey={expCreditByKey}
+              saveExperience={saveExperience}
+              onAskConfirm={onAskConfirm}
+              saving={saving}
             />
           </AccordionSection>
         </form>

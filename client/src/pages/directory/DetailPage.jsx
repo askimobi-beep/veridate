@@ -25,10 +25,14 @@ import { useAuth } from "@/context/AuthContext";
 const fmtDate = (d) => (d ? new Date(d).toLocaleDateString() : "");
 const joinArr = (a) => (Array.isArray(a) && a.length ? a.join(", ") : "");
 
+// 🚧 guard: must be real Mongo ObjectIds
+const isHex24 = (s) => typeof s === "string" && /^[a-f0-9]{24}$/i.test(s);
+
 export default function DetailPage() {
-  const { userId } = useParams();
+  const { userId } = useParams(); // target user id from route
   const { enqueueSnackbar } = useSnackbar();
   const { checkAuth } = useAuth();
+
   const [profile, setProfile] = useState(null);
   const [openValue, setOpenValue] = useState("personal");
   const [loading, setLoading] = useState(true);
@@ -41,7 +45,7 @@ export default function DetailPage() {
     []
   );
 
-  // remove `/api/v1` if present
+  // remove `/api/v1` if present for file links
   const fileBaseURL = useMemo(() => {
     if (!baseURL) return "";
     return baseURL.replace(/\/api\/v1$/, "");
@@ -50,6 +54,7 @@ export default function DetailPage() {
   const fileUrl = (type, name) =>
     name && fileBaseURL ? `${fileBaseURL}/uploads/${type}/${name}` : undefined;
 
+  // fetch target profile by userId
   useEffect(() => {
     if (!userId) return;
     let off = false;
@@ -57,7 +62,7 @@ export default function DetailPage() {
     (async () => {
       try {
         setLoading(true);
-        const { data } = await axiosInstance.get(`/profile/getonid/${userId}`);
+        const { data } = await axiosInstance.get(`/profile/getonid/${encodeURIComponent(userId)}`);
         if (!off) setProfile(data);
       } catch (e) {
         if (!off) setErr(e?.response?.data?.error || "Failed to fetch profile");
@@ -71,25 +76,39 @@ export default function DetailPage() {
     };
   }, [userId]);
 
+  // EDUCATION VERIFY
   const onVerifyEdu = async (eduId) => {
     try {
+      // upfront guards so we don't burn a request on trash ids
+      if (!isHex24(userId) || !isHex24(eduId)) {
+        enqueueSnackbar("Bad ids: target user or education id is invalid.", { variant: "error" });
+        return;
+      }
+
+      // sanity: this row must belong to THIS profile (prevents cross-target bugs)
+      const existsLocally =
+        Array.isArray(profile?.education) &&
+        profile.education.some((row) => String(row._id) === String(eduId));
+      if (!existsLocally) {
+        enqueueSnackbar("This education row doesn’t belong to this profile.", { variant: "error" });
+        return;
+      }
+
       setBusyEdu(eduId);
 
-      const { data } = await axiosInstance.post(
-        `/verify/profiles/${userId}/verify/education/${eduId}`
-      );
+      const url = `/verify/profiles/${encodeURIComponent(userId)}/verify/education/${encodeURIComponent(eduId)}`;
+      const { data } = await axiosInstance.post(url);
 
+      // refresh counts from server response
       const nextEducation = profile.education.map((row) => {
-        const found = data?.education?.find(
-          (r) => String(r._id) === String(row._id)
-        );
+        const found = data?.education?.find((r) => String(r._id) === String(row._id));
         return found ? { ...row, verifyCount: found.verifyCount } : row;
       });
       setProfile((p) => ({ ...p, education: nextEducation }));
 
-      enqueueSnackbar("Education verified. Thanks for contributing!", {
-        variant: "success",
-      });
+      enqueueSnackbar("Education verified. Thanks for contributing!", { variant: "success" });
+
+      // refresh auth (credits)
       await checkAuth();
     } catch (e) {
       enqueueSnackbar(
@@ -103,25 +122,35 @@ export default function DetailPage() {
     }
   };
 
+  // EXPERIENCE VERIFY
   const onVerifyExp = async (expId) => {
     try {
+      if (!isHex24(userId) || !isHex24(expId)) {
+        enqueueSnackbar("Bad ids: target user or experience id is invalid.", { variant: "error" });
+        return;
+      }
+
+      const existsLocally =
+        Array.isArray(profile?.experience) &&
+        profile.experience.some((row) => String(row._id) === String(expId));
+      if (!existsLocally) {
+        enqueueSnackbar("This experience row doesn’t belong to this profile.", { variant: "error" });
+        return;
+      }
+
       setBusyExp(expId);
 
-      const { data } = await axiosInstance.post(
-        `/verify/profiles/${userId}/verify/experience/${expId}`
-      );
+      const url = `/verify/profiles/${encodeURIComponent(userId)}/verify/experience/${encodeURIComponent(expId)}`;
+      const { data } = await axiosInstance.post(url);
 
       const nextExperience = profile.experience.map((row) => {
-        const found = data?.experience?.find(
-          (r) => String(r._id) === String(row._id)
-        );
+        const found = data?.experience?.find((r) => String(r._id) === String(row._id));
         return found ? { ...row, verifyCount: found.verifyCount } : row;
       });
       setProfile((p) => ({ ...p, experience: nextExperience }));
 
-      enqueueSnackbar("Experience verified. Appreciate it!", {
-        variant: "success",
-      });
+      enqueueSnackbar("Experience verified. Appreciate it!", { variant: "success" });
+
       await checkAuth();
     } catch (e) {
       enqueueSnackbar(
@@ -245,7 +274,7 @@ export default function DetailPage() {
                   <SubSection key={String(edu._id)}>
                     <div className="flex items-center justify-between mb-3">
                       <div className="flex items-center gap-2">
-                        <Badge className={badgeClass(cnt, "education")}>
+                        <Badge className={badgeClass(cnt)}>
                           <CheckCircle2 className="h-3.5 w-3.5 mr-1" />
                           {cnt} verified
                         </Badge>
@@ -314,7 +343,7 @@ export default function DetailPage() {
                   <SubSection key={String(exp._id)}>
                     <div className="flex items-center justify-between mb-3">
                       <div className="flex items-center gap-2">
-                        <Badge className={badgeClass(cnt, "experience")}>
+                        <Badge className={badgeClass(cnt)}>
                           <CheckCircle2 className="h-3.5 w-3.5 mr-1" />
                           {cnt} verified
                         </Badge>

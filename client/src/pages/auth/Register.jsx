@@ -10,6 +10,11 @@ import { useSnackbar } from "notistack";
 import OtpVerify from "@/components/auth/OtpVerify";
 import logo from "@/assets/logo/logo.png";
 
+// ⬇️ bring in the same GoogleSignIn you used on LoginPage
+import GoogleSignIn from "@/components/auth/GoogleSignIn";
+// (optional) if you plan to add FB later
+// import FacebookSignIn from "@/components/auth/FacebookSignIn";
+
 export default function RegisterPage() {
   const { enqueueSnackbar } = useSnackbar();
 
@@ -177,30 +182,23 @@ export default function RegisterPage() {
           <div className="h-px bg-gray-300 flex-1" />
         </div>
 
+        {/* Real Google Sign-In (same as LoginPage) */}
         <div className="space-y-3">
-          <button
-            type="button"
-            className="w-full flex items-center justify-center gap-2 bg-white border border-gray-300 text-gray-700 py-2 rounded-md hover:bg-gray-100 transition"
-          >
-            <img
-              src="https://upload.wikimedia.org/wikipedia/commons/thumb/c/c1/Google_%22G%22_logo.svg/2048px-Google_%22G%22_logo.svg.png"
-              alt="Google"
-              className="h-5 w-5"
+          <div className="w-full max-w-[400px] mx-auto">
+            <GoogleSignIn
+              // surface any auth errors through your snackbar
+              onError={(msg) =>
+                enqueueSnackbar(msg || "Google sign-in failed.", {
+                  variant: "error",
+                })
+              }
+              // if your component exposes onSuccess, you can redirect here.
+              // onSuccess={() => (window.location.href = "/")}
             />
-            Sign up with Google
-          </button>
+          </div>
 
-          {/* <button
-            type="button"
-            className="w-full flex items-center justify-center gap-2 bg-[#3b5998] text-white py-2 rounded-md hover:bg-[#314e89] transition"
-          >
-            <img
-              src="https://upload.wikimedia.org/wikipedia/commons/thumb/b/b9/2023_Facebook_icon.svg/2048px-2023_Facebook_icon.svg.png"
-              alt="Facebook"
-              className="h-5 w-5"
-            />
-            Sign up with Facebook
-          </button> */}
+          {/* If you add Facebook later, mirror the LoginPage usage */}
+          {/* <FacebookSignIn onError={(msg)=>enqueueSnackbar(msg || 'Facebook sign-in failed.', { variant: 'error' })} /> */}
         </div>
 
         {/* Already have account */}

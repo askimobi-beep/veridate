@@ -30,12 +30,18 @@ export default function GoogleSignIn({ onError }) {
           try {
             const token = resp?.credential;
             if (!token) throw new Error("No Google credential");
+
             const r = await googleLogin(token);
             const u = r?.data?.user;
-            if (!u?.cnic || !u?.address || !u?.contact) navigate("/auth/complete-profile");
-            else navigate("/dashboard", { replace: true });
+
+            // ✅ always redirect to dashboard on success
+            navigate("/dashboard", { replace: true });
           } catch (e) {
-            onError?.(e?.response?.data?.message || e?.message || "Google sign-in failed");
+            onError?.(
+              e?.response?.data?.message ||
+                e?.message ||
+                "Google sign-in failed"
+            );
           }
         }}
         onError={() => onError?.("Google sign-in failed")}

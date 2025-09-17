@@ -1,5 +1,6 @@
 // controllers/profile.Controller.js
 const Profile = require("../models/Profile");
+const User = require("../models/auth.model");
 const mongoose = require("mongoose");
 const {
   Types: { ObjectId },
@@ -9,6 +10,7 @@ const {
   removeOldEducationFile,
   removeOldExperienceFile,
 } = require("../utils/fileCleanup");
+const { normalizeInstitute } = require("../utils/normalize");
 
 // --- Personal privacy keys ---
 const PERSONAL_PRIVACY_KEYS = new Set([
@@ -294,6 +296,45 @@ exports.saveProfilePhoto = async (req, res) => {
   }
 };
 
+
+async function ensureUserEduCredits(userId, eduRows) {
+  const institutes = (eduRows || [])
+    .map(r => ({
+      institute: r.institute || "",
+      instituteKey: normalizeInstitute(r.institute || ""),
+    }))
+    .filter(r => r.instituteKey);
+
+  if (!institutes.length) return;
+
+  const user = await User.findById(userId).lean();
+  if (!user) return;
+
+  const existing = new Set(
+    (user.verifyCredits?.education || []).map(b => b.instituteKey)
+  );
+
+  const toAdd = [];
+  for (const r of institutes) {
+    if (!existing.has(r.instituteKey)) {
+      toAdd.push({
+        institute: r.institute,
+        instituteKey: r.instituteKey,
+        available: 1,
+        used: 0,
+      });
+      existing.add(r.instituteKey);
+    }
+  }
+
+  if (toAdd.length) {
+    await User.updateOne(
+      { _id: userId },
+      { $push: { "verifyCredits.education": { $each: toAdd } } }
+    );
+  }
+}
+
 /* =========================
    SAVE EDUCATION (allows hiddenFields when locked)
    ========================= */
@@ -381,6 +422,8 @@ exports.saveEducation = async (req, res) => {
         { new: true, upsert: true }
       );
 
+      await ensureUserEduCredits(userId, updated.education);
+
       return res
         .status(200)
         .json({ message: "Education saved & locked", profile: updated });
@@ -444,6 +487,8 @@ exports.saveEducation = async (req, res) => {
       { new: true }
     );
 
+    await ensureUserEduCredits(userId, updated.education);
+
     return res
       .status(200)
       .json({
@@ -455,6 +500,47 @@ exports.saveEducation = async (req, res) => {
     return res.status(500).json({ error: "Failed to save education" });
   }
 };
+
+
+async function ensureUserExpCredits(userId, expRows) {
+  const companies = (expRows || [])
+    .map((r) => ({
+      company: r.company || "",
+      companyKey: r.companyKey || normalizeInstitute(r.company || ""),
+    }))
+    .filter((r) => r.companyKey);
+
+  if (!companies.length) return;
+
+  const user = await User.findById(userId).lean();
+  if (!user) return;
+
+  const existing = new Set(
+    (user.verifyCredits?.experience || []).map((b) => b.companyKey)
+  );
+
+  const toAdd = [];
+  for (const r of companies) {
+    if (!existing.has(r.companyKey)) {
+      toAdd.push({
+        company: r.company,
+        companyKey: r.companyKey,
+        available: 1,
+        used: 0,
+        total: 1, // if you persist total; remove if you decided not to store it
+      });
+      existing.add(r.companyKey);
+    }
+  }
+
+  if (toAdd.length) {
+    await User.updateOne(
+      { _id: userId },
+      { $push: { "verifyCredits.experience": { $each: toAdd } } }
+    );
+  }
+}
+
 
 exports.saveExperience = async (req, res) => {
   try {
@@ -478,52 +564,42 @@ exports.saveExperience = async (req, res) => {
       incoming = [];
     }
 
-    // ================================
-    // CHANGED: Gather files whether router used .any() or .fields()
-    // and support bracketed names like experienceFiles[0]
-    // ================================
+    // gather files (.any() or .fields()) and support experienceFiles[0]
     const allIncomingFiles = Array.isArray(req.files)
-      ? req.files // from upload.any()
-      : req.files?.experienceFiles ?? []; // from upload.fields()
+      ? req.files
+      : req.files?.experienceFiles ?? [];
 
-    const expFiles = (
-      Array.isArray(allIncomingFiles) ? allIncomingFiles : [allIncomingFiles]
-    ).filter(
-      (f) =>
-        f &&
-        typeof f.fieldname === "string" &&
-        f.fieldname.startsWith("experienceFiles")
+    const expFiles = (Array.isArray(allIncomingFiles) ? allIncomingFiles : [allIncomingFiles]).filter(
+      (f) => f && typeof f.fieldname === "string" && f.fieldname.startsWith("experienceFiles")
     );
 
-    // First: exact mapping by bracketed index: experienceFiles[<idx>]
+    // map bracketed files
     expFiles.forEach((f) => {
       if (!f?.filename || typeof f.fieldname !== "string") return;
       const m = f.fieldname.match(/\[(\d+)\]/);
       const parsedIdx = m ? parseInt(m[1], 10) : NaN;
       if (!Number.isNaN(parsedIdx) && incoming[parsedIdx]) {
-        incoming[parsedIdx].experienceLetterFile = f.filename; // precise row mapping
+        incoming[parsedIdx].experienceLetterFile = f.filename;
       }
     });
 
-    // Second: legacy fallback — if any files came without brackets, match by sequence
+    // fallback sequence mapping
     let seq = 0;
     expFiles
       .filter((f) => !/\[\d+\]/.test(f.fieldname))
       .forEach((f) => {
-        while (seq < incoming.length && incoming[seq]?.experienceLetterFile)
-          seq++;
+        while (seq < incoming.length && incoming[seq]?.experienceLetterFile) seq++;
         if (seq < incoming.length) {
           incoming[seq].experienceLetterFile = f.filename;
           seq++;
         }
       });
 
-    // first save locks the section
+    // FIRST SAVE → lock section
     if (!profile?.experienceLocked) {
       if (Array.isArray(profile?.experience)) {
         for (const row of profile.experience) {
-          if (row?.experienceLetterFile)
-            removeOldExperienceFile(row.experienceLetterFile);
+          if (row?.experienceLetterFile) removeOldExperienceFile(row.experienceLetterFile);
         }
       }
 
@@ -537,6 +613,8 @@ exports.saveExperience = async (req, res) => {
         jobFunctions: Array.isArray(e?.jobFunctions) ? e.jobFunctions : [],
         industry: e?.industry || "",
         hiddenFields: Array.isArray(e?.hiddenFields) ? e.hiddenFields : [],
+        // 👇 add normalized key so verifyExperience can match buckets
+        companyKey: normalizeInstitute(e?.company || ""),
       }));
 
       const updated = await Profile.findOneAndUpdate(
@@ -545,14 +623,16 @@ exports.saveExperience = async (req, res) => {
         { new: true, upsert: true }
       );
 
-      return res
-        .status(200)
-        .json({ message: "Experience saved & locked", profile: updated });
+      // 👇 seed per-company credits on User
+      await ensureUserExpCredits(userId, updated.experience);
+
+      return res.status(200).json({ message: "Experience saved & locked", profile: updated });
     }
 
-    // patch existing + append new
+    // PATCH existing + APPEND new
     const current = Array.isArray(profile.experience) ? profile.experience : [];
     const patched = current.map((r) => ({ ...(r.toObject?.() ?? r) }));
+
     const byId = new Map(
       patched.map((r) => (r?._id ? [String(r._id), r] : null)).filter(Boolean)
     );
@@ -562,27 +642,21 @@ exports.saveExperience = async (req, res) => {
       let targetIdx = -1;
 
       if (inc._id && byId.has(String(inc._id))) {
-        targetIdx = patched.findIndex(
-          (x) => String(x?._id) === String(inc._id)
-        );
+        targetIdx = patched.findIndex((x) => String(x?._id) === String(inc._id));
       } else if (i < patched.length && !patched[i]?._id) {
         targetIdx = i;
       }
 
       if (targetIdx >= 0) {
+        // UPDATE limited fields when locked
         const prev = patched[targetIdx];
         const next = { ...prev };
 
         for (const [k, v] of Object.entries(inc)) {
           if (!ALLOWED_WHEN_LOCKED.has(k)) continue;
 
-          if (
-            k === "experienceLetterFile" &&
-            v &&
-            v !== prev.experienceLetterFile
-          ) {
-            if (prev.experienceLetterFile)
-              removeOldExperienceFile(prev.experienceLetterFile);
+          if (k === "experienceLetterFile" && v && v !== prev.experienceLetterFile) {
+            if (prev.experienceLetterFile) removeOldExperienceFile(prev.experienceLetterFile);
           }
 
           if (k === "hiddenFields") {
@@ -594,8 +668,10 @@ exports.saveExperience = async (req, res) => {
           }
         }
 
+        // company is NOT editable when locked, so keep existing companyKey
         patched[targetIdx] = next;
       } else {
+        // APPEND new row (normalize companyKey)
         patched.push({
           jobTitle: inc?.jobTitle || "",
           startDate: inc?.startDate || "",
@@ -603,13 +679,10 @@ exports.saveExperience = async (req, res) => {
           company: inc?.company || "",
           companyWebsite: inc?.companyWebsite || "",
           experienceLetterFile: inc?.experienceLetterFile || null,
-          jobFunctions: Array.isArray(inc?.jobFunctions)
-            ? inc.jobFunctions
-            : [],
+          jobFunctions: Array.isArray(inc?.jobFunctions) ? inc.jobFunctions : [],
           industry: inc?.industry || "",
-          hiddenFields: Array.isArray(inc?.hiddenFields)
-            ? inc.hiddenFields
-            : [],
+          hiddenFields: Array.isArray(inc?.hiddenFields) ? inc.hiddenFields : [],
+          companyKey: normalizeInstitute(inc?.company || ""),
         });
       }
     }
@@ -619,6 +692,9 @@ exports.saveExperience = async (req, res) => {
       { $set: { experience: patched } },
       { new: true }
     );
+
+    // 👇 ensure buckets exist for any newly added company rows
+    await ensureUserExpCredits(userId, updated.experience);
 
     return res.status(200).json({
       message: "Experience updated (existing rows locked; new rows added)",

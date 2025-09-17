@@ -56,7 +56,7 @@ export default function UserMenu({ user, onLogout }) {
         className="group flex items-center gap-2 rounded-full pl-1 pr-2 py-1.5 ring-1 ring-black/5 hover:bg-white/70 transition"
       >
         <Avatar className="h-9 w-9 ring-1 ring-black/5">
-          <AvatarImage src={user?.picture} alt={user?.firstName} />
+          <AvatarImage src={`${import.meta.env.VITE_API_PIC_URL}/uploads/profile/${user?.profilePic}`} alt={user?.firstName} />
           <AvatarFallback>{getInitial(user?.firstName)}</AvatarFallback>
         </Avatar>
         <div className="hidden sm:flex flex-col items-start leading-tight">
@@ -99,30 +99,6 @@ export default function UserMenu({ user, onLogout }) {
                 </div>
               </div>
             </div>
-
-            {/* Credit block */}
-            {/* {user?.credit && (
-              <div className="px-3 pt-2">
-                <Card className="p-3 shadow-none border bg-gray-50/70">
-                  <div className="grid grid-cols-2 gap-3 text-sm">
-                    <div className="flex items-center gap-2 text-gray-700">
-                      <GraduationCap className="h-4 w-4 text-orange-500" />
-                      <span>Education</span>
-                      <span className="ml-auto font-semibold">
-                        {user.credit.education}
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-2 text-gray-700">
-                      <Briefcase className="h-4 w-4 text-blue-500" />
-                      <span>Experience</span>
-                      <span className="ml-auto font-semibold">
-                        {user.credit.experience}
-                      </span>
-                    </div>
-                  </div>
-                </Card>
-              </div>
-            )} */}
 
             {/* Actions */}
             <div className="py-2">

@@ -1,11 +1,14 @@
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useState, useEffect } from "react";
 import AppInput from "@/components/form/AppInput";
 import AppSelect from "@/components/form/AppSelect";
-import FileUploader from "@/components/form/FileUploader";
 import CheckboxGroup from "@/components/form/CheckboxGroup";
-// import { FileText, Save } from "lucide-react";
 import { Check, CircleHelp } from "lucide-react";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import {
   countries,
   genders,
@@ -68,28 +71,131 @@ export default function PersonalDetailsForm({
   }, [baseUrl, userId, formData?.id]);
 
   const [copied, setCopied] = useState(false);
+  const [countriesList, setCountriesList] = useState([]);
+  const [nationalityOptions, setNationalityOptions] = useState([]);
+  const [cityOptions, setCityOptions] = useState([]);
+  const [countryDemonyms, setCountryDemonyms] = useState(new Map());
 
-  const handleShare = async () => {
-    try {
-      if (navigator.share) {
-        await navigator.share({
-          title: "My Profile",
-          text: "Check out my profile",
-          url: shareUrl,
-        });
-        return;
-      }
-      await navigator.clipboard.writeText(shareUrl);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 1200);
-    } catch (err) {
-      // fallback of fallback — just show prompt
-      window.prompt("Copy this URL:", shareUrl);
-    }
-  };
+  // const handleShare = async () => {
+  //   try {
+  //     if (navigator.share) {
+  //       await navigator.share({
+  //         title: "My Profile",
+  //         text: "Check out my profile",
+  //         url: shareUrl,
+  //       });
+  //       return;
+  //     }
+  //     await navigator.clipboard.writeText(shareUrl);
+  //     setCopied(true);
+  //     setTimeout(() => setCopied(false), 1200);
+  //   } catch (err) {
+  //     // fallback of fallback — just show prompt
+  //     window.prompt("Copy this URL:", shareUrl);
+  //   }
+  // };
 
   const emailValid =
     !!formData.email && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const loadCountries = async () => {
+      try {
+        // name + demonyms are all we need
+        const res = await fetch(
+          "https://restcountries.com/v3.1/all?fields=name,demonyms"
+        );
+        const data = await res.json();
+
+        // build sorted list + demonym map
+        const names = [];
+        const demMap = new Map();
+
+        for (const c of data) {
+          const name = c?.name?.common;
+          if (!name) continue;
+          names.push(name);
+
+          // demonyms.eng.m / demonyms.eng.f (not always present)
+          const m = c?.demonyms?.eng?.m;
+          const f = c?.demonyms?.eng?.f;
+          const opts = Array.from(new Set([m, f].filter(Boolean)));
+          demMap.set(name, opts);
+        }
+
+        names.sort((a, b) => a.localeCompare(b));
+        if (!cancelled) {
+          setCountriesList(names);
+          setCountryDemonyms(demMap);
+        }
+      } catch (e) {
+        console.error("Failed to fetch countries", e);
+      }
+    };
+
+    loadCountries();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    const selected = (formData.country || "").trim();
+    if (!selected) {
+      setNationalityOptions([]);
+      setCityOptions([]);
+      return;
+    }
+
+    // 1) nationality from cached demonyms
+    const dem = countryDemonyms.get(selected) || [];
+    if (dem.length) {
+      setNationalityOptions(dem);
+      // if current nationality is empty or not in options, default to first
+      if (!formData.nationality || !dem.includes(formData.nationality)) {
+        handleCustomChange("nationality", dem[0]);
+      }
+    } else {
+      // fallback: "<Country> national"
+      const fallback = `${selected} national`;
+      setNationalityOptions([fallback]);
+      if (!formData.nationality) handleCustomChange("nationality", fallback);
+    }
+
+    // 2) cities by country
+    let cancelled = false;
+    const loadCities = async () => {
+      try {
+        const res = await fetch(
+          "https://countriesnow.space/api/v0.1/countries/cities",
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ country: selected }),
+          }
+        );
+        const json = await res.json();
+        const cities = Array.isArray(json?.data) ? json.data : [];
+        cities.sort((a, b) => a.localeCompare(b));
+        if (!cancelled) setCityOptions(cities);
+        // if current city not in list, clear it
+        if (formData.city && !cities.includes(formData.city)) {
+          handleCustomChange("city", "");
+        }
+      } catch (e) {
+        console.error("Failed to fetch cities", e);
+        if (!cancelled) setCityOptions([]);
+      }
+    };
+
+    loadCities();
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [formData.country, countryDemonyms]);
 
   return (
     <>
@@ -173,13 +279,16 @@ export default function PersonalDetailsForm({
           disabled={isDisabled(locked, "cnic")}
         />
 
-        <AppInput
+        <AppSelect
           label="City"
           name="city"
           value={formData.city}
           onChange={handleChange}
-          placeholder="Enter your city"
-          disabled={isDisabled(locked, "city")}
+          options={cityOptions} // 👈 dynamic
+          placeholder={
+            formData.country ? "Select city" : "Select country first"
+          }
+          disabled={isDisabled(locked, "city") || !formData.country}
         />
 
         <AppSelect
@@ -187,7 +296,7 @@ export default function PersonalDetailsForm({
           name="country"
           value={formData.country}
           onChange={handleChange}
-          options={countries}
+          options={countriesList}
           placeholder="Select your country"
           disabled={isDisabled(locked, "country")}
         />
@@ -222,13 +331,16 @@ export default function PersonalDetailsForm({
           disabled={isDisabled(locked, "residentStatus")}
         />
 
-        <AppInput
+        <AppSelect
           label="Nationality"
           name="nationality"
           value={formData.nationality}
           onChange={handleChange}
-          placeholder="e.g. Pakistani"
-          disabled={isDisabled(locked, "nationality")}
+          options={nationalityOptions} // 👈 dynamic
+          placeholder={
+            formData.country ? "Select nationality" : "Select country first"
+          }
+          disabled={isDisabled(locked, "nationality") || !formData.country}
         />
 
         <AppInput

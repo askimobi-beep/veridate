@@ -1,4 +1,27 @@
+// models/User.js
 const mongoose = require("mongoose");
+
+const EduCreditSchema = new mongoose.Schema(
+  {
+    institute: { type: String, required: true },
+    instituteKey: { type: String, required: true, index: true }, // normalized lowercase
+    available: { type: Number, default: 1 },
+    used: { type: Number, default: 0 },
+    total: { type: Number, default: 1 }, // 👈 lifetime earned for this institute
+  },
+  { _id: false }
+);
+
+const ExpCreditSchema = new mongoose.Schema(
+  {
+    company: { type: String, required: true },
+    companyKey: { type: String, required: true, index: true }, // normalized
+    available: { type: Number, default: 1, min: 0 },
+    used: { type: Number, default: 0, min: 0 },
+    total: { type: Number, default: 1, min: 0 },
+  },
+  { _id: false }
+);
 
 const UserSchema = new mongoose.Schema(
   {
@@ -13,20 +36,21 @@ const UserSchema = new mongoose.Schema(
       match: [/^\S+@\S+\.\S+$/, "Invalid email format"],
     },
     password: { type: String },
+
     role: { type: String, enum: ["user", "admin"], default: "user" },
 
-    // verification credits (your existing feature)
+    // 🔥 credits per institute
     verifyCredits: {
-      education: { type: Number, default: 1 },
-      experience: { type: Number, default: 1 },
+      education: { type: [EduCreditSchema], default: [] },
+      experience: { type: [ExpCreditSchema], default: [] },
     },
 
-    // OTP email flow
+    // OTP flow
     otp: { type: Number },
     otpExpiry: { type: Date },
     isVerified: { type: Boolean, default: false },
 
-    // 🔽 Google fields
+    // OAuth
     googleId: { type: String, index: true },
     facebookId: { type: String, index: true },
     picture: { type: String },
@@ -36,10 +60,9 @@ const UserSchema = new mongoose.Schema(
       default: "local",
     },
 
-    // Block User
+    // Moderation
     isBlocked: { type: Boolean, default: false },
   },
-
   { timestamps: true }
 );
 

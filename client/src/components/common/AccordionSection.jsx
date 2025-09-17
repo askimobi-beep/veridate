@@ -1,6 +1,6 @@
 import React from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Lock, Save } from "lucide-react"; // Save added
+import { Save } from "lucide-react"; // Save added
 
 const containerAnim = { duration: 0.45, ease: [0.25, 1, 0.5, 1] };
 const chevronSpring = { type: "spring", stiffness: 200, damping: 20 };
@@ -20,7 +20,6 @@ export default function AccordionSection({
   contentClassName = "",
   headerClassName = "",
   className = "",
-  verifyCredits, // 👈 new
 }) {
   const isOpen = openValue === value;
 
@@ -50,29 +49,6 @@ export default function AccordionSection({
             }`}
           />
           {title}
-
-          {/* 👇 verifyCredits pill */}
-          {typeof verifyCredits !== "undefined" && (
-            <span
-              className={`ml-2 inline-flex items-center rounded px-2 py-0.5 text-xs font-semibold ${
-                verifyCredits > 0
-                  ? "bg-green-600 text-white"
-                  : "bg-gray-300 text-gray-800"
-              }`}
-            >
-              Credits: {verifyCredits}
-            </span>
-          )}
-
-          {/* Optional locked badge */}
-          {/* {locked && (
-            <span className="flex items-center gap-1 ml-2">
-              <span className="rounded-full bg-red-500 text-white text-xs px-2 py-0.5">
-                Locked
-              </span>
-              <Lock className="h-4 w-4 text-red-500" />
-            </span>
-          )} */}
         </span>
 
         <motion.span
@@ -101,7 +77,7 @@ export default function AccordionSection({
             className={`px-6 pb-6 origin-top ${contentClassName}`}
           >
             {/* Top Save button */}
-            {onSave && (
+            {/* {onSave && (
               <div className="mb-4 flex justify-end">
                 <button
                   type="button"
@@ -113,27 +89,12 @@ export default function AccordionSection({
                   {saving ? "Saving..." : "Save"}
                 </button>
               </div>
-            )}
+            )} */}
 
             {/* Children (form content etc.) */}
             {typeof children === "function"
               ? children({ disabled: locked })
               : children}
-
-            {/* Bottom Save button */}
-            {onSave && (
-              <div className="mt-4 flex justify-end">
-                <button
-                  type="button"
-                  onClick={() => onAskConfirm?.(value, title, onSave)}
-                  disabled={saving}
-                  className="inline-flex items-center gap-2 rounded-xl border border-orange-600 px-4 py-2 text-sm font-medium text-white bg-orange-600 hover:bg-orange-700 active:scale-[0.98] transition"
-                >
-                  <Save className="h-4 w-4" />
-                  {saving ? "Saving..." : "Save"}
-                </button>
-              </div>
-            )}
           </motion.div>
         )}
       </AnimatePresence>

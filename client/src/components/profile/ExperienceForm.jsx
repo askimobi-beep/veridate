@@ -4,10 +4,11 @@ import AppSelect from "@/components/form/AppSelect";
 import FileUploader from "@/components/form/FileUploader";
 import CheckboxGroup from "@/components/form/CheckboxGroup";
 import { Button } from "@/components/ui/button";
-import { FileText, Building2, BriefcaseBusiness } from "lucide-react";
+import { FileText, Building2, BriefcaseBusiness, Save } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 // change this import if your switch lives elsewhere
 import BlockSwitch from "@/components/form/Switch";
+import CreditBadges from "../creditshow/CreditBadge";
 
 // demo options — replace with your actual lists if you have them
 const jobTitles = [
@@ -65,6 +66,8 @@ const toggleHidden = (row, key, onUpdate) => {
   onUpdate("hiddenFields", next);
 };
 
+const companyWebsiteRegex = /^https:\/\/[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}\/$/;
+
 export default function ExperienceForm({
   experienceList,
   updateExperience,
@@ -72,12 +75,23 @@ export default function ExperienceForm({
   removeExperience,
   locked,
   letterRefs,
+  expCreditByKey,
+  saveExperience, // 👈 NEW
+  onAskConfirm, // 👈 NEW
+  saving, // 👈 NEW
 }) {
+  const norm = (s) => (s || "").trim().toLowerCase().replace(/\s+/g, " ");
   return (
     <>
       <AnimatePresence initial={false}>
         {experienceList.map((exp, index) => {
           const rowLocked = !!exp._id && locked;
+          const key = exp.companyKey || norm(exp.company);
+          const bucket =
+            key && expCreditByKey?.get ? expCreditByKey.get(key) : null;
+          const isCompanyWebsiteValid = companyWebsiteRegex.test(
+            (exp.companyWebsite || "").trim()
+          );
 
           return (
             <motion.div
@@ -87,8 +101,18 @@ export default function ExperienceForm({
             >
               {/* Row header (title only) */}
               <div className="flex items-center justify-between">
-                <div className="text-sm font-semibold text-gray-700">
-                  Experience {index + 1}
+                <div className="flex items-center gap-3">
+                  <span className="text-sm font-semibold text-gray-800">
+                    Experience {index + 1}
+                  </span>
+                  {bucket ? (
+                    <CreditBadges
+                      label={bucket.company || "—"}
+                      available={bucket.available ?? 0}
+                      used={bucket.used ?? 0}
+                      total={bucket.total}
+                    />
+                  ) : null}
                 </div>
               </div>
 
@@ -140,48 +164,26 @@ export default function ExperienceForm({
                   placeholder="Select date"
                   disabled={isDisabled(rowLocked, "endDate")}
                 />
-
                 <AppInput
                   name={`companyWebsite`}
                   label="Company Website"
                   type="url"
-                  pattern="https?://.*"
-                  title="URL must start with http:// or https://"
                   value={exp.companyWebsite}
-                  onChange={(e) =>
-                    updateExperience(index, "companyWebsite", e.target.value)
-                  }
-                  onBlur={(e) => {
-                    let v = e.target.value.trim();
-                    if (!v) {
-                      e.target.setCustomValidity("");
-                      return;
-                    }
-                    if (!/^https?:\/\//i.test(v)) v = "https://" + v;
-                    let ok = true;
-                    try {
-                      new URL(v);
-                    } catch {
-                      ok = false;
-                    }
-                    if (!ok) {
-                      e.target.setCustomValidity(
-                        "Enter a valid URL starting with http:// or https://"
-                      );
-                      e.target.reportValidity();
-                      return;
-                    }
-                    e.target.setCustomValidity("");
-                    updateExperience(index, "companyWebsite", v);
-                  }}
-                  onInvalid={(e) => {
-                    e.target.setCustomValidity(
-                      "Enter a valid URL starting with http:// or https://"
+                  onChange={(e) => {
+                    const val = e.target.value.trim();
+                    updateExperience(index, "companyWebsite", val);
+                    updateExperience(
+                      index,
+                      "error_companyWebsite",
+                      val && !companyWebsiteRegex.test(val)
+                        ? "Only valid website URLs allowed (e.g. https://company.com/)"
+                        : ""
                     );
                   }}
-                  onInput={(e) => e.target.setCustomValidity("")}
-                  placeholder="https://company.com"
+                  placeholder="https://company.com/"
                   disabled={isDisabled(rowLocked, "companyWebsite")}
+                  error={exp.error_companyWebsite}
+                  pattern="^https:\/\/[a-zA-Z0-9\.-]+\.[a-zA-Z]{2,}\/$"
                 />
 
                 <AppSelect
@@ -256,14 +258,45 @@ export default function ExperienceForm({
               </div>
 
               {!rowLocked && (
-                <div className="flex justify-end">
-                  <Button
-                    variant="destructive"
-                    type="button"
-                    onClick={() => removeExperience(index)}
-                  >
-                    Remove Experience
-                  </Button>
+                <div className="flex justify-end gap-3 pt-1">
+                  {!rowLocked && (
+                    <>
+                      <Button
+                        variant="destructive"
+                        type="button"
+                        onClick={() => removeExperience(index)}
+                      >
+                        Remove
+                      </Button>
+
+                      <Button
+                        type="button"
+                        disabled={saving || !isCompanyWebsiteValid}
+                        onClick={() => {
+                          const val = (exp.companyWebsite || "").trim();
+                          if (!companyWebsiteRegex.test(val)) {
+                            updateExperience(
+                              index,
+                              "error_companyWebsite",
+                              "Only valid website URLs allowed (e.g. https://company.com/)"
+                            );
+                            return; // ⛔ block save + confirm
+                          }
+
+                          // clear any stale error
+                          updateExperience(index, "error_companyWebsite", "");
+
+                          onAskConfirm?.("experience", "Experience", () =>
+                            saveExperience(index, experienceList[index])
+                          );
+                        }}
+                        className="inline-flex items-center gap-2 bg-orange-600 hover:bg-orange-700 text-white"
+                      >
+                        <Save className="h-4 w-4" />
+                        {saving ? "Saving..." : "Save"}
+                      </Button>
+                    </>
+                  )}
                 </div>
               )}
             </motion.div>

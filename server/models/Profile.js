@@ -1,10 +1,47 @@
+// models/Profile.js
 const mongoose = require("mongoose");
 
-const profileSchema = new mongoose.Schema(
-  {
-    user: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
+const EducationSchema = new mongoose.Schema({
+  degreeTitle: String,
+  startDate: Date,
+  endDate: Date,
+  institute: String,
+  instituteWebsite: String,
+  degreeFile: String,
+  hiddenFields: [String],
 
-    // --- existing personal ---
+  verifyCount: { type: Number, default: 0 },
+  verifiedBy: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
+
+  // helps matching with User.verifyCredits buckets
+  instituteKey: { type: String, index: true },
+});
+
+
+
+const ExperienceSchema = new mongoose.Schema({
+  jobTitle: String,
+  startDate: Date,
+  endDate: Date,
+  company: String,
+  companyWebsite: String,
+  experienceLetterFile: String,
+  jobFunctions: [String],
+  industry: String,
+  hiddenFields: [String],
+
+  verifyCount: { type: Number, default: 0 },
+  verifiedBy: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
+
+  // normalized key to align with User.verifyCredits.experience buckets
+  companyKey: { type: String, index: true },
+});
+
+const ProfileSchema = new mongoose.Schema(
+  {
+    user: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true, unique: true },
+
+    // --- personal ---
     name: String,
     email: String,
     fatherName: String,
@@ -26,40 +63,13 @@ const profileSchema = new mongoose.Schema(
 
     // --- education ---
     educationLocked: { type: Boolean, default: false },
-    education: [
-      {
-        degreeTitle: String,
-        startDate: Date,
-        endDate: Date,
-        institute: String,
-        instituteWebsite: String,
-        degreeFile: String,
-        hiddenFields: [String],
+    education: { type: [EducationSchema], default: [] },
 
-        verifyCount: { type: Number, default: 0 },
-        verifiedBy: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }], // unique users
-      },
-    ],
-
-    // --- experience (new) ---
+    // --- experience ---
     experienceLocked: { type: Boolean, default: false },
-    experience: [
-      {
-        jobTitle: String,
-        startDate: Date,
-        endDate: Date,
-        company: String,
-        companyWebsite: String,
-        experienceLetterFile: String, // stored filename
-        jobFunctions: [String], // multiple selection
-        industry: String,
-        hiddenFields: [String], // names of fields user wants to hide
-        verifyCount: { type: Number, default: 0 },
-        verifiedBy: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
-      },
-    ],
+    experience: { type: [ExperienceSchema], default: [] },
   },
   { timestamps: true }
 );
 
-module.exports = mongoose.model("Profile", profileSchema);
+module.exports = mongoose.model("Profile", ProfileSchema);

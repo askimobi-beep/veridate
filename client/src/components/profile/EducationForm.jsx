@@ -5,10 +5,10 @@ import AppInput from "@/components/form/AppInput";
 import AppSelect from "@/components/form/AppSelect";
 import FileUploader from "@/components/form/FileUploader";
 import { Button } from "@/components/ui/button";
-import { FileText } from "lucide-react";
+import { FileText, Save } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-// ⬇️ update this path to wherever you placed BlockSwitch
 import BlockSwitch from "@/components/form/Switch";
+import CreditBadge from "../creditshow/CreditBadge";
 
 const degreeOptions = [
   "Bachelor of Science",
@@ -33,8 +33,14 @@ const instituteOptions = [
 ];
 
 // keep these
-const EDUCATION_UNLOCKED = new Set(["endDate", "instituteWebsite", "degreeFile", "hiddenFields"]);
-const isEduDisabled = (rowLocked, field) => rowLocked && !EDUCATION_UNLOCKED.has(field);
+const EDUCATION_UNLOCKED = new Set([
+  "endDate",
+  "instituteWebsite",
+  "degreeFile",
+  "hiddenFields",
+]);
+const isEduDisabled = (rowLocked, field) =>
+  rowLocked && !EDUCATION_UNLOCKED.has(field);
 
 // helpers for privacy toggles
 const hasHidden = (row, key) =>
@@ -42,7 +48,9 @@ const hasHidden = (row, key) =>
 
 const toggleHidden = (row, key, onUpdate) => {
   const curr = Array.isArray(row.hiddenFields) ? row.hiddenFields : [];
-  const next = hasHidden(row, key) ? curr.filter((k) => k !== key) : [...curr, key];
+  const next = hasHidden(row, key)
+    ? curr.filter((k) => k !== key)
+    : [...curr, key];
   onUpdate("hiddenFields", next);
 };
 
@@ -53,22 +61,36 @@ export default function EducationForm({
   removeEducation,
   locked,
   degreeRefs,
-  // optional: parent save handler
-  saveEducation,
+  eduCreditByKey,
+  saveEducation, // 👈 now required here
+  onAskConfirm, // 👈 confirm gateway from parent
+  saving, // 👈 to disable button
 }) {
+  const norm = (s) => (s || "").trim().toLowerCase().replace(/\s+/g, " ");
   const handleSave = (index) => {
     if (typeof saveEducation === "function") {
       saveEducation(index, educationList[index]);
     } else {
-      console.warn("saveEducation prop not provided. Provide saveEducation(index, data).");
+      console.warn(
+        "saveEducation prop not provided. Provide saveEducation(index, data)."
+      );
     }
   };
+
+  const websiteRegex = /^https:\/\/[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}\/$/;
 
   return (
     <>
       <AnimatePresence initial={false}>
         {educationList.map((edu, index) => {
           const rowLocked = !!edu._id && locked;
+
+          const key = edu.instituteKey || norm(edu.institute);
+          const bucket =
+            key && eduCreditByKey?.get ? eduCreditByKey.get(key) : null;
+          const isWebsiteValid = websiteRegex.test(
+            (edu.instituteWebsite || "").trim()
+          ); // 👈 per-row
 
           return (
             <motion.div
@@ -78,7 +100,20 @@ export default function EducationForm({
             >
               {/* Row header */}
               <div className="flex items-center justify-between">
-                <div className="text-sm font-semibold text-gray-700">Education {index + 1}</div>
+                <div className="flex items-center gap-3">
+                  <span className="text-sm font-semibold text-gray-800">
+                    Education {index + 1}
+                  </span>
+
+                  {bucket ? (
+                    <CreditBadge
+                      label={bucket.institute || "—"}
+                      available={bucket.available ?? 0}
+                      used={bucket.used ?? 0}
+                      total={bucket.total}
+                    />
+                  ) : null}
+                </div>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -87,7 +122,9 @@ export default function EducationForm({
                   label="Degree Title"
                   labelText="Degree"
                   value={edu.degreeTitle}
-                  onChange={(e) => updateEducation(index, "degreeTitle", e.target.value)}
+                  onChange={(e) =>
+                    updateEducation(index, "degreeTitle", e.target.value)
+                  }
                   options={degreeOptions}
                   disabled={isEduDisabled(rowLocked, "degreeTitle")}
                 />
@@ -97,7 +134,9 @@ export default function EducationForm({
                   label="Institute"
                   labelText="Institute"
                   value={edu.institute}
-                  onChange={(e) => updateEducation(index, "institute", e.target.value)}
+                  onChange={(e) =>
+                    updateEducation(index, "institute", e.target.value)
+                  }
                   options={instituteOptions}
                   disabled={isEduDisabled(rowLocked, "institute")}
                 />
@@ -107,7 +146,9 @@ export default function EducationForm({
                   label="Start Date"
                   type="date"
                   value={edu.startDate}
-                  onChange={(e) => updateEducation(index, "startDate", e.target.value)}
+                  onChange={(e) =>
+                    updateEducation(index, "startDate", e.target.value)
+                  }
                   placeholder="Start date"
                   disabled={rowLocked}
                 />
@@ -117,7 +158,9 @@ export default function EducationForm({
                   label="End Date"
                   type="date"
                   value={edu.endDate}
-                  onChange={(e) => updateEducation(index, "endDate", e.target.value)}
+                  onChange={(e) =>
+                    updateEducation(index, "endDate", e.target.value)
+                  }
                   placeholder="End date"
                   disabled={isEduDisabled(rowLocked, "endDate")}
                 />
@@ -125,10 +168,23 @@ export default function EducationForm({
                 <AppInput
                   name={`instituteWebsite-${index}`}
                   label="Institute Website"
+                  type="url"
                   value={edu.instituteWebsite}
-                  onChange={(e) => updateEducation(index, "instituteWebsite", e.target.value)}
-                  placeholder="https://www.institute.edu"
+                  onChange={(e) => {
+                    const val = e.target.value.trim();
+                    updateEducation(index, "instituteWebsite", val);
+                    updateEducation(
+                      index,
+                      "error_instituteWebsite",
+                      val && !websiteRegex.test(val)
+                        ? "Only valid website URLs allowed (e.g. https://university.com/)"
+                        : ""
+                    );
+                  }}
+                  placeholder="https://ucp.edu.pk/"
                   disabled={isEduDisabled(rowLocked, "instituteWebsite")}
+                  error={edu.error_instituteWebsite}
+                  pattern="^https:\/\/[a-zA-Z0-9\.-]+\.[a-zA-Z]{2,}\/$"
                 />
 
                 {/* Full-width uploader with a switch row above it */}
@@ -136,7 +192,7 @@ export default function EducationForm({
                   <div className="flex items-center justify-between mb-2">
                     <label className="text-sm font-medium text-gray-700 flex items-center gap-2">
                       <FileText className="h-4 w-4 text-orange-600" />
-                      Degree File (PDF / Image)
+                       Upload Degree  (PDF / Image)
                     </label>
 
                     <div className="flex items-center gap-2">
@@ -150,17 +206,27 @@ export default function EducationForm({
                             updateEducation(index, field, val)
                           )
                         }
-                        className={rowLocked && !EDUCATION_UNLOCKED.has("hiddenFields") ? "opacity-50 pointer-events-none" : ""}
+                        className={
+                          rowLocked && !EDUCATION_UNLOCKED.has("hiddenFields")
+                            ? "opacity-50 pointer-events-none"
+                            : ""
+                        }
                       />
                     </div>
                   </div>
 
                   <FileUploader
-                    ref={(el) => (degreeRefs?.current ? (degreeRefs.current[index] = el) : null)}
+                    ref={(el) =>
+                      degreeRefs?.current
+                        ? (degreeRefs.current[index] = el)
+                        : null
+                    }
                     name={`degreeFile-${index}`}
                     accept="application/pdf,image/*"
                     icon={FileText}
-                    onChange={(file) => updateEducation(index, "degreeFile", file)}
+                    onChange={(file) =>
+                      updateEducation(index, "degreeFile", file)
+                    }
                     disabled={isEduDisabled(rowLocked, "degreeFile")}
                     className="w-full"
                     // if your FileUploader **requires** a label prop and renders it,
@@ -173,9 +239,42 @@ export default function EducationForm({
               {/* Row actions */}
               <div className="flex justify-end gap-3 pt-1">
                 {!rowLocked && (
-                  <Button variant="destructive" type="button" onClick={() => removeEducation(index)}>
-                    Remove
-                  </Button>
+                  <>
+                    <Button
+                      variant="destructive"
+                      type="button"
+                      onClick={() => removeEducation(index)}
+                    >
+                      Remove
+                    </Button>
+
+                    <Button
+                      type="button"
+                      disabled={saving || !isWebsiteValid}
+                      onClick={() => {
+                        const val = (edu.instituteWebsite || "").trim();
+                        if (!websiteRegex.test(val)) {
+                          updateEducation(
+                            index,
+                            "error_instituteWebsite",
+                            "Only valid website URLs allowed (e.g. https://ucp.edu.pk/)"
+                          );
+                          return; // ⛔ stop — do not open confirm, do not save
+                        }
+
+                        // clear error (in case they fixed it)
+                        updateEducation(index, "error_instituteWebsite", "");
+
+                        onAskConfirm?.("education", "Education", () =>
+                          saveEducation(index, educationList[index])
+                        );
+                      }}
+                      className="inline-flex items-center gap-2 bg-orange-600 hover:bg-orange-700 text-white"
+                    >
+                      <Save className="h-4 w-4" />
+                      {saving ? "Saving..." : "Save"}
+                    </Button>
+                  </>
                 )}
               </div>
             </motion.div>

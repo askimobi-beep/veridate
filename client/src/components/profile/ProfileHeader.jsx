@@ -25,8 +25,8 @@ export default function ProfileHeader({
   copied,
   shareUrl,
 }) {
-  const BASE_UPLOAD_URL = "https://api.veridate.store/uploads";
-  // const BASE_UPLOAD_URL = "http://localhost:8000/uploads";
+  // const BASE_UPLOAD_URL = "https://api.veridate.store/uploads";
+  const BASE_UPLOAD_URL = `${import.meta.env.VITE_API_PIC_URL}/uploads`;
 
   // make a preview that works for: empty | filename | absolute URL | File
   const blobUrlRef = useRef(null);
