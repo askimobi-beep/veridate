@@ -2,7 +2,7 @@ import React, { useMemo, useState, useEffect } from "react";
 import AppInput from "@/components/form/AppInput";
 import AppSelect from "@/components/form/AppSelect";
 import CheckboxGroup from "@/components/form/CheckboxGroup";
-import { Check, CircleHelp, Save } from "lucide-react";
+import { Loader2, Check, CircleHelp, Save } from "lucide-react";
 import {
   Tooltip,
   TooltipContent,
@@ -76,67 +76,30 @@ export default function PersonalDetailsForm({
   const [countriesList, setCountriesList] = useState([]);
   const [nationalityOptions, setNationalityOptions] = useState([]);
   const [cityOptions, setCityOptions] = useState([]);
+  const [cityLoading, setCityLoading] = useState(false); // 👈 NEW
   const [countryDemonyms, setCountryDemonyms] = useState(new Map());
-
-  // const handleShare = async () => {
-  //   try {
-  //     if (navigator.share) {
-  //       await navigator.share({
-  //         title: "My Profile",
-  //         text: "Check out my profile",
-  //         url: shareUrl,
-  //       });
-  //       return;
-  //     }
-  //     await navigator.clipboard.writeText(shareUrl);
-  //     setCopied(true);
-  //     setTimeout(() => setCopied(false), 1200);
-  //   } catch (err) {
-  //     // fallback of fallback — just show prompt
-  //     window.prompt("Copy this URL:", shareUrl);
-  //   }
-  // };
 
   const emailValid =
     !!formData.email && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email);
 
+  // fetch country list (names only — keep it simple)
   useEffect(() => {
     let cancelled = false;
-
     const loadCountries = async () => {
       try {
-        // name + demonyms are all we need
         const res = await fetch(
-          "https://restcountries.com/v3.1/all?fields=name,demonyms"
+          "https://restcountries.com/v3.1/all?fields=name"
         );
         const data = await res.json();
-
-        // build sorted list + demonym map
-        const names = [];
-        const demMap = new Map();
-
-        for (const c of data) {
-          const name = c?.name?.common;
-          if (!name) continue;
-          names.push(name);
-
-          // demonyms.eng.m / demonyms.eng.f (not always present)
-          const m = c?.demonyms?.eng?.m;
-          const f = c?.demonyms?.eng?.f;
-          const opts = Array.from(new Set([m, f].filter(Boolean)));
-          demMap.set(name, opts);
-        }
-
-        names.sort((a, b) => a.localeCompare(b));
-        if (!cancelled) {
-          setCountriesList(names);
-          setCountryDemonyms(demMap);
-        }
+        const names = data
+          .map((c) => c?.name?.common)
+          .filter(Boolean)
+          .sort((a, b) => a.localeCompare(b));
+        if (!cancelled) setCountriesList(names);
       } catch (e) {
         console.error("Failed to fetch countries", e);
       }
     };
-
     loadCountries();
     return () => {
       cancelled = true;
@@ -146,30 +109,15 @@ export default function PersonalDetailsForm({
   useEffect(() => {
     const selected = (formData.country || "").trim();
     if (!selected) {
-      setNationalityOptions([]);
       setCityOptions([]);
+      setCityLoading(false);
       return;
     }
 
-    // 1) nationality from cached demonyms
-    const dem = countryDemonyms.get(selected) || [];
-    if (dem.length) {
-      setNationalityOptions(dem);
-      // if current nationality is empty or not in options, default to first
-      if (!formData.nationality || !dem.includes(formData.nationality)) {
-        handleCustomChange("nationality", dem[0]);
-      }
-    } else {
-      // fallback: "<Country> national"
-      const fallback = `${selected} national`;
-      setNationalityOptions([fallback]);
-      if (!formData.nationality) handleCustomChange("nationality", fallback);
-    }
-
-    // 2) cities by country
     let cancelled = false;
     const loadCities = async () => {
       try {
+        setCityLoading(true); // 👈 start
         const res = await fetch(
           "https://countriesnow.space/api/v0.1/countries/cities",
           {
@@ -181,14 +129,18 @@ export default function PersonalDetailsForm({
         const json = await res.json();
         const cities = Array.isArray(json?.data) ? json.data : [];
         cities.sort((a, b) => a.localeCompare(b));
-        if (!cancelled) setCityOptions(cities);
-        // if current city not in list, clear it
-        if (formData.city && !cities.includes(formData.city)) {
-          handleCustomChange("city", "");
+        if (!cancelled) {
+          setCityOptions(cities);
+          // keep user value if valid; otherwise clear
+          if (formData.city && !cities.includes(formData.city)) {
+            handleCustomChange("city", "");
+          }
         }
       } catch (e) {
         console.error("Failed to fetch cities", e);
         if (!cancelled) setCityOptions([]);
+      } finally {
+        if (!cancelled) setCityLoading(false); // 👈 stop
       }
     };
 
@@ -197,8 +149,7 @@ export default function PersonalDetailsForm({
       cancelled = true;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [formData.country, countryDemonyms]);
-
+  }, [formData.country]);
   return (
     <>
       <div className="mt-4 flex justify-end">
@@ -274,20 +225,33 @@ export default function PersonalDetailsForm({
           onChange={handleChange}
           disabled={locked}
           endAdornment={
-            <TooltipProvider delayDuration={100}>
+            <TooltipProvider delayDuration={150}>
               <Tooltip>
                 <TooltipTrigger asChild>
                   <button
                     type="button"
                     aria-label="Mobile number help"
-                    className="text-gray-400 hover:text-gray-600"
+                    className="rounded-md p-1.5 border border-gray-200 hover:bg-gray-50 text-gray-500 hover:text-gray-700 shadow-sm"
                   >
                     <CircleHelp className="h-4 w-4" />
                   </button>
                 </TooltipTrigger>
-                <TooltipContent side="left" className="text-sm">
-                  Add your primary contact number (with country code). This
-                  isn’t shown unless you mark it visible.
+                <TooltipContent
+                  side="left"
+                  align="center"
+                  className="max-w-sm rounded-xl border border-gray-200 shadow-lg p-3 bg-white"
+                >
+                  <div className="text-sm font-semibold text-gray-900 mb-1">
+                    Why we ask for this
+                  </div>
+                  <div className="text-xs text-gray-600">
+                    Add your primary contact number (with country code). This
+                    stays private unless you mark it visible in your privacy
+                    settings.
+                  </div>
+                  <div className="mt-2 text-xs text-gray-500">
+                    Example: +92 300 1234567
+                  </div>
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>
@@ -308,11 +272,26 @@ export default function PersonalDetailsForm({
           name="city"
           value={formData.city}
           onChange={handleChange}
-          options={cityOptions} // 👈 dynamic
+          options={cityOptions}
           placeholder={
-            formData.country ? "Select city" : "Select country first"
+            !formData.country
+              ? "Select country first"
+              : cityLoading
+              ? "Loading cities…"
+              : cityOptions.length
+              ? "Select city"
+              : "No cities found"
           }
-          disabled={isDisabled(locked, "city") || !formData.country}
+          // disable while loading or until a country is chosen
+          disabled={
+            isDisabled(locked, "city") || !formData.country || cityLoading
+          }
+          // OPTIONAL: if AppSelect supports endAdornment, show spinner
+          endAdornment={
+            cityLoading ? (
+              <Loader2 className="h-4 w-4 animate-spin text-gray-500" />
+            ) : null
+          }
         />
 
         <AppSelect
@@ -336,12 +315,12 @@ export default function PersonalDetailsForm({
         />
 
         <AppSelect
-          label="Marital Status"
+          label="Martial Status"
           name="maritalStatus"
           value={formData.maritalStatus}
           onChange={handleChange}
           options={maritalStatuses}
-          placeholder="Martial Status"
+          placeholder="Select Martial Status"
           disabled={isDisabled(locked, "maritalStatus")}
         />
 
@@ -351,20 +330,17 @@ export default function PersonalDetailsForm({
           value={formData.residentStatus}
           onChange={handleChange}
           options={residentStatuses}
-          placeholder="Resident Status"
+          placeholder="Select Resident Status"
           disabled={isDisabled(locked, "residentStatus")}
         />
 
-        <AppSelect
+        <AppInput
           label="Nationality"
           name="nationality"
           value={formData.nationality}
           onChange={handleChange}
-          options={nationalityOptions} // 👈 dynamic
-          placeholder={
-            formData.country ? "Select nationality" : "Select country first"
-          }
-          disabled={isDisabled(locked, "nationality") || !formData.country}
+          placeholder="e.g. Pakistani"
+          disabled={isDisabled(locked, "nationality")}
         />
 
         <AppInput

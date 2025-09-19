@@ -36,7 +36,7 @@ const AppSelect = ({
           selectClassName
         )}
       >
-        <option value="">{`Select ${placeholder}`}</option>
+        <option value="">{`${placeholder || label}`}</option>
         {options.map((opt) => (
           <option key={opt} value={opt}>
             {opt}

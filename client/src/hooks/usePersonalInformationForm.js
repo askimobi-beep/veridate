@@ -1,5 +1,6 @@
 import { useState } from "react";
 import axiosInstance from "@/utils/axiosInstance";
+import { useAuth } from "@/context/AuthContext";
 
 const getEmptyForm = () => ({
   // --- personal ---
@@ -54,6 +55,26 @@ export default function usePersonalInformationForm() {
   const [formData, setFormData] = useState(getEmptyForm());
   const [submitting, setSubmitting] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [savingRows, setSavingRows] = useState(new Set());
+  const [savingExpRows, setSavingExpRows] = useState(new Set());
+  const setRowSaving = (index, on) =>
+    setSavingRows((prev) => {
+      const next = new Set(prev);
+      if (on) next.add(index);
+      else next.delete(index);
+      return next;
+    });
+  const isRowSaving = (i) => savingRows.has(i);
+
+  const setExpRowSaving = (index, on) =>
+    setSavingExpRows((prev) => {
+      const next = new Set(prev);
+      if (on) next.add(index);
+      else next.delete(index);
+      return next;
+    });
+  const isExpRowSaving = (i) => savingExpRows.has(i);
+  const { checkAuth } = useAuth();
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -233,7 +254,7 @@ export default function usePersonalInformationForm() {
         headers: { "Content-Type": "multipart/form-data" },
       });
       if (res?.status === 200) {
-        window.location.reload();
+        checkAuth();
       }
       return { ok: true, data: res.data };
     } catch (err) {
@@ -277,6 +298,68 @@ export default function usePersonalInformationForm() {
       };
     } finally {
       setSaving(false);
+      checkAuth();
+    }
+  };
+
+  const saveEducationRow = async (index, row) => {
+    setRowSaving(index, true);
+
+    const data = new FormData();
+
+    // attach ONLY this row's file if present
+    if (row.degreeFile instanceof File) {
+      data.append("educationFiles[0]", row.degreeFile);
+    }
+
+    // strip file before JSON
+    const { degreeFile, ...rest } = row;
+
+    // send a single-row payload + index hint
+    data.append("education", JSON.stringify([rest]));
+    data.append("rowIndex", String(index));
+
+    try {
+      const res = await axiosInstance.post("/profile/save-education", data, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+
+      // if server returns the normalized row, merge it and lock
+      if (res?.data?.row) {
+        setFormData((prev) => {
+          const education = [...prev.education];
+          education[index] = {
+            ...education[index],
+            ...res.data.row,
+            _id: res?.data?.row?._id ?? education[index]?._id, // keep/beef up id
+            rowLocked: true, // 🔒 lock this row only
+          };
+          return { ...prev, education };
+        });
+      } else {
+        // BE didn't echo the row? still lock locally.
+        setFormData((prev) => {
+          const education = [...prev.education];
+          education[index] = {
+            ...education[index],
+            rowLocked: true,
+          };
+          return { ...prev, education };
+        });
+      }
+
+      return { ok: true, data: res.data };
+    } catch (err) {
+      return {
+        ok: false,
+        error:
+          err?.response?.data?.error ||
+          err?.message ||
+          "Failed to save education row",
+      };
+    } finally {
+      setRowSaving(index, false);
+      checkAuth();
     }
   };
 
@@ -309,6 +392,59 @@ export default function usePersonalInformationForm() {
       };
     } finally {
       setSaving(false);
+      checkAuth();
+    }
+  };
+
+  const saveExperienceRow = async (index, row) => {
+    setExpRowSaving(index, true);
+    const data = new FormData();
+
+    if (row.experienceLetterFile instanceof File) {
+      data.append("experienceFiles[0]", row.experienceLetterFile);
+    }
+
+    const { experienceLetterFile, ...rest } = row;
+    data.append("experience", JSON.stringify([rest]));
+    data.append("rowIndex", String(index));
+
+    try {
+      const res = await axiosInstance.post("/profile/save-experience", data, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+
+      if (res?.data?.row) {
+        setFormData((prev) => {
+          const experience = [...prev.experience];
+          experience[index] = {
+            ...experience[index],
+            ...res.data.row,
+            _id: res?.data?.row?._id ?? experience[index]?._id,
+            rowLocked: true, // 🔒 lock this experience row
+          };
+          return { ...prev, experience };
+        });
+      } else {
+        // lock locally even without echo
+        setFormData((prev) => {
+          const experience = [...prev.experience];
+          experience[index] = { ...experience[index], rowLocked: true };
+          return { ...prev, experience };
+        });
+      }
+
+      return { ok: true, data: res.data };
+    } catch (err) {
+      return {
+        ok: false,
+        error:
+          err?.response?.data?.error ||
+          err?.message ||
+          "Failed to save experience row",
+      };
+    } finally {
+      setExpRowSaving(index, false);
+      checkAuth();
     }
   };
 
@@ -371,9 +507,13 @@ export default function usePersonalInformationForm() {
     updateExperience,
     removeExperience,
     saveExperience,
+    saveExperienceRow,
+    isExpRowSaving,
     clearExperienceFiles,
     savePersonalInfo,
     saveProfilePhoto,
+    saveEducationRow,
+    isRowSaving,
     submit,
     resetForm,
     clearPersonalFiles,

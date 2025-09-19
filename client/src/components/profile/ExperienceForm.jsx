@@ -1,16 +1,16 @@
+// components/profile/ExperienceForm.jsx
 import React from "react";
 import AppInput from "@/components/form/AppInput";
 import AppSelect from "@/components/form/AppSelect";
 import FileUploader from "@/components/form/FileUploader";
 import CheckboxGroup from "@/components/form/CheckboxGroup";
 import { Button } from "@/components/ui/button";
-import { FileText, Building2, BriefcaseBusiness, Save } from "lucide-react";
+import { FileText, Save } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-// change this import if your switch lives elsewhere
 import BlockSwitch from "@/components/form/Switch";
-import CreditBadges from "../creditshow/CreditBadge";
+import CreditBadge from "../creditshow/CreditBadge";
 
-// demo options — replace with your actual lists if you have them
+// ------ dropdown options ------
 const jobTitles = [
   "Software Engineer",
   "Senior Software Engineer",
@@ -21,7 +21,14 @@ const jobTitles = [
   "Other",
 ];
 
-const companies = ["Google", "Microsoft", "Amazon", "Meta", "Apple", "Other"];
+const companies = [
+  "Google",
+  "Microsoft",
+  "Amazon",
+  "Meta",
+  "Apple",
+  "Other",
+];
 
 const industries = [
   "Software",
@@ -43,7 +50,7 @@ const jobFunctionOptions = [
   "Operations",
 ];
 
-// enforce the whitelist you allowed on backend
+// fields editable even when row is locked
 const EXPERIENCE_UNLOCKED = new Set([
   "endDate",
   "companyWebsite",
@@ -51,7 +58,8 @@ const EXPERIENCE_UNLOCKED = new Set([
   "jobFunctions",
   "hiddenFields",
 ]);
-const isDisabled = (rowLocked, field) =>
+
+const isExpDisabled = (rowLocked, field) =>
   rowLocked && !EXPERIENCE_UNLOCKED.has(field);
 
 // helpers for privacy toggles
@@ -66,32 +74,48 @@ const toggleHidden = (row, key, onUpdate) => {
   onUpdate("hiddenFields", next);
 };
 
-const companyWebsiteRegex = /^https:\/\/[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}\/$/;
+const companyWebsiteRegex = /^https:\/\/[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
 
 export default function ExperienceForm({
   experienceList,
   updateExperience,
   addExperience,
   removeExperience,
-  locked,
-  letterRefs,
-  expCreditByKey,
-  saveExperience, // 👈 NEW
-  onAskConfirm, // 👈 NEW
-  saving, // 👈 NEW
+  locked,            // section-level lock
+  letterRefs,        // refs array for per-row uploader
+  expCreditByKey,    // optional Map for credits
+  saveExperience,    // (index, row) -> row-wise save
+  onAskConfirm,      // (value, title, actionFn)
+  isRowSaving,       // (index) => boolean
 }) {
   const norm = (s) => (s || "").trim().toLowerCase().replace(/\s+/g, " ");
+
+  // derive "Other" mode for selects: if value isn't in the list, we treat it as custom
+  const isOtherSelected = (list, value) => !!value && !list.includes(value);
+
   return (
     <>
       <AnimatePresence initial={false}>
         {experienceList.map((exp, index) => {
-          const rowLocked = !!exp._id && locked;
-          const key = exp.companyKey || norm(exp.company);
-          const bucket =
-            key && expCreditByKey?.get ? expCreditByKey.get(key) : null;
+          // ✅ instant row lock (local) OR section lock when server-locked
+          const rowLocked = !!exp?.rowLocked || (!!exp?._id && locked);
+          const savingThis =
+            typeof isRowSaving === "function" ? isRowSaving(index) : false;
+
+          // dropdown glue for "Other"
+          const jobTitleOther = isOtherSelected(jobTitles, exp.jobTitle);
+          const companyOther = isOtherSelected(companies, exp.company);
+
+          const jobTitleSelectValue = jobTitleOther ? "Other" : (exp.jobTitle || "");
+          const companySelectValue = companyOther ? "Other" : (exp.company || "");
+
           const isCompanyWebsiteValid = companyWebsiteRegex.test(
             (exp.companyWebsite || "").trim()
           );
+
+          const key = exp.companyKey || norm(exp.company);
+          const bucket =
+            key && expCreditByKey?.get ? expCreditByKey.get(key) : null;
 
           return (
             <motion.div
@@ -99,14 +123,15 @@ export default function ExperienceForm({
               layout
               className="origin-top mb-6 p-5 rounded-2xl border border-gray-200 bg-white shadow-sm space-y-4"
             >
-              {/* Row header (title only) */}
+              {/* Row header */}
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <span className="text-sm font-semibold text-gray-800">
                     Experience {index + 1}
                   </span>
+
                   {bucket ? (
-                    <CreditBadges
+                    <CreditBadge
                       label={bucket.company || "—"}
                       available={bucket.available ?? 0}
                       used={bucket.used ?? 0}
@@ -117,55 +142,101 @@ export default function ExperienceForm({
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <AppSelect
-                  name={`jobTitle`}
-                  label="Job Title"
-                  icon={BriefcaseBusiness}
-                  value={exp.jobTitle}
-                  onChange={(e) =>
-                    updateExperience(index, "jobTitle", e.target.value)
-                  }
-                  options={jobTitles}
-                  disabled={isDisabled(rowLocked, "jobTitle")}
-                />
+                {/* Job Title (dropdown + optional "Other" input) */}
+                <div className="flex flex-col gap-2">
+                  <AppSelect
+                    name={`jobTitle-${index}`}
+                    label="Job Title"
+                    value={jobTitleSelectValue}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      if (val === "Other") {
+                        // when switching to Other, keep current if it's already custom, else clear
+                        if (!jobTitleOther) {
+                          // clear to let user type
+                          updateExperience(index, "jobTitle", "");
+                        }
+                      } else {
+                        // picked from list => set directly
+                        updateExperience(index, "jobTitle", val);
+                      }
+                    }}
+                    options={jobTitles}
+                    disabled={isExpDisabled(rowLocked, "jobTitle")}
+                  />
+                  {jobTitleOther && (
+                    <AppInput
+                      name={`jobTitleOther-${index}`}
+                      label="Custom Job Title"
+                      value={exp.jobTitle || ""}
+                      onChange={(e) =>
+                        updateExperience(index, "jobTitle", e.target.value)
+                      }
+                      placeholder="Type your job title"
+                      disabled={isExpDisabled(rowLocked, "jobTitle")}
+                    />
+                  )}
+                </div>
 
-                <AppSelect
-                  name={`company`}
-                  label="Company"
-                  icon={Building2}
-                  value={exp.company}
-                  onChange={(e) =>
-                    updateExperience(index, "company", e.target.value)
-                  }
-                  options={companies}
-                  disabled={isDisabled(rowLocked, "company")}
-                />
+                {/* Company (dropdown + optional "Other" input) */}
+                <div className="flex flex-col gap-2">
+                  <AppSelect
+                    name={`company-${index}`}
+                    label="Company"
+                    value={companySelectValue}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      if (val === "Other") {
+                        if (!companyOther) {
+                          updateExperience(index, "company", "");
+                        }
+                      } else {
+                        updateExperience(index, "company", val);
+                      }
+                    }}
+                    options={companies}
+                    disabled={isExpDisabled(rowLocked, "company")}
+                  />
+                  {companyOther && (
+                    <AppInput
+                      name={`companyOther-${index}`}
+                      label="Custom Company"
+                      value={exp.company || ""}
+                      onChange={(e) =>
+                        updateExperience(index, "company", e.target.value)
+                      }
+                      placeholder="Type your company"
+                      disabled={isExpDisabled(rowLocked, "company")}
+                    />
+                  )}
+                </div>
 
                 <AppInput
-                  name={`startDate`}
+                  name={`startDate-${index}`}
                   label="Start Date"
                   type="date"
                   value={exp.startDate}
                   onChange={(e) =>
                     updateExperience(index, "startDate", e.target.value)
                   }
-                  placeholder="Select date"
-                  disabled={isDisabled(rowLocked, "startDate")}
+                  placeholder="Start date"
+                  disabled={rowLocked}
                 />
 
                 <AppInput
-                  name={`endDate`}
+                  name={`endDate-${index}`}
                   label="End Date"
                   type="date"
                   value={exp.endDate}
                   onChange={(e) =>
                     updateExperience(index, "endDate", e.target.value)
                   }
-                  placeholder="Select date"
-                  disabled={isDisabled(rowLocked, "endDate")}
+                  placeholder="End date"
+                  disabled={isExpDisabled(rowLocked, "endDate")}
                 />
+
                 <AppInput
-                  name={`companyWebsite`}
+                  name={`companyWebsite-${index}`}
                   label="Company Website"
                   type="url"
                   value={exp.companyWebsite}
@@ -180,21 +251,20 @@ export default function ExperienceForm({
                         : ""
                     );
                   }}
-                  placeholder="https://company.com/"
-                  disabled={isDisabled(rowLocked, "companyWebsite")}
+                  placeholder="https://company.com"
+                  disabled={isExpDisabled(rowLocked, "companyWebsite")}
                   error={exp.error_companyWebsite}
-                  pattern="^https:\/\/[a-zA-Z0-9\.-]+\.[a-zA-Z]{2,}\/$"
                 />
 
                 <AppSelect
-                  name={`industry`}
+                  name={`industry-${index}`}
                   label="Industry"
                   value={exp.industry}
                   onChange={(e) =>
                     updateExperience(index, "industry", e.target.value)
                   }
                   options={industries}
-                  disabled={isDisabled(rowLocked, "industry")}
+                  disabled={isExpDisabled(rowLocked, "industry")}
                 />
 
                 <div className="md:col-span-2">
@@ -205,7 +275,7 @@ export default function ExperienceForm({
                     onChange={(updated) =>
                       updateExperience(index, "jobFunctions", updated)
                     }
-                    disabled={isDisabled(rowLocked, "jobFunctions")}
+                    disabled={isExpDisabled(rowLocked, "jobFunctions")}
                   />
                 </div>
 
@@ -214,7 +284,7 @@ export default function ExperienceForm({
                   <div className="flex items-center justify-between mb-2">
                     <label className="text-sm font-medium text-gray-700 flex items-center gap-2">
                       <FileText className="h-4 w-4 text-orange-600" />
-                      Upload Experience Letter (PDF / PNG / JPG)
+                      Upload Experience Letter (PDF / Image)
                     </label>
 
                     <div className="flex items-center gap-2">
@@ -242,74 +312,80 @@ export default function ExperienceForm({
                   </div>
 
                   <FileUploader
-                    ref={(el) => (letterRefs.current[index] = el)}
-                    // omit label here to avoid duplicate header; if FileUploader *requires* label, pass it
-                    // label="Upload Experience Letter (PDF / PNG / JPG)"
+                    ref={(el) => {
+                      if (letterRefs?.current) letterRefs.current[index] = el;
+                    }}
                     name={`experienceLetterFile-${index}`}
                     accept="application/pdf,image/*"
                     icon={FileText}
                     onChange={(file) =>
                       updateExperience(index, "experienceLetterFile", file)
                     }
-                    disabled={isDisabled(rowLocked, "experienceLetterFile")}
+                    disabled={isExpDisabled(rowLocked, "experienceLetterFile")}
                     className="w-full"
                   />
                 </div>
               </div>
 
-              {!rowLocked && (
-                <div className="flex justify-end gap-3 pt-1">
-                  {!rowLocked && (
-                    <>
-                      <Button
-                        variant="destructive"
-                        type="button"
-                        onClick={() => removeExperience(index)}
-                      >
-                        Remove
-                      </Button>
+              {/* Row actions */}
+              <div className="flex justify-end gap-3 pt-1">
+                {!rowLocked && (
+                  <Button
+                    variant="destructive"
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation(); // don’t toggle accordion
+                      removeExperience(index);
+                    }}
+                  >
+                    Remove
+                  </Button>
+                )}
 
-                      <Button
-                        type="button"
-                        disabled={saving || !isCompanyWebsiteValid}
-                        onClick={() => {
-                          const val = (exp.companyWebsite || "").trim();
-                          if (!companyWebsiteRegex.test(val)) {
-                            updateExperience(
-                              index,
-                              "error_companyWebsite",
-                              "Only valid website URLs allowed (e.g. https://company.com/)"
-                            );
-                            return; // ⛔ block save + confirm
-                          }
+                <Button
+                  type="button"
+                  disabled={savingThis || !isCompanyWebsiteValid}
+                  onClick={(e) => {
+                    e.stopPropagation(); // don’t toggle accordion
 
-                          // clear any stale error
-                          updateExperience(index, "error_companyWebsite", "");
+                    // validate URL again
+                    const val = (exp.companyWebsite || "").trim();
+                    if (!companyWebsiteRegex.test(val)) {
+                      updateExperience(
+                        index,
+                        "error_companyWebsite",
+                        "Only valid website URLs allowed (e.g. https://company.com/)"
+                      );
+                      return;
+                    }
+                    updateExperience(index, "error_companyWebsite", "");
 
-                          onAskConfirm?.("experience", "Experience", () =>
-                            saveExperience(index, experienceList[index])
-                          );
-                        }}
-                        className="inline-flex items-center gap-2 bg-orange-600 hover:bg-orange-700 text-white"
-                      >
-                        <Save className="h-4 w-4" />
-                        {saving ? "Saving..." : "Save"}
-                      </Button>
-                    </>
-                  )}
-                </div>
-              )}
+                    // row-wise confirm & save
+                    onAskConfirm?.(
+                      `experience:${index}`,
+                      `Experience ${index + 1}`,
+                      () => saveExperience(index, experienceList[index])
+                    );
+                  }}
+                  className="inline-flex items-center gap-2 bg-orange-600 hover:bg-orange-700 text-white"
+                >
+                  <Save className="h-4 w-4" />
+                  {savingThis ? "Saving..." : "Save"}
+                </Button>
+              </div>
             </motion.div>
           );
         })}
       </AnimatePresence>
 
-      {/* always visible */}
       <motion.div layout>
         <Button
           type="button"
           className="bg-orange-100 text-orange-700 hover:bg-orange-200"
-          onClick={addExperience}
+          onClick={(e) => {
+            e.stopPropagation();
+            addExperience();
+          }}
         >
           + Add Experience
         </Button>

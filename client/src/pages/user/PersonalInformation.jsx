@@ -1,4 +1,5 @@
-import React, { useEffect, useMemo, useRef, useState } from "react"; // ⬅️ add useMemo
+// pages/.../PersonalInformation.jsx
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useSnackbar } from "notistack";
 import {
   BriefcaseBusiness as Briefcase,
@@ -29,11 +30,15 @@ export default function PersonalInformation() {
     updateEducation,
     removeEducation,
     saveEducation,
+    saveEducationRow,
+    isRowSaving,
     // experience
     addExperience,
     updateExperience,
     removeExperience,
     saveExperience,
+    saveExperienceRow,
+    isExpRowSaving,
     // personal
     savePersonalInfo,
     saveProfilePhoto,
@@ -120,17 +125,27 @@ export default function PersonalInformation() {
         : [],
       dob: toYMD(data.dob),
       education: Array.isArray(data.education)
-        ? data.education.map((e) => ({
+        ? data.education.map((e, i) => ({
             ...e,
             startDate: toYMD(e.startDate),
             endDate: toYMD(e.endDate),
+            // ✅ keep any existing local rowLocked unless server explicitly sets it
+            rowLocked:
+              (typeof e.rowLocked === "boolean" ? e.rowLocked : undefined) ??
+              prev.education?.[i]?.rowLocked ??
+              false,
           }))
         : prev.education,
       experience: Array.isArray(data.experience)
-        ? data.experience.map((x) => ({
+        ? data.experience.map((x, i) => ({
             ...x,
             startDate: toYMD(x.startDate),
             endDate: toYMD(x.endDate),
+            // (optional) if you also do row locking for experience later
+            rowLocked:
+              (typeof x.rowLocked === "boolean" ? x.rowLocked : undefined) ??
+              prev.experience?.[i]?.rowLocked ??
+              false,
           }))
         : prev.experience,
     }));
@@ -146,7 +161,14 @@ export default function PersonalInformation() {
         const serverProfile = res?.data?.profile;
         enqueueSnackbar(`${pendingTitle} saved`, { variant: "success" });
 
-        setLocked((prev) => ({ ...prev, [pendingValue]: true }));
+        // lock only full sections; don't lock the entire education section for a single row save
+        if (
+          pendingValue === "pi" ||
+          pendingValue === "experience" ||
+          pendingValue === "education"
+        ) {
+          setLocked((prev) => ({ ...prev, [pendingValue]: true }));
+        }
 
         if (serverProfile) normalizeFromServer(serverProfile);
 
@@ -155,10 +177,42 @@ export default function PersonalInformation() {
           profilePicRef.current?.reset?.();
           clearPersonalFiles();
         }
+
+        // full education section save (legacy behavior)
         if (pendingValue === "education") {
           degreeRefs.current.forEach((r) => r?.reset?.());
           clearEducationFiles();
+          // (optional) lock all rows after full save
+          setFormData((prev) => ({
+            ...prev,
+            education: prev.education.map((e) => ({ ...e, rowLocked: true })),
+          }));
         }
+
+        // row-wise education save: pendingValue = "education:<index>"
+        if (
+          typeof pendingValue === "string" &&
+          pendingValue.startsWith("education:")
+        ) {
+          const idx = Number(pendingValue.split(":")[1]);
+          if (!Number.isNaN(idx)) {
+            degreeRefs.current?.[idx]?.reset?.(); // only reset this uploader
+          }
+          // keep the accordion open on row save
+          setOpen("education");
+        }
+
+        if (
+          typeof pendingValue === "string" &&
+          pendingValue.startsWith("experience:")
+        ) {
+          const idx = Number(pendingValue.split(":")[1]);
+          if (!Number.isNaN(idx)) {
+            letterRefs.current?.[idx]?.reset?.(); // reset only this row's uploader
+          }
+          setOpen("experience"); // keep accordion open on row save
+        }
+
         if (pendingValue === "experience") {
           letterRefs.current.forEach((r) => r?.reset?.());
           clearExperienceFiles();
@@ -177,12 +231,12 @@ export default function PersonalInformation() {
     }
   };
 
-  const handleCancel = () => {
-    setConfirmOpen(false);
-    setPendingAction(null);
-    setPendingTitle("");
-    setPendingValue(null);
-  };
+  // const handleCancel = () => {
+  //   setConfirmOpen(false);
+  //   setPendingAction(null);
+  //   setPendingTitle("");
+  //   setPendingValue(null);
+  // };
 
   // reflect auth user into the form fast
   useEffect(() => {
@@ -195,7 +249,7 @@ export default function PersonalInformation() {
     }
   }, [authLoading, user, setFormData]);
 
-  // fetch full profile
+  // fetch full profile — ✅ also preserves rowLocked from local state
   useEffect(() => {
     const load = async () => {
       try {
@@ -210,17 +264,29 @@ export default function PersonalInformation() {
           email: user?.email ?? data.email ?? prev.email ?? "",
           dob: toYMD(data.dob),
           education: Array.isArray(data.education)
-            ? data.education.map((e) => ({
+            ? data.education.map((e, i) => ({
                 ...e,
                 startDate: toYMD(e.startDate),
                 endDate: toYMD(e.endDate),
+                rowLocked:
+                  (typeof e.rowLocked === "boolean"
+                    ? e.rowLocked
+                    : undefined) ??
+                  prev.education?.[i]?.rowLocked ??
+                  false,
               }))
             : prev.education,
           experience: Array.isArray(data.experience)
-            ? data.experience.map((x) => ({
+            ? data.experience.map((x, i) => ({
                 ...x,
                 startDate: toYMD(x.startDate),
                 endDate: toYMD(x.endDate),
+                rowLocked:
+                  (typeof x.rowLocked === "boolean"
+                    ? x.rowLocked
+                    : undefined) ??
+                  prev.experience?.[i]?.rowLocked ??
+                  false,
               }))
             : prev.experience || [
                 {
@@ -267,7 +333,7 @@ export default function PersonalInformation() {
     }
   };
 
-  // ===== Share Button logic (moved here) =====
+  // Share button logic ...
   const baseUrl =
     import.meta.env.VITE_PROFILE_BASE_URL ||
     (typeof window !== "undefined" && window.location?.origin) ||
@@ -297,7 +363,6 @@ export default function PersonalInformation() {
       window.prompt("Copy this URL:", shareUrl);
     }
   };
-  // ===========================================
 
   return (
     <div className="min-h-screen w-full flex items-start justify-center px-4 py-10 relative overflow-hidden">
@@ -307,11 +372,8 @@ export default function PersonalInformation() {
           profilePicRef={profilePicRef}
           uploading={saving && open === "pi"}
           onPhotoChange={(file) => {
-            if (file) {
-              handleCustomChange("profilePic", file);
-            } else {
-              handleCustomChange("profilePic", "");
-            }
+            if (file) handleCustomChange("profilePic", file);
+            else handleCustomChange("profilePic", "");
           }}
           onPhotoSave={async () => {
             const res = await saveProfilePhoto();
@@ -376,9 +438,9 @@ export default function PersonalInformation() {
               locked={!!locked.education}
               degreeRefs={degreeRefs}
               eduCreditByKey={eduCreditByKey}
-              saveEducation={saveEducation}
+              saveEducation={saveEducationRow}
+              isRowSaving={isRowSaving}
               onAskConfirm={onAskConfirm}
-              saving={saving}
             />
           </AccordionSection>
 
@@ -402,9 +464,11 @@ export default function PersonalInformation() {
               locked={!!locked.experience}
               letterRefs={letterRefs}
               expCreditByKey={expCreditByKey}
-              saveExperience={saveExperience}
+              // saveExperience={saveExperience}
               onAskConfirm={onAskConfirm}
-              saving={saving}
+              // saving={saving}
+              saveExperience={saveExperienceRow} // ✅ row-wise
+              isRowSaving={isExpRowSaving} // ✅ per-row spinner/disable
             />
           </AccordionSection>
         </form>
@@ -413,7 +477,12 @@ export default function PersonalInformation() {
       <ConfirmDialog
         isOpen={confirmOpen}
         onConfirm={handleConfirm}
-        onCancel={handleCancel}
+        onCancel={() => {
+          setConfirmOpen(false);
+          setPendingAction(null);
+          setPendingTitle("");
+          setPendingValue(null);
+        }}
         title={`Save ${pendingTitle}?`}
         description={`Once saved, your ${pendingTitle.toLowerCase()} cannot be modified. Please review carefully before confirming.`}
         confirmText="Yes, save it"

@@ -4,7 +4,14 @@ import { AnimatePresence, motion } from "framer-motion";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { LogOut, Settings, User, ChevronDown, GraduationCap, Briefcase } from "lucide-react";
+import {
+  LogOut,
+  Settings,
+  User,
+  ChevronDown,
+  GraduationCap,
+  Briefcase,
+} from "lucide-react";
 
 function getInitial(name) {
   return (name?.trim()?.charAt(0) || "U").toUpperCase();
@@ -56,7 +63,12 @@ export default function UserMenu({ user, onLogout }) {
         className="group flex items-center gap-2 rounded-full pl-1 pr-2 py-1.5 ring-1 ring-black/5 hover:bg-white/70 transition"
       >
         <Avatar className="h-9 w-9 ring-1 ring-black/5">
-          <AvatarImage src={`${import.meta.env.VITE_API_PIC_URL}/uploads/profile/${user?.profilePic}`} alt={user?.firstName} />
+          <AvatarImage
+            src={`${import.meta.env.VITE_API_PIC_URL}/uploads/profile/${
+              user?.profilePic
+            }`}
+            alt={user?.firstName}
+          />
           <AvatarFallback>{getInitial(user?.firstName)}</AvatarFallback>
         </Avatar>
         <div className="hidden sm:flex flex-col items-start leading-tight">
@@ -86,7 +98,12 @@ export default function UserMenu({ user, onLogout }) {
             <div className="px-4 py-3 bg-gradient-to-br from-white to-gray-50">
               <div className="flex items-center gap-3">
                 <Avatar className="h-10 w-10 ring-1 ring-black/5">
-                  <AvatarImage src={user?.picture} alt={user?.firstName} />
+                  <AvatarImage
+                    src={`${import.meta.env.VITE_API_PIC_URL}/uploads/profile/${
+                      user?.profilePic
+                    }`}
+                    alt={user?.firstName}
+                  />
                   <AvatarFallback>{getInitial(user?.firstName)}</AvatarFallback>
                 </Avatar>
                 <div className="min-w-0">
@@ -101,7 +118,7 @@ export default function UserMenu({ user, onLogout }) {
             </div>
 
             {/* Actions */}
-            <div className="py-2">
+            {/* <div className="py-2">
               <button
                 onClick={() => go("/profile")}
                 className="w-full flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition"
@@ -117,7 +134,7 @@ export default function UserMenu({ user, onLogout }) {
                 <Settings className="h-4 w-4" />
                 Settings
               </button>
-            </div>
+            </div> */}
 
             <div className="h-px bg-gray-100" />
 

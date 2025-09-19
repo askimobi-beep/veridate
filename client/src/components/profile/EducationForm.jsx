@@ -1,5 +1,4 @@
 // components/profile/EducationForm.jsx
-// FULL component — FileUploader full row + Hide toggle as a switch above it
 import React from "react";
 import AppInput from "@/components/form/AppInput";
 import AppSelect from "@/components/form/AppSelect";
@@ -32,13 +31,14 @@ const instituteOptions = [
   "Other",
 ];
 
-// keep these
+// fields editable even when row is locked
 const EDUCATION_UNLOCKED = new Set([
   "endDate",
   "instituteWebsite",
   "degreeFile",
   "hiddenFields",
 ]);
+
 const isEduDisabled = (rowLocked, field) =>
   rowLocked && !EDUCATION_UNLOCKED.has(field);
 
@@ -59,38 +59,32 @@ export default function EducationForm({
   updateEducation,
   addEducation,
   removeEducation,
-  locked,
+  locked,           // section-level lock
   degreeRefs,
   eduCreditByKey,
-  saveEducation, // 👈 now required here
-  onAskConfirm, // 👈 confirm gateway from parent
-  saving, // 👈 to disable button
+  saveEducation,    // (index, row)
+  onAskConfirm,     // (sectionValue, sectionTitle, actionFn)
+  isRowSaving,      // (index) => boolean
 }) {
   const norm = (s) => (s || "").trim().toLowerCase().replace(/\s+/g, " ");
-  const handleSave = (index) => {
-    if (typeof saveEducation === "function") {
-      saveEducation(index, educationList[index]);
-    } else {
-      console.warn(
-        "saveEducation prop not provided. Provide saveEducation(index, data)."
-      );
-    }
-  };
-
-  const websiteRegex = /^https:\/\/[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}\/$/;
+  const websiteRegex = /^https:\/\/[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
 
   return (
     <>
       <AnimatePresence initial={false}>
         {educationList.map((edu, index) => {
-          const rowLocked = !!edu._id && locked;
+          // ✅ respect per-row lock immediately, fallback to section lock for saved rows with _id
+          const rowLocked = !!edu?.rowLocked || (!!edu?._id && locked);
+          const savingThis =
+            typeof isRowSaving === "function" ? isRowSaving(index) : false;
 
           const key = edu.instituteKey || norm(edu.institute);
           const bucket =
             key && eduCreditByKey?.get ? eduCreditByKey.get(key) : null;
+
           const isWebsiteValid = websiteRegex.test(
             (edu.instituteWebsite || "").trim()
-          ); // 👈 per-row
+          );
 
           return (
             <motion.div
@@ -177,14 +171,14 @@ export default function EducationForm({
                       index,
                       "error_instituteWebsite",
                       val && !websiteRegex.test(val)
-                        ? "Only valid website URLs allowed (e.g. https://university.com/)"
+                        ? "Only valid website URLs allowed (e.g. https://university.com)"
                         : ""
                     );
                   }}
-                  placeholder="https://ucp.edu.pk/"
+                  placeholder="https://university.com"
                   disabled={isEduDisabled(rowLocked, "instituteWebsite")}
                   error={edu.error_instituteWebsite}
-                  pattern="^https:\/\/[a-zA-Z0-9\.-]+\.[a-zA-Z]{2,}\/$"
+                  pattern={websiteRegex}
                 />
 
                 {/* Full-width uploader with a switch row above it */}
@@ -229,32 +223,30 @@ export default function EducationForm({
                     }
                     disabled={isEduDisabled(rowLocked, "degreeFile")}
                     className="w-full"
-                    // if your FileUploader **requires** a label prop and renders it,
-                    // pass label="Degree File (PDF / Image)" and add a prop to hide it,
-                    // or keep as-is to avoid double labels.
                   />
                 </div>
               </div>
 
-              
               {/* Row actions */}
               <div className="flex justify-end gap-3 pt-1">
-                {/* Remove only when not locked */}
                 {!rowLocked && (
                   <Button
                     variant="destructive"
                     type="button"
-                    onClick={() => removeEducation(index)}
+                    onClick={(e) => {
+                      e.stopPropagation(); // prevent bubbling to accordion header
+                      removeEducation(index);
+                    }}
                   >
                     Remove
                   </Button>
                 )}
 
-                {/* Save is ALWAYS visible */}
                 <Button
                   type="button"
-                  disabled={saving || !isWebsiteValid } // show but disable if locked/invalid
-                  onClick={() => {
+                  disabled={savingThis || !isWebsiteValid}
+                  onClick={(e) => {
+                    e.stopPropagation(); // prevent bubbling to accordion header
                     const val = (edu.instituteWebsite || "").trim();
                     if (!websiteRegex.test(val)) {
                       updateEducation(
@@ -265,14 +257,16 @@ export default function EducationForm({
                       return;
                     }
                     updateEducation(index, "error_instituteWebsite", "");
-                    onAskConfirm?.("education", "Education", () =>
-                      saveEducation(index, educationList[index])
+                    onAskConfirm?.(
+                      `education:${index}`,
+                      `Education ${index + 1}`,
+                      () => saveEducation(index, educationList[index])
                     );
                   }}
                   className="inline-flex items-center gap-2 bg-orange-600 hover:bg-orange-700 text-white"
                 >
                   <Save className="h-4 w-4" />
-                  {saving ? "Saving..." : "Save"}
+                  {savingThis ? "Saving..." : "Save"}
                 </Button>
               </div>
             </motion.div>
@@ -284,7 +278,10 @@ export default function EducationForm({
         <Button
           type="button"
           className="bg-orange-100 text-orange-700 hover:bg-orange-200"
-          onClick={addEducation}
+          onClick={(e) => {
+            e.stopPropagation();
+            addEducation();
+          }}
         >
           + Add Education
         </Button>

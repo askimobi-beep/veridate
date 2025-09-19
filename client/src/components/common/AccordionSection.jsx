@@ -1,10 +1,8 @@
 import React from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { Save } from "lucide-react"; // Save added
+import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 
-const containerAnim = { duration: 0.45, ease: [0.25, 1, 0.5, 1] };
-const chevronSpring = { type: "spring", stiffness: 200, damping: 20 };
-const bodyAnim = { duration: 0.35, ease: [0.22, 1, 0.36, 1] };
+const CARD_TRANSITION = { type: "spring", stiffness: 300, damping: 28 };
+const CHEVRON_SPRING = { type: "spring", stiffness: 220, damping: 18 };
 
 export default function AccordionSection({
   title,
@@ -13,91 +11,100 @@ export default function AccordionSection({
   openValue,
   setOpenValue,
   locked = false,
-  saving = false,
-  onSave,
-  onAskConfirm,
   children,
   contentClassName = "",
   headerClassName = "",
   className = "",
 }) {
   const isOpen = openValue === value;
+  const prefersReducedMotion = useReducedMotion();
+
+  // Variants for the collapsible body
+  const bodyVariants = {
+    open: {
+      height: "auto",
+      opacity: 1,
+      scale: 1,
+      filter: "blur(0px)",
+      transition: {
+        height: { ...CARD_TRANSITION },
+        opacity: { duration: 0.18, ease: [0.22, 1, 0.36, 1] },
+        scale: { duration: 0.18, ease: [0.22, 1, 0.36, 1] },
+        filter: { duration: 0.18 },
+      },
+    },
+    collapsed: {
+      height: 0,
+      opacity: 0,
+      scale: 0.98,
+      filter: "blur(2px)",
+      transition: {
+        height: { ...CARD_TRANSITION },
+        opacity: { duration: 0.14, ease: [0.4, 0, 1, 1] },
+        scale: { duration: 0.14 },
+        filter: { duration: 0.14 },
+      },
+    },
+  };
 
   return (
-    <motion.div
-      layout
-      transition={containerAnim}
-      className={`mb-6 rounded-2xl border shadow-xl backdrop-blur-md transition-all duration-500 ${
+    <motion.section
+      layout="position"
+      className={`mb-6 rounded-2xl border shadow-xl backdrop-blur-md transition-colors duration-300 ${
         isOpen
           ? "border-white/20 bg-white/60 text-gray-800"
           : "border-white/10 bg-orange-200 text-black"
       } ${locked ? "opacity-90" : ""} ${className}`}
+      whileHover={!isOpen ? { scale: prefersReducedMotion ? 1 : 1.002 } : undefined}
+      transition={CARD_TRANSITION}
     >
-      {/* Accordion Header */}
+      {/* Header */}
       <motion.button
         type="button"
-        layout
-        onClick={() => setOpenValue(isOpen ? null : value)}
         className={`w-full flex items-center justify-between px-6 py-4 text-base md:text-lg font-semibold ${headerClassName}`}
         aria-expanded={isOpen}
         aria-controls={`accordion-content-${value}`}
+        onClick={() => setOpenValue(isOpen ? null : value)}
+        initial={false}
+        whileTap={{ scale: prefersReducedMotion ? 1 : 0.995 }}
       >
         <span className="flex items-center gap-2">
-          <Icon
-            className={`h-5 w-5 ${
-              isOpen ? "text-orange-600" : "text-orange-600"
-            }`}
-          />
+          {Icon ? (
+            <Icon className={`h-5 w-5 ${isOpen ? "text-orange-600" : "text-orange-600"}`} />
+          ) : null}
           {title}
         </span>
 
         <motion.span
-          layout
           initial={false}
           animate={{ rotate: isOpen ? 180 : 0 }}
-          transition={chevronSpring}
-          className={`text-xl font-bold ${
-            isOpen ? "text-orange-700" : "text-orange-600"
-          }`}
+          transition={CHEVRON_SPRING}
+          className={`text-xl font-bold ${isOpen ? "text-orange-700" : "text-orange-600"}`}
         >
           {isOpen ? "−" : "+"}
         </motion.span>
       </motion.button>
 
-      {/* Accordion Body */}
+      {/* Body */}
       <AnimatePresence initial={false}>
         {isOpen && (
           <motion.div
-            id={`accordion-content-${value}`}
             key="content"
-            initial={{ opacity: 0, scaleY: 0.95 }}
-            animate={{ opacity: 1, scaleY: 1 }}
-            exit={{ opacity: 0, scaleY: 0.95 }}
-            transition={bodyAnim}
+            id={`accordion-content-${value}`}
+            role="region"
+            aria-labelledby={`accordion-header-${value}`}
             className={`px-6 pb-6 origin-top ${contentClassName}`}
+            style={{ overflow: "hidden" }}
+            initial={prefersReducedMotion ? false : "collapsed"}
+            animate={prefersReducedMotion ? { height: "auto", opacity: 1 } : "open"}
+            exit={prefersReducedMotion ? { height: 0, opacity: 0 } : "collapsed"}
+            variants={bodyVariants}
+            layout
           >
-            {/* Top Save button */}
-            {/* {onSave && (
-              <div className="mb-4 flex justify-end">
-                <button
-                  type="button"
-                  onClick={() => onAskConfirm?.(value, title, onSave)}
-                  disabled={saving}
-                  className="inline-flex items-center gap-2 rounded-xl border border-orange-600 px-4 py-2 text-sm font-medium text-white bg-orange-600 hover:bg-orange-700 active:scale-[0.98] transition"
-                >
-                  <Save className="h-4 w-4" />
-                  {saving ? "Saving..." : "Save"}
-                </button>
-              </div>
-            )} */}
-
-            {/* Children (form content etc.) */}
-            {typeof children === "function"
-              ? children({ disabled: locked })
-              : children}
+            {typeof children === "function" ? children({ disabled: locked }) : children}
           </motion.div>
         )}
       </AnimatePresence>
-    </motion.div>
+    </motion.section>
   );
 }
