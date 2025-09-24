@@ -8,12 +8,14 @@ export default function AppInput({
   className,
   inputClassName,
   disabled = false,
-  endAdornment = null, // 👈 new
-  error, // 👈 NEW
-  pattern,
+  endAdornment = null,
+  startAdornment = null,          // 👈 NEW
+  startPaddingClass = "pl-24",    // 👈 NEW: how much left padding when startAdornment exists
+  error,
   ...props
 }) {
   const hasEnd = !!endAdornment;
+  const hasStart = !!startAdornment;
 
   return (
     <div className={cn("space-y-1", className)}>
@@ -35,19 +37,29 @@ export default function AppInput({
             "bg-white/90 border border-gray-200 text-gray-900 placeholder:text-gray-400",
             "focus-visible:ring-2 focus-visible:ring-black focus-visible:ring-offset-0",
             disabled && "bg-gray-100 text-gray-500 cursor-not-allowed",
-            (pattern = { pattern }), // 👈 allow regex enforcement
-            hasEnd && "pr-10", // 👈 room for the icon
+            hasEnd && "pr-10",
+            hasStart && startPaddingClass, // 👈 add left padding when using startAdornment
             inputClassName
           )}
           {...props}
         />
-        {error && <p className="text-xs text-start py-2 text-red-500">{error}</p>}
+
+        {/* left addon inside the field */}
+        {hasStart && (
+          <div className="absolute inset-y-0 left-2 flex items-center">
+            {startAdornment}
+          </div>
+        )}
+
+        {/* right addon inside the field */}
         {hasEnd && (
           <div className="absolute inset-y-0 right-2 flex items-center">
             {endAdornment}
           </div>
         )}
       </div>
+
+      {error && <p className="text-xs text-start py-2 text-red-500">{error}</p>}
     </div>
   );
 }

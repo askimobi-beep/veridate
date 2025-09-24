@@ -45,6 +45,7 @@ const ProfileSchema = new mongoose.Schema(
     name: String,
     email: String,
     fatherName: String,
+    mobileCountryCode: String, // 👈 add
     mobile: String,
     cnic: String,
     city: String,

@@ -17,6 +17,7 @@ import {
   shiftOptions,
   workAuthorizationOptions,
 } from "@/components/form/Dropdowndata";
+import BlockSwitch from "../form/Switch";
 
 const PERSONAL_UNLOCKED = new Set([
   "email",
@@ -34,23 +35,15 @@ const PERSONAL_UNLOCKED = new Set([
 
 const isDisabled = (locked, field) => locked && !PERSONAL_UNLOCKED.has(field);
 
-// --- replace your PRIVACY_OPTIONS with this ---
-const PRIVACY_ITEMS = [
-  { label: "Marital Status", value: "maritalStatus" },
-  { label: "CNIC", value: "cnic" },
-  { label: "Father Name", value: "fatherName" },
-  { label: "Date of Birth", value: "dob" },
-  { label: "Phone Number", value: "mobile" },
-  { label: "Email", value: "email" },
+// keep your list small or wire a proper lib later
+const callingCodes = [
+  "+1", "+7", "+20", "+27",
+  "+30", "+33", "+34", "+39",
+  "+44", "+49", "+52", "+55",
+  "+61", "+62", "+63", "+64", "+65",
+  "+81", "+82", "+86", "+90",
+  "+92", "+94", "+966", "+971", "+972"
 ];
-
-// helpers: label <-> value maps
-const LABEL_TO_VALUE = Object.fromEntries(
-  PRIVACY_ITEMS.map((i) => [i.label, i.value])
-);
-const VALUE_TO_LABEL = Object.fromEntries(
-  PRIVACY_ITEMS.map((i) => [i.value, i.label])
-);
 
 export default function PersonalDetailsForm({
   formData,
@@ -72,24 +65,53 @@ export default function PersonalDetailsForm({
     return `${baseUrl}/dashboard/profiles/${id}`;
   }, [baseUrl, userId, formData?.id]);
 
-  const [copied, setCopied] = useState(false);
   const [countriesList, setCountriesList] = useState([]);
-  const [nationalityOptions, setNationalityOptions] = useState([]);
   const [cityOptions, setCityOptions] = useState([]);
-  const [cityLoading, setCityLoading] = useState(false); // 👈 NEW
-  const [countryDemonyms, setCountryDemonyms] = useState(new Map());
+  const [cityLoading, setCityLoading] = useState(false);
 
   const emailValid =
     !!formData.email && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email);
 
-  // fetch country list (names only — keep it simple)
+  // ----- privacy helpers -----
+  const hiddenSet = new Set(formData.personalHiddenFields || []);
+  const isHidden = (field) => hiddenSet.has(field);
+
+  const setVisibility = (field, visible) => {
+    let updated = [...(formData.personalHiddenFields || [])];
+    const idx = updated.indexOf(field);
+    if (visible) {
+      if (idx !== -1) updated.splice(idx, 1);
+    } else {
+      if (idx === -1) updated.push(field);
+    }
+    handleCustomChange("personalHiddenFields", updated);
+  };
+
+  const withPrivacy = (labelText, fieldKey, leftExtra = null) => (
+    <div className="flex items-center justify-between gap-3 w-full">
+      <span className="flex items-center gap-2">
+        {leftExtra}
+        {labelText}
+      </span>
+      <div className="flex items-center gap-2 text-xs text-gray-500">
+        <span className="min-w-[44px] text-right">
+          {isHidden(fieldKey) ? "Hidden" : "Visible"}
+        </span>
+        <BlockSwitch
+          checked={!isHidden(fieldKey)}
+          onChange={(checked) => setVisibility(fieldKey, checked)}
+        />
+      </div>
+    </div>
+  );
+  // ----------------------------
+
+  // fetch country list (names only)
   useEffect(() => {
     let cancelled = false;
     const loadCountries = async () => {
       try {
-        const res = await fetch(
-          "https://restcountries.com/v3.1/all?fields=name"
-        );
+        const res = await fetch("https://restcountries.com/v3.1/all?fields=name");
         const data = await res.json();
         const names = data
           .map((c) => c?.name?.common)
@@ -101,11 +123,10 @@ export default function PersonalDetailsForm({
       }
     };
     loadCountries();
-    return () => {
-      cancelled = true;
-    };
+    return () => { cancelled = true; };
   }, []);
 
+  // fetch cities when country changes
   useEffect(() => {
     const selected = (formData.country || "").trim();
     if (!selected) {
@@ -117,7 +138,7 @@ export default function PersonalDetailsForm({
     let cancelled = false;
     const loadCities = async () => {
       try {
-        setCityLoading(true); // 👈 start
+        setCityLoading(true);
         const res = await fetch(
           "https://countriesnow.space/api/v0.1/countries/cities",
           {
@@ -131,7 +152,6 @@ export default function PersonalDetailsForm({
         cities.sort((a, b) => a.localeCompare(b));
         if (!cancelled) {
           setCityOptions(cities);
-          // keep user value if valid; otherwise clear
           if (formData.city && !cities.includes(formData.city)) {
             handleCustomChange("city", "");
           }
@@ -140,29 +160,22 @@ export default function PersonalDetailsForm({
         console.error("Failed to fetch cities", e);
         if (!cancelled) setCityOptions([]);
       } finally {
-        if (!cancelled) setCityLoading(false); // 👈 stop
+        if (!cancelled) setCityLoading(false);
       }
     };
 
     loadCities();
-    return () => {
-      cancelled = true;
-    };
+    return () => { cancelled = true; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [formData.country]);
+
   return (
     <>
       <div className="mt-4 flex justify-end">
         <button
           type="button"
           onClick={() => {
-            // basic guard example: email must be valid if present
-            if (
-              !formData.email ||
-              !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)
-            ) {
-              // if you use a snackbar, you can show an error; otherwise noop
-              // enqueueSnackbar?.("Please enter a valid email", { variant: "error" });
+            if (!formData.email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
               return;
             }
             onAskConfirm?.("pi", "Personal Details", () => savePersonalInfo());
@@ -174,15 +187,11 @@ export default function PersonalDetailsForm({
           {saving ? "Saving..." : "Save"}
         </button>
       </div>
-      {/* The rest of your form exactly as you had it */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+      {/* Form */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-5">
         <AppInput
-          label={
-            <>
-              {/* <UserRound className="h-4 w-4 text-orange-600" /> */}
-              <span>Legal Name</span>
-            </>
-          }
+          label={<span>Legal Name</span>}
           name="name"
           value={formData.name}
           onChange={handleChange}
@@ -190,12 +199,13 @@ export default function PersonalDetailsForm({
           disabled
         />
 
+        {/* Email: tick in label + in field */}
         <AppInput
-          label={
-            <>
-              <span>Email</span>
-            </>
-          }
+          label={withPrivacy(
+            "Email",
+            "email",
+            emailValid ? <Check className="h-4 w-4 text-green-600" /> : null
+          )}
           name="email"
           type="email"
           value={formData.email}
@@ -203,13 +213,11 @@ export default function PersonalDetailsForm({
           placeholder="you@example.com"
           autoComplete="email"
           disabled
-          endAdornment={
-            emailValid ? <Check className="h-4 w-4 text-green-600" /> : null
-          }
+          // endAdornment={emailValid ? <Check className="h-4 w-4 text-green-600" /> : null}
         />
 
         <AppInput
-          label="Father Name"
+          label={withPrivacy("Father Name", "fatherName")}
           name="fatherName"
           value={formData.fatherName}
           onChange={handleChange}
@@ -217,49 +225,79 @@ export default function PersonalDetailsForm({
           disabled={isDisabled(locked, "fatherName")}
         />
 
+        {/* Mobile: country code SELECT embedded inside the same field */}
         <AppInput
           name="mobile"
-          label="Mobile Number"
+          label={
+            <div className="flex items-center justify-between gap-3 w-full">
+              <div className="flex items-center gap-2">
+                <span>Mobile Number</span>
+                <TooltipProvider delayDuration={150}>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <button
+                        type="button"
+                        aria-label="Mobile number help"
+                        className="rounded-md p-1.5 border border-gray-200 hover:bg-gray-50 text-gray-500 hover:text-gray-700 shadow-sm"
+                      >
+                        <CircleHelp className="h-4 w-4" />
+                      </button>
+                    </TooltipTrigger>
+                    <TooltipContent
+                      side="left"
+                      align="center"
+                      className="max-w-sm rounded-xl border border-gray-200 shadow-lg p-3 bg-white"
+                    >
+                      <div className="text-sm font-semibold text-gray-900 mb-1">
+                        Why we ask for this
+                      </div>
+                      <div className="text-xs text-gray-600">
+                        Add your primary contact number (with country code).
+                        This stays private unless you mark it visible.
+                      </div>
+                      <div className="mt-2 text-xs text-gray-500">
+                        Example: +92 300 1234567
+                      </div>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              </div>
+              <div className="flex items-center gap-2 text-xs text-gray-500">
+                <span className="min-w-[44px] text-right">
+                  {isHidden("mobile") ? "Hidden" : "Visible"}
+                </span>
+                <BlockSwitch
+                  checked={!isHidden("mobile")}
+                  onChange={(checked) => setVisibility("mobile", checked)}
+                />
+              </div>
+            </div>
+          }
           type="tel"
           value={formData.mobile || ""}
           onChange={handleChange}
+          placeholder="300 1234567"
           disabled={locked}
-          endAdornment={
-            <TooltipProvider delayDuration={150}>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <button
-                    type="button"
-                    aria-label="Mobile number help"
-                    className="rounded-md p-1.5 border border-gray-200 hover:bg-gray-50 text-gray-500 hover:text-gray-700 shadow-sm"
-                  >
-                    <CircleHelp className="h-4 w-4" />
-                  </button>
-                </TooltipTrigger>
-                <TooltipContent
-                  side="left"
-                  align="center"
-                  className="max-w-sm rounded-xl border border-gray-200 shadow-lg p-3 bg-white"
-                >
-                  <div className="text-sm font-semibold text-gray-900 mb-1">
-                    Why we ask for this
-                  </div>
-                  <div className="text-xs text-gray-600">
-                    Add your primary contact number (with country code). This
-                    stays private unless you mark it visible in your privacy
-                    settings.
-                  </div>
-                  <div className="mt-2 text-xs text-gray-500">
-                    Example: +92 300 1234567
-                  </div>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
+          startAdornment={
+            <div className="flex items-center">
+              <select
+                className="h-8 rounded-md text-gray-800 border px-2 pr-6 border-none"
+                value={formData.mobileCountryCode || "+92"}
+                onChange={(e) => handleCustomChange("mobileCountryCode", e.target.value)}
+                disabled={locked}
+              >
+                {callingCodes.map((c) => (
+                  <option key={c} value={c}>{c}</option>
+                ))}
+              </select>
+              <span className="mx-2 h-5 w-px bg-gray-300" />
+            </div>
           }
+          startPaddingClass="pl-28" // 👈 give the input enough left space for the select
         />
 
         <AppInput
-          label="CNIC"
+          label={withPrivacy("CNIC", "cnic")}
           name="cnic"
           value={formData.cnic}
           onChange={handleChange}
@@ -282,16 +320,8 @@ export default function PersonalDetailsForm({
               ? "Select city"
               : "No cities found"
           }
-          // disable while loading or until a country is chosen
-          disabled={
-            isDisabled(locked, "city") || !formData.country || cityLoading
-          }
-          // OPTIONAL: if AppSelect supports endAdornment, show spinner
-          endAdornment={
-            cityLoading ? (
-              <Loader2 className="h-4 w-4 animate-spin text-gray-500" />
-            ) : null
-          }
+          disabled={isDisabled(locked, "city") || !formData.country || cityLoading}
+          endAdornment={cityLoading ? <Loader2 className="h-4 w-4 animate-spin text-gray-500" /> : null}
         />
 
         <AppSelect
@@ -315,12 +345,12 @@ export default function PersonalDetailsForm({
         />
 
         <AppSelect
-          label="Martial Status"
+          label={withPrivacy("Marital Status", "maritalStatus")}
           name="maritalStatus"
           value={formData.maritalStatus}
           onChange={handleChange}
           options={maritalStatuses}
-          placeholder="Select Martial Status"
+          placeholder="Select Marital Status"
           disabled={isDisabled(locked, "maritalStatus")}
         />
 
@@ -344,7 +374,7 @@ export default function PersonalDetailsForm({
         />
 
         <AppInput
-          label="Date of Birth"
+          label={withPrivacy("Date of Birth", "dob")}
           type="date"
           name="dob"
           value={formData.dob}
@@ -355,24 +385,11 @@ export default function PersonalDetailsForm({
       </div>
 
       <div className="mt-6 grid grid-cols-1 md:grid-cols-1 gap-4">
-        {/* <FileUploader
-          ref={resumeRef}
-          label="Resume (PDF)"
-          name="resume"
-          accept="application/pdf"
-          icon={FileText}
-          onChange={(file) => handleCustomChange("resume", file)}
-          disabled={isDisabled(locked, "resume")}
-        />
-         */}
-
         <CheckboxGroup
           title="Shift Preferences"
           options={shiftOptions}
           selected={formData.shiftPreferences}
-          onChange={(updated) =>
-            handleCustomChange("shiftPreferences", updated)
-          }
+          onChange={(updated) => handleCustomChange("shiftPreferences", updated)}
           disabled={isDisabled(locked, "shiftPreferences")}
         />
 
@@ -380,72 +397,16 @@ export default function PersonalDetailsForm({
           title="Work Authorization"
           options={workAuthorizationOptions}
           selected={formData.workAuthorization}
-          onChange={(updated) =>
-            handleCustomChange("workAuthorization", updated)
-          }
+          onChange={(updated) => handleCustomChange("workAuthorization", updated)}
           disabled={isDisabled(locked, "workAuthorization")}
         />
       </div>
-
-      {/* Privacy prefs */}
-      <div className="mt-8 mb-10 rounded-2xl border border-gray-200 bg-white shadow-sm p-6">
-        <h3 className="text-lg font-semibold text-gray-800 flex items-center gap-2 mb-2">
-          <span className="inline-block h-2 w-2 rounded-full bg-orange-500"></span>
-          Privacy Preferences
-        </h3>
-        <p className="text-sm text-gray-500 mb-5">
-          Control what details are visible to others in the directory & your
-          public profile.
-        </p>
-
-        <div className="grid sm:grid-cols-2 gap-3">
-          {PRIVACY_ITEMS.map((item) => {
-            const checked = (formData.personalHiddenFields || []).includes(
-              item.value
-            );
-            return (
-              <label
-                key={item.value}
-                className={`flex items-center gap-3 px-4 py-3 rounded-xl cursor-pointer transition 
-                  ${
-                    checked
-                      ? "bg-orange-50 border border-orange-300"
-                      : "border border-gray-200 hover:bg-gray-50"
-                  }`}
-              >
-                <input
-                  type="checkbox"
-                  className="h-4 w-4 accent-orange-600 cursor-pointer"
-                  checked={checked}
-                  onChange={(e) => {
-                    let updated = [...(formData.personalHiddenFields || [])];
-                    if (e.target.checked) {
-                      updated.push(item.value);
-                    } else {
-                      updated = updated.filter((v) => v !== item.value);
-                    }
-                    handleCustomChange("personalHiddenFields", updated);
-                  }}
-                />
-                <span className="text-sm text-gray-700">{item.label}</span>
-              </label>
-            );
-          })}
-        </div>
-      </div>
-      {/* Actions */}
 
       <div className="mt-4 flex justify-end">
         <button
           type="button"
           onClick={() => {
-            // basic guard example: email must be valid if present
-            if (
-              !formData.email ||
-              !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)
-            ) {
-              // if you use a snackbar, you can show an error; otherwise noop
-              // enqueueSnackbar?.("Please enter a valid email", { variant: "error" });
+            if (!formData.email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
               return;
             }
             onAskConfirm?.("pi", "Personal Details", () => savePersonalInfo());

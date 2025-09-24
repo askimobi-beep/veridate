@@ -184,21 +184,56 @@ export default function RegisterPage() {
 
         {/* Real Google Sign-In (same as LoginPage) */}
         <div className="space-y-3">
+          {/* Google */}
           <div className="w-full max-w-[400px] mx-auto">
             <GoogleSignIn
-              // surface any auth errors through your snackbar
               onError={(msg) =>
                 enqueueSnackbar(msg || "Google sign-in failed.", {
                   variant: "error",
                 })
               }
-              // if your component exposes onSuccess, you can redirect here.
               // onSuccess={() => (window.location.href = "/")}
             />
           </div>
 
-          {/* If you add Facebook later, mirror the LoginPage usage */}
-          {/* <FacebookSignIn onError={(msg)=>enqueueSnackbar(msg || 'Facebook sign-in failed.', { variant: 'error' })} /> */}
+          {/* LinkedIn */}
+          <div className="w-full max-w-[400px] mx-auto">
+            <Button
+              type="button"
+              onClick={() => {
+                try {
+                  // hook up your LinkedIn login flow here
+                  console.log("LinkedIn sign in clicked");
+                } catch (err) {
+                  enqueueSnackbar(err?.message || "LinkedIn sign-in failed.", {
+                    variant: "error",
+                  });
+                }
+              }}
+              className="w-full bg-[#0A66C2] hover:bg-[#004182] text-white font-semibold flex items-center justify-center gap-2"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 448 512"
+                className="w-5 h-5"
+                fill="currentColor"
+              >
+                <path d="M100.28 448H7.4V148.9h92.88zm-46.44-341C24 107 0 83 0 53.4a53.4 53.4 0 11106.8 0c0 29.6-23.9 53.6-53 53.6zM447.9 448h-92.4V302.4c0-34.7-12.5-58.4-43.6-58.4-23.8 0-38 16-44.3 31.4-2.3 5.6-2.9 13.4-2.9 21.3V448h-92.4s1.2-260.2 0-286.1h92.4v40.6c12.3-19 34.3-46.1 83.5-46.1 61 0 107 39.8 107 125.2V448z" />
+              </svg>
+              Continue with LinkedIn
+            </Button>
+          </div>
+
+          {/* Future Facebook */}
+          {/* <div className="w-full max-w-[400px] mx-auto">
+    <FacebookSignIn
+      onError={(msg) =>
+        enqueueSnackbar(msg || "Facebook sign-in failed.", {
+          variant: "error",
+        })
+      }
+    />
+  </div> */}
         </div>
 
         {/* Already have account */}

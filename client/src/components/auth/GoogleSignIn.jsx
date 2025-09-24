@@ -22,7 +22,7 @@ export default function GoogleSignIn({ onError }) {
       <GoogleLogin
         ux_mode="popup"
         theme="filled_blue"
-        text="signin_with"
+        text="continue_with"
         shape="rectangular"
         size="large"
         width={w || undefined} // when 0 on first render, let Google choose; updates right after

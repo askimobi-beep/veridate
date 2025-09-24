@@ -192,6 +192,7 @@ export default function usePersonalInformationForm() {
       fd.append("email", formData.email || "");
       fd.append("fatherName", formData.fatherName || "");
       fd.append("mobile", formData.mobile || "");
+      fd.append("mobileCountryCode", formData.mobileCountryCode || "+92"); // 👈 ADD THIS
       fd.append("cnic", formData.cnic || "");
       fd.append("city", formData.city || "");
       fd.append("country", formData.country || "");
@@ -239,6 +240,8 @@ export default function usePersonalInformationForm() {
       setSaving(false);
     }
   };
+
+
 
   const saveProfilePhoto = async () => {
     setSaving(true);

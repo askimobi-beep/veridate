@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { FileText, Save } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import BlockSwitch from "@/components/form/Switch";
-import CreditBadge from "../creditshow/CreditBadge";
+import CreditText from "../creditshow/CreditBadge";
 
 // ------ dropdown options ------
 const jobTitles = [
@@ -21,14 +21,7 @@ const jobTitles = [
   "Other",
 ];
 
-const companies = [
-  "Google",
-  "Microsoft",
-  "Amazon",
-  "Meta",
-  "Apple",
-  "Other",
-];
+const companies = ["Google", "Microsoft", "Amazon", "Meta", "Apple", "Other"];
 
 const industries = [
   "Software",
@@ -81,16 +74,16 @@ export default function ExperienceForm({
   updateExperience,
   addExperience,
   removeExperience,
-  locked,            // section-level lock
-  letterRefs,        // refs array for per-row uploader
-  expCreditByKey,    // optional Map for credits
-  saveExperience,    // (index, row) -> row-wise save
-  onAskConfirm,      // (value, title, actionFn)
-  isRowSaving,       // (index) => boolean
+  locked, // section-level lock
+  letterRefs, // refs array for per-row uploader
+  expCreditByKey, // optional Map for credits
+  saveExperience, // (index, row) -> row-wise save
+  onAskConfirm, // (value, title, actionFn)
+  isRowSaving, // (index) => boolean
 }) {
   const norm = (s) => (s || "").trim().toLowerCase().replace(/\s+/g, " ");
 
-  // derive "Other" mode for selects: if value isn't in the list, we treat it as custom
+  // derive "Other" mode for selects
   const isOtherSelected = (list, value) => !!value && !list.includes(value);
 
   return (
@@ -106,8 +99,10 @@ export default function ExperienceForm({
           const jobTitleOther = isOtherSelected(jobTitles, exp.jobTitle);
           const companyOther = isOtherSelected(companies, exp.company);
 
-          const jobTitleSelectValue = jobTitleOther ? "Other" : (exp.jobTitle || "");
-          const companySelectValue = companyOther ? "Other" : (exp.company || "");
+          const jobTitleSelectValue = jobTitleOther
+            ? "Other"
+            : exp.jobTitle || "";
+          const companySelectValue = companyOther ? "Other" : exp.company || "";
 
           const isCompanyWebsiteValid = companyWebsiteRegex.test(
             (exp.companyWebsite || "").trim()
@@ -117,30 +112,38 @@ export default function ExperienceForm({
           const bucket =
             key && expCreditByKey?.get ? expCreditByKey.get(key) : null;
 
+          // compute credits for simple text line
+          const available = bucket?.available ?? 0;
+          const used = bucket?.used ?? 0;
+          const total =
+            typeof bucket?.total === "number" ? bucket.total : available + used;
+
           return (
             <motion.div
               key={index}
               layout
               className="origin-top mb-6 p-5 rounded-2xl border border-gray-200 bg-white shadow-sm space-y-4"
             >
+             
               {/* Row header */}
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <span className="text-sm font-semibold text-gray-800">
-                    Experience {index + 1}
-                  </span>
-
-                  {bucket ? (
-                    <CreditBadge
-                      label={bucket.company || "—"}
-                      available={bucket.available ?? 0}
-                      used={bucket.used ?? 0}
-                      total={bucket.total}
-                    />
-                  ) : null}
+              <div className="mb-1 text-left">
+                <div className="text-lg font-bold text-gray-900">
+                  {exp?._id && (exp.jobTitle || "").trim()
+                    ? exp.jobTitle
+                    : `Experience ${index + 1}`}
                 </div>
-              </div>
 
+                {/* Plain text credits under the heading */}
+                {bucket ? (
+                  <div className="mt-0.5 text-left">
+                    <CreditText
+                      available={available}
+                      used={used}
+                      total={total}
+                    />
+                  </div>
+                ) : null}
+              </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {/* Job Title (dropdown + optional "Other" input) */}
                 <div className="flex flex-col gap-2">
@@ -151,13 +154,10 @@ export default function ExperienceForm({
                     onChange={(e) => {
                       const val = e.target.value;
                       if (val === "Other") {
-                        // when switching to Other, keep current if it's already custom, else clear
                         if (!jobTitleOther) {
-                          // clear to let user type
                           updateExperience(index, "jobTitle", "");
                         }
                       } else {
-                        // picked from list => set directly
                         updateExperience(index, "jobTitle", val);
                       }
                     }}
@@ -326,7 +326,6 @@ export default function ExperienceForm({
                   />
                 </div>
               </div>
-
               {/* Row actions */}
               <div className="flex justify-end gap-3 pt-1">
                 {!rowLocked && (
@@ -348,7 +347,6 @@ export default function ExperienceForm({
                   onClick={(e) => {
                     e.stopPropagation(); // don’t toggle accordion
 
-                    // validate URL again
                     const val = (exp.companyWebsite || "").trim();
                     if (!companyWebsiteRegex.test(val)) {
                       updateExperience(
@@ -360,7 +358,6 @@ export default function ExperienceForm({
                     }
                     updateExperience(index, "error_companyWebsite", "");
 
-                    // row-wise confirm & save
                     onAskConfirm?.(
                       `experience:${index}`,
                       `Experience ${index + 1}`,

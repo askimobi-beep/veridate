@@ -34,16 +34,16 @@ export default function Navbar() {
       <div className="w-full mx-auto px-3 sm:px-4 md:px-6">
         {/* 3-col: search | logo | user */}
         <div className="h-16 grid grid-cols-3 items-center gap-3">
-          {/* Left: Search */}
+          {/* Left: Logo */}
           <div className="flex items-center">
-            <SearchBar onSearch={goDirectory} />
-          </div>
-
-          {/* Center: Logo */}
-          <div className="flex items-center justify-center">
             <Link to="/" className="inline-flex items-center">
               <img src={logo} alt="Veridate Logo" className="h-12 w-auto" />
             </Link>
+          </div>
+
+          {/* Center: Directory Search */}
+          <div className="flex items-center justify-center">
+            <SearchBar onSearch={goDirectory} />
           </div>
 
           {/* Right: User menu / Login */}

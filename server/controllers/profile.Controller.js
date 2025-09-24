@@ -66,84 +66,143 @@ function redactEduExpArrays(p) {
   return p;
 }
 
-/* =========================
-   CREATE PROFILE (kept)
-   ========================= */
-exports.createProfile = async (req, res) => {
-  try {
-    const {
-      name,
-      email,
-      fatherName,
-      mobile,
-      cnic,
-      city,
-      country,
-      gender,
-      maritalStatus,
-      residentStatus,
-      nationality,
-      dob,
-      shiftPreferences,
-      workAuthorization,
-    } = req.body;
 
-    const education = req.body.education ? JSON.parse(req.body.education) : [];
-    const degreeFiles = req.files?.educationFiles || [];
-
-    // match by index on initial create
-    education.forEach((edu, index) => {
-      edu.degreeFile = degreeFiles[index]?.filename || "";
-    });
-
-    const newProfile = new Profile({
-      name,
-      email,
-      fatherName,
-      mobile,
-      cnic,
-      city,
-      country,
-      gender,
-      maritalStatus,
-      residentStatus,
-      nationality,
-      dob,
-      shiftPreferences: Array.isArray(shiftPreferences)
-        ? shiftPreferences
-        : JSON.parse(shiftPreferences || "[]"),
-      workAuthorization: Array.isArray(workAuthorization)
-        ? workAuthorization
-        : JSON.parse(workAuthorization || "[]"),
-      resume: req.files?.resume?.[0]?.filename,
-      profilePic: req.files?.profilePic?.[0]?.filename,
-      education,
-      user: req.user.id,
-    });
-
-    await newProfile.save();
-
-    res.status(201).json({
-      message: "Profile created successfully",
-      newProfile,
-    });
-  } catch (error) {
-    console.error("Profile creation failed", error);
-    res.status(500).json({ error: "Internal Server Error" });
-  }
+const normalizeDigits = (s) => (s || "").replace(/\D+/g, ""); // keep only 0-9
+const normalizeCode = (s) => {
+  const t = (s || "").trim();
+  if (!t) return "";
+  const digits = t.replace(/[^\d]/g, "");
+  return digits ? `+${digits}` : "";
 };
+
+
 
 /* =========================
    SAVE PERSONAL INFO
    ========================= */
+// exports.savePersonalInfo = async (req, res) => {
+//   try {
+//     const userId = req.user.id;
+//     const profile = await Profile.findOne({ user: userId });
+
+//     const ALLOWED_WHEN_LOCKED = new Set([
+//       "email",
+//       "mobile",
+//       "maritalStatus",
+//       "city",
+//       "country",
+//       "residentStatus",
+//       "nationality",
+//       "shiftPreferences",
+//       "workAuthorization",
+//       "personalHiddenFields",
+//     ]);
+
+//     const filesUpdate = {};
+//     if (req.files?.resume?.[0])
+//       filesUpdate.resume = req.files.resume[0].filename;
+//     if (req.files?.profilePic?.[0])
+//       filesUpdate.profilePic = req.files.profilePic[0].filename;
+
+//     const fields = [
+//       "name",
+//       "email",
+//       "fatherName",
+//       "mobile",
+//       "cnic",
+//       "city",
+//       "country",
+//       "gender",
+//       "maritalStatus",
+//       "residentStatus",
+//       "nationality",
+//       "dob",
+//       "shiftPreferences",
+//       "workAuthorization",
+//       "personalHiddenFields",
+//     ];
+
+//     const bodyUpdate = {};
+//     for (const key of fields) {
+//       if (req.body[key] !== undefined) {
+//         if (
+//           key === "shiftPreferences" ||
+//           key === "workAuthorization" ||
+//           key === "personalHiddenFields"
+//         ) {
+//           try {
+//             bodyUpdate[key] = Array.isArray(req.body[key])
+//               ? req.body[key]
+//               : JSON.parse(req.body[key] || "[]");
+//           } catch {
+//             bodyUpdate[key] = [];
+//           }
+//         } else {
+//           bodyUpdate[key] = req.body[key];
+//         }
+//       }
+//     }
+
+//     if (profile) {
+//       if (filesUpdate.resume && profile.resume)
+//         removeOldPersonalFile("resume", profile.resume);
+//       if (filesUpdate.profilePic && profile.profilePic)
+//         removeOldPersonalFile("profilePic", profile.profilePic);
+//     }
+
+//     if (!profile?.personalInfoLocked) {
+//       const updated = await Profile.findOneAndUpdate(
+//         { user: userId },
+//         { $set: { ...bodyUpdate, ...filesUpdate, personalInfoLocked: true } },
+//         { new: true, upsert: true }
+//       );
+//       return res
+//         .status(200)
+//         .json({ message: "Personal info saved & locked", profile: updated });
+//     }
+
+//     const lockedUpdate = {};
+//     for (const [k, v] of Object.entries(bodyUpdate)) {
+//       if (ALLOWED_WHEN_LOCKED.has(k)) lockedUpdate[k] = v;
+//     }
+//     Object.assign(lockedUpdate, filesUpdate);
+
+//     if (!Object.keys(lockedUpdate).length) {
+//       return res
+//         .status(403)
+//         .json({
+//           error:
+//             "This section is locked. Only permitted fields can be updated.",
+//         });
+//     }
+
+//     const updated = await Profile.findOneAndUpdate(
+//       { user: userId },
+//       { $set: lockedUpdate },
+//       { new: true }
+//     );
+//     return res
+//       .status(200)
+//       .json({ message: "Personal info updated", profile: updated });
+//   } catch (err) {
+//     console.error(err);
+//     res.status(500).json({ error: "Failed to save personal info" });
+//   }
+// };
+
+// add next to savePersonalInfo
+
+
 exports.savePersonalInfo = async (req, res) => {
   try {
     const userId = req.user.id;
     const profile = await Profile.findOne({ user: userId });
 
+    // fields allowed to update when section is locked
     const ALLOWED_WHEN_LOCKED = new Set([
       "email",
       "mobile",
+      "mobileCountryCode", // 👈 allow code to come through when locked
       "maritalStatus",
       "city",
       "country",
@@ -154,17 +213,18 @@ exports.savePersonalInfo = async (req, res) => {
       "personalHiddenFields",
     ]);
 
+    // file payloads (unchanged)
     const filesUpdate = {};
-    if (req.files?.resume?.[0])
-      filesUpdate.resume = req.files.resume[0].filename;
-    if (req.files?.profilePic?.[0])
-      filesUpdate.profilePic = req.files.profilePic[0].filename;
+    if (req.files?.resume?.[0]) filesUpdate.resume = req.files.resume[0].filename;
+    if (req.files?.profilePic?.[0]) filesUpdate.profilePic = req.files.profilePic[0].filename;
 
+    // read body fields (now includes mobileCountryCode)
     const fields = [
       "name",
       "email",
       "fatherName",
       "mobile",
+      "mobileCountryCode", // 👈 NEW
       "cnic",
       "city",
       "country",
@@ -181,11 +241,7 @@ exports.savePersonalInfo = async (req, res) => {
     const bodyUpdate = {};
     for (const key of fields) {
       if (req.body[key] !== undefined) {
-        if (
-          key === "shiftPreferences" ||
-          key === "workAuthorization" ||
-          key === "personalHiddenFields"
-        ) {
+        if (key === "shiftPreferences" || key === "workAuthorization" || key === "personalHiddenFields") {
           try {
             bodyUpdate[key] = Array.isArray(req.body[key])
               ? req.body[key]
@@ -199,24 +255,37 @@ exports.savePersonalInfo = async (req, res) => {
       }
     }
 
-    if (profile) {
-      if (filesUpdate.resume && profile.resume)
-        removeOldPersonalFile("resume", profile.resume);
-      if (filesUpdate.profilePic && profile.profilePic)
-        removeOldPersonalFile("profilePic", profile.profilePic);
+    // 👇 merge country code + local number into a single mobile string
+    // example: code "+92" and number "3001234567" -> "+923001234567"
+    {
+      const code = normalizeCode(bodyUpdate.mobileCountryCode || req.body.mobileCountryCode);
+      const num = normalizeDigits(bodyUpdate.mobile || req.body.mobile);
+
+      if (num) {
+        bodyUpdate.mobile = code ? `${code}${num}` : num;
+      }
+
+      // if you DON'T want to store mobileCountryCode separately in the DB:
+      delete bodyUpdate.mobileCountryCode;
     }
 
+    // cleanup old files if replacing
+    if (profile) {
+      if (filesUpdate.resume && profile.resume) removeOldPersonalFile?.("resume", profile.resume);
+      if (filesUpdate.profilePic && profile.profilePic) removeOldPersonalFile?.("profilePic", profile.profilePic);
+    }
+
+    // if section not locked yet → set + lock
     if (!profile?.personalInfoLocked) {
       const updated = await Profile.findOneAndUpdate(
         { user: userId },
         { $set: { ...bodyUpdate, ...filesUpdate, personalInfoLocked: true } },
         { new: true, upsert: true }
       );
-      return res
-        .status(200)
-        .json({ message: "Personal info saved & locked", profile: updated });
+      return res.status(200).json({ message: "Personal info saved & locked", profile: updated });
     }
 
+    // section locked → only allow selected fields
     const lockedUpdate = {};
     for (const [k, v] of Object.entries(bodyUpdate)) {
       if (ALLOWED_WHEN_LOCKED.has(k)) lockedUpdate[k] = v;
@@ -226,10 +295,7 @@ exports.savePersonalInfo = async (req, res) => {
     if (!Object.keys(lockedUpdate).length) {
       return res
         .status(403)
-        .json({
-          error:
-            "This section is locked. Only permitted fields can be updated.",
-        });
+        .json({ error: "This section is locked. Only permitted fields can be updated." });
     }
 
     const updated = await Profile.findOneAndUpdate(
@@ -237,16 +303,15 @@ exports.savePersonalInfo = async (req, res) => {
       { $set: lockedUpdate },
       { new: true }
     );
-    return res
-      .status(200)
-      .json({ message: "Personal info updated", profile: updated });
+
+    return res.status(200).json({ message: "Personal info updated", profile: updated });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Failed to save personal info" });
   }
 };
 
-// add next to savePersonalInfo
+
 exports.saveProfilePhoto = async (req, res) => {
   try {
     const userId = req.user.id;

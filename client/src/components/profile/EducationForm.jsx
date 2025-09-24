@@ -59,12 +59,12 @@ export default function EducationForm({
   updateEducation,
   addEducation,
   removeEducation,
-  locked,           // section-level lock
+  locked, // section-level lock
   degreeRefs,
   eduCreditByKey,
-  saveEducation,    // (index, row)
-  onAskConfirm,     // (sectionValue, sectionTitle, actionFn)
-  isRowSaving,      // (index) => boolean
+  saveEducation, // (index, row)
+  onAskConfirm, // (sectionValue, sectionTitle, actionFn)
+  isRowSaving, // (index) => boolean
 }) {
   const norm = (s) => (s || "").trim().toLowerCase().replace(/\s+/g, " ");
   const websiteRegex = /^https:\/\/[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
@@ -73,7 +73,6 @@ export default function EducationForm({
     <>
       <AnimatePresence initial={false}>
         {educationList.map((edu, index) => {
-          // ✅ respect per-row lock immediately, fallback to section lock for saved rows with _id
           const rowLocked = !!edu?.rowLocked || (!!edu?._id && locked);
           const savingThis =
             typeof isRowSaving === "function" ? isRowSaving(index) : false;
@@ -92,25 +91,28 @@ export default function EducationForm({
               layout
               className="origin-top mb-6 p-5 rounded-2xl border border-gray-200 bg-white shadow-sm space-y-4"
             >
+            
               {/* Row header */}
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <span className="text-sm font-semibold text-gray-800">
-                    Education {index + 1}
-                  </span>
+              <div className="mb-1 text-left">
+                <div className="text-lg font-bold text-gray-900">
+                  {edu?._id && (edu.degreeTitle || "").trim()
+                    ? edu.degreeTitle
+                    : `Education ${index + 1}`}
+                </div>
 
-                  {bucket ? (
+                {bucket ? (
+                  <div className="mt-1 text-sm">
                     <CreditBadge
                       label={bucket.institute || "—"}
                       available={bucket.available ?? 0}
                       used={bucket.used ?? 0}
                       total={bucket.total}
                     />
-                  ) : null}
-                </div>
+                  </div>
+                ) : null}
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
                 <AppSelect
                   name={`degreeTitle-${index}`}
                   label="Degree Title"
@@ -234,7 +236,7 @@ export default function EducationForm({
                     variant="destructive"
                     type="button"
                     onClick={(e) => {
-                      e.stopPropagation(); // prevent bubbling to accordion header
+                      e.stopPropagation();
                       removeEducation(index);
                     }}
                   >
@@ -246,7 +248,7 @@ export default function EducationForm({
                   type="button"
                   disabled={savingThis || !isWebsiteValid}
                   onClick={(e) => {
-                    e.stopPropagation(); // prevent bubbling to accordion header
+                    e.stopPropagation();
                     const val = (edu.instituteWebsite || "").trim();
                     if (!websiteRegex.test(val)) {
                       updateEducation(
