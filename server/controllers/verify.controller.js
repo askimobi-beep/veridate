@@ -2,11 +2,7 @@ const mongoose = require("mongoose");
 const Profile = require("../models/Profile");
 const User = require("../models/auth.model");
 
-// if you already have this util, import it; otherwise this fallback is fine.
-const {
-  normalizeInstitute = (s) => (s || "").trim().toLowerCase().replace(/\s+/g, " "),
-  normalizeCompany = (s) => (s || "").trim().toLowerCase().replace(/\s+/g, " "),
-} = require("../utils/normalize") || {};
+
 
 const toStr = (v) => String(v);
 const extractHex24 = (s) => (s || "").trim().match(/^[a-f0-9]{24}$/i)?.[0];
@@ -35,6 +31,18 @@ const summarizeEduCredits = (userDoc) => {
 
   return { buckets, totals: { ...totals, total: totals.available + totals.used } };
 };
+
+
+const normalize = (val) => {
+  if (val == null) return "";
+  // coerce non-strings safely
+  const s = typeof val === "string" ? val : String(val);
+  return s.trim().toLowerCase().replace(/\s+/g, " ");
+};
+
+const normalizeInstitute = normalize;
+const normalizeCompany = normalize;
+
 
 
 

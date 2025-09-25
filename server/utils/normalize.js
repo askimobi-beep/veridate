@@ -1,7 +1,9 @@
-const normalizeUtils = require("../utils/normalize");
-const normalizeInstitute =
-  normalizeUtils?.normalizeInstitute ||
-  ((s) => (s || "").trim().toLowerCase().replace(/\s+/g, " "));
-const normalizeCompany =
-  normalizeUtils?.normalizeCompany ||
-  ((s) => (s || "").trim().toLowerCase().replace(/\s+/g, " "));
+function normalizeText(s) {
+  return (s || "").trim().toLowerCase().replace(/\s+/g, " ");
+}
+
+// Export as an object (CommonJS)
+module.exports = {
+  normalizeInstitute: normalizeText,
+  normalizeCompany: normalizeText,
+};
