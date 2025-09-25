@@ -3,9 +3,10 @@ const Profile = require("../models/Profile");
 const User = require("../models/auth.model");
 
 // if you already have this util, import it; otherwise this fallback is fine.
-const normalizeInstitute =
-  require("../utils/normalize")?.normalizeInstitute ||
-  ((s) => (s || "").trim().toLowerCase().replace(/\s+/g, " "));
+const {
+  normalizeInstitute = (s) => (s || "").trim().toLowerCase().replace(/\s+/g, " "),
+  normalizeCompany = (s) => (s || "").trim().toLowerCase().replace(/\s+/g, " "),
+} = require("../utils/normalize") || {};
 
 const toStr = (v) => String(v);
 const extractHex24 = (s) => (s || "").trim().match(/^[a-f0-9]{24}$/i)?.[0];

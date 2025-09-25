@@ -2,14 +2,12 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import axiosInstance from "@/utils/axiosInstance";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, FileText, Briefcase, CheckCircle2 } from "lucide-react";
 import AccordionSection from "@/components/common/AccordionSection";
-import { FileText, Briefcase, CheckCircle2 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-
 import {
   SectionWrapper,
   DefinitionList,
@@ -17,22 +15,18 @@ import {
   SubSection,
   LinkText,
 } from "@/components/directory/DetailBlocks";
-
 import { useSnackbar } from "notistack";
 import { useAuth } from "@/context/AuthContext";
 
 const fmtDate = (d) => (d ? new Date(d).toLocaleDateString() : "");
 const joinArr = (a) => (Array.isArray(a) && a.length ? a.join(", ") : "");
 
-// guard: must be real Mongo ObjectIds
 const isHex24 = (s) => typeof s === "string" && /^[a-f0-9]{24}$/i.test(s);
 
-// mirror backend normalization
 const normalize = (s) => (s || "").trim().toLowerCase().replace(/\s+/g, " ");
 const normalizeInstitute = normalize;
 const normalizeCompany = normalize;
 
-// credits → Map(key -> {available, used})
 const creditsToMap = (arr, keyField) => {
   const out = new Map();
   (arr || []).forEach((b) => {
@@ -46,7 +40,6 @@ const creditsToMap = (arr, keyField) => {
   return out;
 };
 
-// per-row status
 function eduStatus({ row, meId, meProfile, eduCreditMap }) {
   const already =
     Array.isArray(row?.verifiedBy) &&
@@ -91,28 +84,27 @@ function expStatus({ row, meId, meProfile, expCreditMap }) {
   return "eligible";
 }
 
-// hard color classes per status
 const btnStyleByStatus = (status) => {
   switch (status) {
     case "already-verified":
       return "bg-green-600 hover:bg-green-600 text-white disabled:opacity-100 cursor-default";
-    case "eligible": // blue
+    case "eligible":
       return "bg-blue-600 hover:bg-blue-600 text-white disabled:opacity-100";
-    case "no-credits": // amber
+    case "no-credits":
       return "bg-amber-500 hover:bg-amber-500 text-black disabled:opacity-100 cursor-not-allowed";
-    case "ineligible": // red
+    case "ineligible":
     default:
       return "bg-red-600 hover:bg-red-600 text-white disabled:opacity-100 cursor-not-allowed";
   }
 };
 
 export default function DetailPage() {
-  const { userId } = useParams(); // target user id from route
+  const { userId } = useParams();
   const { enqueueSnackbar } = useSnackbar();
-  const { user: authUser, checkAuth } = useAuth(); // needs _id + verifyCredits.*
+  const { user: authUser, checkAuth } = useAuth();
 
-  const [profile, setProfile] = useState(null); // target profile
-  const [meProfile, setMeProfile] = useState(null); // current user's profile
+  const [profile, setProfile] = useState(null);
+  const [meProfile, setMeProfile] = useState(null);
   const [openValue, setOpenValue] = useState("personal");
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState("");
@@ -123,19 +115,14 @@ export default function DetailPage() {
     () => axiosInstance.defaults.baseURL?.replace(/\/$/, ""),
     []
   );
-
   const navigate = useNavigate();
-
-  // remove `/api/v1` if present for file links
-  const fileBaseURL = useMemo(() => {
-    if (!baseURL) return "";
-    return baseURL.replace(/\/api\/v1$/, "");
-  }, [baseURL]);
-
+  const fileBaseURL = useMemo(
+    () => (baseURL ? baseURL.replace(/\/api\/v1$/, "") : ""),
+    [baseURL]
+  );
   const fileUrl = (type, name) =>
     name && fileBaseURL ? `${fileBaseURL}/uploads/${type}/${name}` : undefined;
 
-  // fetch target + me profile
   useEffect(() => {
     let off = false;
     (async () => {
@@ -164,7 +151,6 @@ export default function DetailPage() {
     };
   }, [userId]);
 
-  // credit maps
   const eduCreditMap = useMemo(() => {
     const buckets = authUser?.verifyCredits?.education || [];
     return creditsToMap(buckets, "instituteKey");
@@ -175,20 +161,11 @@ export default function DetailPage() {
     return creditsToMap(buckets, "companyKey");
   }, [authUser]);
 
-  // verify education
+  // === Verify Education ===
   const onVerifyEdu = async (eduId) => {
     try {
       if (!isHex24(userId) || !isHex24(eduId)) {
         enqueueSnackbar("Bad ids: target user or education id is invalid.", {
-          variant: "error",
-        });
-        return;
-      }
-      const existsLocally =
-        Array.isArray(profile?.education) &&
-        profile.education.some((row) => String(row._id) === String(eduId));
-      if (!existsLocally) {
-        enqueueSnackbar("This education row doesn’t belong to this profile.", {
           variant: "error",
         });
         return;
@@ -200,22 +177,25 @@ export default function DetailPage() {
       )}/verify/education/${encodeURIComponent(eduId)}`;
       const { data } = await axiosInstance.post(url);
 
-      const nextEducation = profile.education.map((row) => {
-        const found = data?.education?.find(
-          (r) => String(r._id) === String(row._id)
-        );
-        return found
+      const updatedRow = data?.education?.find(
+        (r) => String(r._id) === String(eduId)
+      );
+
+      const nextEducation = profile.education.map((row) =>
+        String(row._id) === String(eduId)
           ? {
               ...row,
-              verifyCount: found.verifyCount,
-              verifiedBy: [...(row.verifiedBy || []), authUser?._id],
+              verifyCount: updatedRow?.verifyCount ?? (row.verifyCount || 0) + 1,
+              verifiedBy: updatedRow?.verifiedBy ?? [
+                ...(row.verifiedBy || []),
+                authUser?._id,
+              ],
             }
-          : row;
-      });
-      setProfile((p) => ({ ...p, education: nextEducation }));
+          : row
+      );
 
-      // enqueueSnackbar("Education verified. Thanks for contributing!", { variant: "success" });
-      await checkAuth(); // refresh credits
+      setProfile((p) => ({ ...p, education: nextEducation }));
+      await checkAuth();
     } catch (e) {
       enqueueSnackbar(
         e?.response?.data?.message ||
@@ -228,20 +208,11 @@ export default function DetailPage() {
     }
   };
 
-  // verify experience
+  // === Verify Experience ===
   const onVerifyExp = async (expId) => {
     try {
       if (!isHex24(userId) || !isHex24(expId)) {
         enqueueSnackbar("Bad ids: target user or experience id is invalid.", {
-          variant: "error",
-        });
-        return;
-      }
-      const existsLocally =
-        Array.isArray(profile?.experience) &&
-        profile.experience.some((row) => String(row._id) === String(expId));
-      if (!existsLocally) {
-        enqueueSnackbar("This experience row doesn’t belong to this profile.", {
           variant: "error",
         });
         return;
@@ -253,21 +224,25 @@ export default function DetailPage() {
       )}/verify/experience/${encodeURIComponent(expId)}`;
       const { data } = await axiosInstance.post(url);
 
-      const nextExperience = profile.experience.map((row) => {
-        const found = data?.experience?.find(
-          (r) => String(r._id) === String(row._id)
-        );
-        return found
+      const updatedRow = data?.experience?.find(
+        (r) => String(r._id) === String(expId)
+      );
+
+      const nextExperience = profile.experience.map((row) =>
+        String(row._id) === String(expId)
           ? {
               ...row,
-              verifyCount: found.verifyCount,
-              verifiedBy: [...(row.verifiedBy || []), authUser?._id],
+              verifyCount:
+                updatedRow?.verifyCount ?? (row.verifyCount || 0) + 1,
+              verifiedBy: updatedRow?.verifiedBy ?? [
+                ...(row.verifiedBy || []),
+                authUser?._id,
+              ],
             }
-          : row;
-      });
-      setProfile((p) => ({ ...p, experience: nextExperience }));
+          : row
+      );
 
-      // enqueueSnackbar("Experience verified. Appreciate it!", { variant: "success" });
+      setProfile((p) => ({ ...p, experience: nextExperience }));
       await checkAuth();
     } catch (e) {
       enqueueSnackbar(
@@ -310,42 +285,32 @@ export default function DetailPage() {
             Back
           </Button>
         </div>
+
         {/* Header */}
         <Card className="mb-6">
           <CardContent className="p-5 md:p-6 flex items-center gap-4 md:gap-6">
             <Avatar className="h-16 w-16 rounded-lg">
-              {avatarUrl ? (
-                <AvatarImage src={avatarUrl} alt={fullName} />
-              ) : null}
+              {avatarUrl ? <AvatarImage src={avatarUrl} alt={fullName} /> : null}
               <AvatarFallback className="rounded-lg">
                 {initials(fullName)}
               </AvatarFallback>
             </Avatar>
-
             <div className="flex-1">
               <div className="flex flex-wrap items-center gap-2">
-                <h1 className="text-xl md:text-2xl font-semibold">
-                  {fullName}
-                </h1>
+                <h1 className="text-xl md:text-2xl font-semibold">{fullName}</h1>
                 {profile?.gender ? (
                   <Badge variant="secondary">{profile.gender}</Badge>
                 ) : null}
               </div>
               <div className="mt-0.5 text-sm text-muted-foreground">
-                {profile?.email || "—"}{" "}
-                {profile?.mobile ? `• ${profile.mobile}` : ""}
+                {profile?.email || "—"} {profile?.mobile ? `• ${profile.mobile}` : ""}
               </div>
-              <div className="text-sm text-muted-foreground">
-                {location || "—"}
-              </div>
+              <div className="text-sm text-muted-foreground">{location || "—"}</div>
             </div>
           </CardContent>
         </Card>
 
-        {/* PERSONAL — unchanged */}
-        {/* ... */}
-
-        {/* EDUCATION */}
+        {/* Education */}
         <AccordionSection
           title="Education"
           icon={FileText}
@@ -360,22 +325,17 @@ export default function DetailPage() {
               <div className="space-y-4">
                 {profile.education.map((edu) => {
                   const cnt = edu.verifyCount || 0;
-                  const status = eduStatus({
-                    row: edu,
-                    meId,
-                    meProfile,
-                    eduCreditMap,
-                  });
+                  const status = eduStatus({ row: edu, meId, meProfile, eduCreditMap });
                   const label =
                     status === "already-verified"
-                      ? "Already verified"
+                      ? "Already veridate"
                       : status === "eligible"
                       ? busyEdu === String(edu._id)
                         ? "Verifying…"
-                        : "Verify now"
+                        : "Veridate now"
                       : status === "no-credits"
                       ? "No credits"
-                      : "Not eligible";
+                      : "Mismatch education";
 
                   return (
                     <SubSection key={String(edu._id)}>
@@ -390,8 +350,7 @@ export default function DetailPage() {
                           size="sm"
                           className={btnStyleByStatus(status)}
                           onClick={() =>
-                            status === "eligible" &&
-                            onVerifyEdu(String(edu._id))
+                            status === "eligible" && onVerifyEdu(String(edu._id))
                           }
                           disabled={
                             status !== "eligible" || busyEdu === String(edu._id)
@@ -400,7 +359,6 @@ export default function DetailPage() {
                           {label}
                         </Button>
                       </div>
-
                       <DefinitionList>
                         <DLRow label="Degree Title">{edu.degreeTitle}</DLRow>
                         <DLRow label="Institute">{edu.institute}</DLRow>
@@ -428,14 +386,12 @@ export default function DetailPage() {
                 })}
               </div>
             ) : (
-              <div className="text-sm text-muted-foreground">
-                No education added.
-              </div>
+              <div className="text-sm text-muted-foreground">No education added.</div>
             )}
           </SectionWrapper>
         </AccordionSection>
 
-        {/* EXPERIENCE */}
+        {/* Experience */}
         <AccordionSection
           title="Experience"
           icon={Briefcase}
@@ -450,22 +406,17 @@ export default function DetailPage() {
               <div className="space-y-4">
                 {profile.experience.map((exp) => {
                   const cnt = exp.verifyCount || 0;
-                  const status = expStatus({
-                    row: exp,
-                    meId,
-                    meProfile,
-                    expCreditMap,
-                  });
+                  const status = expStatus({ row: exp, meId, meProfile, expCreditMap });
                   const label =
                     status === "already-verified"
-                      ? "Already verified"
+                      ? "Already veridate"
                       : status === "eligible"
                       ? busyExp === String(exp._id)
                         ? "Verifying…"
-                        : "Verify now"
+                        : "Veridate now"
                       : status === "no-credits"
                       ? "No credits"
-                      : "Not eligible";
+                      : "Mismatch experience";
 
                   return (
                     <SubSection key={String(exp._id)}>
@@ -480,8 +431,7 @@ export default function DetailPage() {
                           size="sm"
                           className={btnStyleByStatus(status)}
                           onClick={() =>
-                            status === "eligible" &&
-                            onVerifyExp(String(exp._id))
+                            status === "eligible" && onVerifyExp(String(exp._id))
                           }
                           disabled={
                             status !== "eligible" || busyExp === String(exp._id)
@@ -490,7 +440,6 @@ export default function DetailPage() {
                           {label}
                         </Button>
                       </div>
-
                       <DefinitionList>
                         <DLRow label="Job Title">{exp.jobTitle}</DLRow>
                         <DLRow label="Company">{exp.company}</DLRow>
@@ -505,19 +454,14 @@ export default function DetailPage() {
                           <LinkText
                             href={
                               exp.experienceLetterFile
-                                ? fileUrl(
-                                    "experience",
-                                    exp.experienceLetterFile
-                                  )
+                                ? fileUrl("experience", exp.experienceLetterFile)
                                 : undefined
                             }
                           >
                             {exp.experienceLetterFile || "—"}
                           </LinkText>
                         </DLRow>
-                        <DLRow label="Job Functions">
-                          {joinArr(exp.jobFunctions)}
-                        </DLRow>
+                        <DLRow label="Job Functions">{joinArr(exp.jobFunctions)}</DLRow>
                         <DLRow label="Industry">{exp.industry}</DLRow>
                       </DefinitionList>
                     </SubSection>
@@ -525,9 +469,7 @@ export default function DetailPage() {
                 })}
               </div>
             ) : (
-              <div className="text-sm text-muted-foreground">
-                No experience added.
-              </div>
+              <div className="text-sm text-muted-foreground">No experience added.</div>
             )}
           </SectionWrapper>
         </AccordionSection>
@@ -542,9 +484,7 @@ function initials(name) {
   return (p[0]?.[0] || "").toUpperCase() + (p[1]?.[0] || "").toUpperCase();
 }
 
-/** Badge color logic — tune thresholds if you want  */
 function badgeClass(count) {
-  // neutral → silver at 3+ → gold at 5+ → blue at 10+
   if (count >= 10) return "bg-blue-500 text-white hover:bg-blue-500";
   if (count >= 5) return "bg-yellow-500 text-black hover:bg-yellow-500";
   if (count >= 3) return "bg-zinc-300 text-zinc-900 hover:bg-zinc-300";

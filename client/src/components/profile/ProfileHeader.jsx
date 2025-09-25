@@ -111,7 +111,7 @@ export default function ProfileHeader({
         <button
           type="button"
           onClick={onShare}
-          className="inline-flex items-center gap-2 rounded px-4 py-2 text-sm font-semibold text-white bg-orange-600 hover:bg-orange-700 active:scale-[0.98] shadow-sm transition"
+          className="inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold text-white bg-orange-600 hover:bg-orange-700 active:scale-[0.98] shadow-sm transition"
           aria-label="Share profile link"
         >
           {copied ? <Check className="h-4 w-4" /> : <Share2 className="h-4 w-4" />}

@@ -175,15 +175,8 @@ export default function RegisterPage() {
           </Button>
         </form>
 
-        {/* Social Signup Options */}
-        <div className="my-6 flex items-center gap-2">
-          <div className="h-px bg-gray-300 flex-1" />
-          <span className="text-gray-500 text-sm">or</span>
-          <div className="h-px bg-gray-300 flex-1" />
-        </div>
-
         {/* Real Google Sign-In (same as LoginPage) */}
-        <div className="space-y-3">
+        <div className="space-y-3 mt-4">
           {/* Google */}
           <div className="w-full max-w-[400px] mx-auto">
             <GoogleSignIn
@@ -234,6 +227,13 @@ export default function RegisterPage() {
       }
     />
   </div> */}
+        </div>
+
+        {/* Social Signup Options */}
+        <div className="my-6 flex items-center gap-2">
+          <div className="h-px bg-gray-300 flex-1" />
+          <span className="text-gray-500 text-sm">or</span>
+          <div className="h-px bg-gray-300 flex-1" />
         </div>
 
         {/* Already have account */}

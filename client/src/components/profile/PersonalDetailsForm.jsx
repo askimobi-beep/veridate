@@ -2,7 +2,7 @@ import React, { useMemo, useState, useEffect } from "react";
 import AppInput from "@/components/form/AppInput";
 import AppSelect from "@/components/form/AppSelect";
 import CheckboxGroup from "@/components/form/CheckboxGroup";
-import { Loader2, Check, CircleHelp, Save } from "lucide-react";
+import { Loader2, CircleCheck, CircleHelp, Save } from "lucide-react";
 import {
   Tooltip,
   TooltipContent,
@@ -37,12 +37,32 @@ const isDisabled = (locked, field) => locked && !PERSONAL_UNLOCKED.has(field);
 
 // keep your list small or wire a proper lib later
 const callingCodes = [
-  "+1", "+7", "+20", "+27",
-  "+30", "+33", "+34", "+39",
-  "+44", "+49", "+52", "+55",
-  "+61", "+62", "+63", "+64", "+65",
-  "+81", "+82", "+86", "+90",
-  "+92", "+94", "+966", "+971", "+972"
+  "+1",
+  "+7",
+  "+20",
+  "+27",
+  "+30",
+  "+33",
+  "+34",
+  "+39",
+  "+44",
+  "+49",
+  "+52",
+  "+55",
+  "+61",
+  "+62",
+  "+63",
+  "+64",
+  "+65",
+  "+81",
+  "+82",
+  "+86",
+  "+90",
+  "+92",
+  "+94",
+  "+966",
+  "+971",
+  "+972",
 ];
 
 export default function PersonalDetailsForm({
@@ -111,7 +131,9 @@ export default function PersonalDetailsForm({
     let cancelled = false;
     const loadCountries = async () => {
       try {
-        const res = await fetch("https://restcountries.com/v3.1/all?fields=name");
+        const res = await fetch(
+          "https://restcountries.com/v3.1/all?fields=name"
+        );
         const data = await res.json();
         const names = data
           .map((c) => c?.name?.common)
@@ -123,7 +145,9 @@ export default function PersonalDetailsForm({
       }
     };
     loadCountries();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   // fetch cities when country changes
@@ -165,7 +189,9 @@ export default function PersonalDetailsForm({
     };
 
     loadCities();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [formData.country]);
 
@@ -175,7 +201,10 @@ export default function PersonalDetailsForm({
         <button
           type="button"
           onClick={() => {
-            if (!formData.email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+            if (
+              !formData.email ||
+              !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)
+            ) {
               return;
             }
             onAskConfirm?.("pi", "Personal Details", () => savePersonalInfo());
@@ -201,11 +230,35 @@ export default function PersonalDetailsForm({
 
         {/* Email: tick in label + in field */}
         <AppInput
-          label={withPrivacy(
-            "Email",
-            "email",
-            emailValid ? <Check className="h-4 w-4 text-green-600" /> : null
-          )}
+          label={
+            <div className="flex items-center gap-2">
+              <span>Email</span>
+              {emailValid && (
+                <TooltipProvider delayDuration={150}>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <div className="flex items-center justify-center w-5 h-5 rounded-full cursor-pointer">
+                        <CircleCheck className="h-5 w-5 text-green-600" />
+                      </div>
+                    </TooltipTrigger>
+                    <TooltipContent
+                      side="right"
+                      align="center"
+                      className="max-w-sm rounded-xl border border-gray-200 shadow-lg p-3 bg-white"
+                    >
+                      <div className="text-sm font-semibold text-gray-900 mb-1">
+                        This email has been verified successfully.
+                      </div>
+                      <p className="text-xs text-gray-600">
+                        Verified emails help keep your account secure and
+                        trusted.
+                      </p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              )}
+            </div>
+          }
           name="email"
           type="email"
           value={formData.email}
@@ -213,7 +266,6 @@ export default function PersonalDetailsForm({
           placeholder="you@example.com"
           autoComplete="email"
           disabled
-          // endAdornment={emailValid ? <Check className="h-4 w-4 text-green-600" /> : null}
         />
 
         <AppInput
@@ -238,7 +290,7 @@ export default function PersonalDetailsForm({
                       <button
                         type="button"
                         aria-label="Mobile number help"
-                        className="rounded-md p-1.5 border border-gray-200 hover:bg-gray-50 text-gray-500 hover:text-gray-700 shadow-sm"
+                        className="rounded-md p-1.5  text-gray-500 hover:text-gray-700"
                       >
                         <CircleHelp className="h-4 w-4" />
                       </button>
@@ -249,14 +301,8 @@ export default function PersonalDetailsForm({
                       className="max-w-sm rounded-xl border border-gray-200 shadow-lg p-3 bg-white"
                     >
                       <div className="text-sm font-semibold text-gray-900 mb-1">
-                        Why we ask for this
-                      </div>
-                      <div className="text-xs text-gray-600">
-                        Add your primary contact number (with country code).
-                        This stays private unless you mark it visible.
-                      </div>
-                      <div className="mt-2 text-xs text-gray-500">
-                        Example: +92 300 1234567
+                        This mobile number has not been verified. Please verify
+                        to secure your account.
                       </div>
                     </TooltipContent>
                   </Tooltip>
@@ -283,11 +329,15 @@ export default function PersonalDetailsForm({
               <select
                 className="h-8 rounded-md text-gray-800 border px-2 pr-6 border-none"
                 value={formData.mobileCountryCode || "+92"}
-                onChange={(e) => handleCustomChange("mobileCountryCode", e.target.value)}
+                onChange={(e) =>
+                  handleCustomChange("mobileCountryCode", e.target.value)
+                }
                 disabled={locked}
               >
                 {callingCodes.map((c) => (
-                  <option key={c} value={c}>{c}</option>
+                  <option key={c} value={c}>
+                    {c}
+                  </option>
                 ))}
               </select>
               <span className="mx-2 h-5 w-px bg-gray-300" />
@@ -320,8 +370,14 @@ export default function PersonalDetailsForm({
               ? "Select city"
               : "No cities found"
           }
-          disabled={isDisabled(locked, "city") || !formData.country || cityLoading}
-          endAdornment={cityLoading ? <Loader2 className="h-4 w-4 animate-spin text-gray-500" /> : null}
+          disabled={
+            isDisabled(locked, "city") || !formData.country || cityLoading
+          }
+          endAdornment={
+            cityLoading ? (
+              <Loader2 className="h-4 w-4 animate-spin text-gray-500" />
+            ) : null
+          }
         />
 
         <AppSelect
@@ -364,12 +420,13 @@ export default function PersonalDetailsForm({
           disabled={isDisabled(locked, "residentStatus")}
         />
 
-        <AppInput
+        <AppSelect
           label="Nationality"
           name="nationality"
           value={formData.nationality}
           onChange={handleChange}
-          placeholder="e.g. Pakistani"
+          options={countriesList}
+          placeholder="Pakistan"
           disabled={isDisabled(locked, "nationality")}
         />
 
@@ -389,7 +446,9 @@ export default function PersonalDetailsForm({
           title="Shift Preferences"
           options={shiftOptions}
           selected={formData.shiftPreferences}
-          onChange={(updated) => handleCustomChange("shiftPreferences", updated)}
+          onChange={(updated) =>
+            handleCustomChange("shiftPreferences", updated)
+          }
           disabled={isDisabled(locked, "shiftPreferences")}
         />
 
@@ -397,7 +456,9 @@ export default function PersonalDetailsForm({
           title="Work Authorization"
           options={workAuthorizationOptions}
           selected={formData.workAuthorization}
-          onChange={(updated) => handleCustomChange("workAuthorization", updated)}
+          onChange={(updated) =>
+            handleCustomChange("workAuthorization", updated)
+          }
           disabled={isDisabled(locked, "workAuthorization")}
         />
       </div>
@@ -406,7 +467,10 @@ export default function PersonalDetailsForm({
         <button
           type="button"
           onClick={() => {
-            if (!formData.email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+            if (
+              !formData.email ||
+              !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)
+            ) {
               return;
             }
             onAskConfirm?.("pi", "Personal Details", () => savePersonalInfo());

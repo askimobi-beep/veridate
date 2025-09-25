@@ -165,15 +165,8 @@ export default function LoginPage() {
             </Button>
           </form>
 
-          {/* Divider */}
-          <div className="my-6 w-full max-w-[400px] flex items-center gap-2">
-            <div className="h-px bg-gray-300 flex-1" />
-            <span className="text-gray-500 text-sm">or</span>
-            <div className="h-px bg-gray-300 flex-1" />
-          </div>
-
           {/* Social Login */}
-          <div className="w-full flex justify-center">
+          <div className="w-full flex justify-center mt-4">
             <div className="w-full max-w-[400px] space-y-3">
               <GoogleSignIn onError={setError} />
 
@@ -200,8 +193,15 @@ export default function LoginPage() {
             </div>
           </div>
 
+          {/* Divider */}
+          <div className="my-4 w-full max-w-[400px] flex items-center gap-2">
+            <div className="h-px bg-gray-300 flex-1" />
+            <span className="text-gray-500 text-sm">or</span>
+            <div className="h-px bg-gray-300 flex-1" />
+          </div>
+
           {/* Register CTA */}
-          <div className="mt-6 text-center text-sm text-gray-600">
+          <div className="mt-1 text-center text-sm text-gray-600">
             Don’t have an account?{" "}
             <Link
               to="/register-user"
