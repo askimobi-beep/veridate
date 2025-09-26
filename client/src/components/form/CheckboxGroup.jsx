@@ -20,7 +20,7 @@ export default function CheckboxGroup({
     <div className="space-y-2">
       {title && (
         <h3 className="text-base font-semibold text-gray-900 flex items-center gap-2">
-          <span className="text-black font-bold">✔</span> {title}
+           {title}
         </h3>
       )}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">

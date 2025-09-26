@@ -9,11 +9,7 @@ import axiosInstance from "@/utils/axiosInstance";
 import { useSnackbar } from "notistack";
 import OtpVerify from "@/components/auth/OtpVerify";
 import logo from "@/assets/logo/logo.png";
-
-// ⬇️ bring in the same GoogleSignIn you used on LoginPage
 import GoogleSignIn from "@/components/auth/GoogleSignIn";
-// (optional) if you plan to add FB later
-// import FacebookSignIn from "@/components/auth/FacebookSignIn";
 
 export default function RegisterPage() {
   const { enqueueSnackbar } = useSnackbar();
@@ -48,9 +44,7 @@ export default function RegisterPage() {
       !formData.email ||
       !formData.password
     ) {
-      enqueueSnackbar("Please fill all required fields.", {
-        variant: "warning",
-      });
+      enqueueSnackbar("Please fill all required fields.", { variant: "warning" });
       return;
     }
     if (formData.password !== formData.confirmPassword) {
@@ -68,7 +62,7 @@ export default function RegisterPage() {
         password: formData.password,
       };
 
-      const { data } = await axiosInstance.post("/auth/register-user", payload);
+      await axiosInstance.post("/auth/register-user", payload);
 
       setLastRegisterPayload(payload);
       setOtpOpen(true);
@@ -88,15 +82,14 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className="min-h-screen w-full bg-gradient-to-br from-white via-[#f7f9fc] to-[#eef3ff] flex items-center justify-center px-4 relative overflow-hidden">
-      <div className="pointer-events-none absolute -top-40 left-1/3 h-[36rem] w-[36rem] rounded-full bg-[radial-gradient(circle_at_center,rgba(56,189,248,0.12),transparent_70%)] blur-3xl" />
-      <div className="pointer-events-none absolute -bottom-48 right-[-10%] h-[34rem] w-[34rem] rounded-full bg-[radial-gradient(circle_at_center,rgba(167,139,250,0.12),transparent_70%)] blur-3xl" />
-
+    
+    <div className="min-h-screen w-full flex items-center justify-center px-4 relative overflow-hidden">
       <motion.div
         initial={{ opacity: 0, y: 40 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
-        className="z-10 w-full max-w-lg bg-white/60 backdrop-blur-xl shadow-xl border border-white/20 rounded-2xl overflow-hidden p-8"
+        /* CHANGED: max-w-lg -> max-w-md to match LoginPage */
+        className="z-10 w-full max-w-md bg-white/60 backdrop-blur-xl shadow-xl border border-white/20 rounded-2xl overflow-hidden p-8"
       >
         {/* Logo */}
         <div className="flex justify-center mb-6">
@@ -104,7 +97,8 @@ export default function RegisterPage() {
         </div>
 
         {/* Register Form */}
-        <form onSubmit={handleRegister} className="space-y-4">
+        {/* CHANGED: cap inner width like LoginPage */}
+        <form onSubmit={handleRegister} className="w-full max-w-[400px] mx-auto space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <AppInput
               name="firstName"
@@ -181,11 +175,8 @@ export default function RegisterPage() {
           <div className="w-full max-w-[400px] mx-auto">
             <GoogleSignIn
               onError={(msg) =>
-                enqueueSnackbar(msg || "Google sign-in failed.", {
-                  variant: "error",
-                })
+                enqueueSnackbar(msg || "Google sign-in failed.", { variant: "error" })
               }
-              // onSuccess={() => (window.location.href = "/")}
             />
           </div>
 
@@ -195,7 +186,6 @@ export default function RegisterPage() {
               type="button"
               onClick={() => {
                 try {
-                  // hook up your LinkedIn login flow here
                   console.log("LinkedIn sign in clicked");
                 } catch (err) {
                   enqueueSnackbar(err?.message || "LinkedIn sign-in failed.", {
@@ -216,21 +206,11 @@ export default function RegisterPage() {
               Continue with LinkedIn
             </Button>
           </div>
-
-          {/* Future Facebook */}
-          {/* <div className="w-full max-w-[400px] mx-auto">
-    <FacebookSignIn
-      onError={(msg) =>
-        enqueueSnackbar(msg || "Facebook sign-in failed.", {
-          variant: "error",
-        })
-      }
-    />
-  </div> */}
         </div>
 
         {/* Social Signup Options */}
-        <div className="my-6 flex items-center gap-2">
+        {/* CHANGED: constrain divider width to match LoginPage */}
+        <div className="my-6 w-full max-w-[400px] mx-auto flex items-center gap-2">
           <div className="h-px bg-gray-300 flex-1" />
           <span className="text-gray-500 text-sm">or</span>
           <div className="h-px bg-gray-300 flex-1" />

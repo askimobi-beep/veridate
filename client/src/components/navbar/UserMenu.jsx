@@ -118,23 +118,23 @@ export default function UserMenu({ user, onLogout }) {
             </div>
 
             {/* Actions */}
-            {/* <div className="py-2">
+            <div className="py-2">
               <button
-                onClick={() => go("/profile")}
+                onClick={() => go("/dashboard")}
                 className="w-full flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition"
               >
                 <User className="h-4 w-4" />
                 Profile
               </button>
 
-              <button
+              {/* <button
                 onClick={() => go("/settings")}
                 className="w-full flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition"
               >
                 <Settings className="h-4 w-4" />
                 Settings
-              </button>
-            </div> */}
+              </button> */}
+            </div>
 
             <div className="h-px bg-gray-100" />
 

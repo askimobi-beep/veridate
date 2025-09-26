@@ -238,7 +238,7 @@ export default function PersonalDetailsForm({
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <div className="flex items-center justify-center w-5 h-5 rounded-full cursor-pointer">
-                        <CircleCheck className="h-5 w-5 text-green-600" />
+                        <CircleCheck className="h-4 w-4 text-green-600" />
                       </div>
                     </TooltipTrigger>
                     <TooltipContent
@@ -247,12 +247,9 @@ export default function PersonalDetailsForm({
                       className="max-w-sm rounded-xl border border-gray-200 shadow-lg p-3 bg-white"
                     >
                       <div className="text-sm font-semibold text-gray-900 mb-1">
-                        This email has been verified successfully.
+                        Verified
                       </div>
-                      <p className="text-xs text-gray-600">
-                        Verified emails help keep your account secure and
-                        trusted.
-                      </p>
+                     
                     </TooltipContent>
                   </Tooltip>
                 </TooltipProvider>
@@ -301,8 +298,7 @@ export default function PersonalDetailsForm({
                       className="max-w-sm rounded-xl border border-gray-200 shadow-lg p-3 bg-white"
                     >
                       <div className="text-sm font-semibold text-gray-900 mb-1">
-                        This mobile number has not been verified. Please verify
-                        to secure your account.
+                        Unverified – Get Verified
                       </div>
                     </TooltipContent>
                   </Tooltip>

@@ -91,7 +91,7 @@ const btnStyleByStatus = (status) => {
     case "eligible":
       return "bg-blue-600 hover:bg-blue-600 text-white disabled:opacity-100";
     case "no-credits":
-      return "bg-amber-500 hover:bg-amber-500 text-black disabled:opacity-100 cursor-not-allowed";
+      return "bg-red-500 hover:bg-amber-500 text-black disabled:opacity-100 cursor-not-allowed";
     case "ineligible":
     default:
       return "bg-red-600 hover:bg-red-600 text-white disabled:opacity-100 cursor-not-allowed";
@@ -185,7 +185,8 @@ export default function DetailPage() {
         String(row._id) === String(eduId)
           ? {
               ...row,
-              verifyCount: updatedRow?.verifyCount ?? (row.verifyCount || 0) + 1,
+              verifyCount:
+                updatedRow?.verifyCount ?? (row.verifyCount || 0) + 1,
               verifiedBy: updatedRow?.verifiedBy ?? [
                 ...(row.verifiedBy || []),
                 authUser?._id,
@@ -290,22 +291,29 @@ export default function DetailPage() {
         <Card className="mb-6">
           <CardContent className="p-5 md:p-6 flex items-center gap-4 md:gap-6">
             <Avatar className="h-16 w-16 rounded-lg">
-              {avatarUrl ? <AvatarImage src={avatarUrl} alt={fullName} /> : null}
+              {avatarUrl ? (
+                <AvatarImage src={avatarUrl} alt={fullName} />
+              ) : null}
               <AvatarFallback className="rounded-lg">
                 {initials(fullName)}
               </AvatarFallback>
             </Avatar>
             <div className="flex-1">
               <div className="flex flex-wrap items-center gap-2">
-                <h1 className="text-xl md:text-2xl font-semibold">{fullName}</h1>
+                <h1 className="text-xl md:text-2xl font-semibold">
+                  {fullName}
+                </h1>
                 {profile?.gender ? (
                   <Badge variant="secondary">{profile.gender}</Badge>
                 ) : null}
               </div>
               <div className="mt-0.5 text-sm text-muted-foreground">
-                {profile?.email || "—"} {profile?.mobile ? `• ${profile.mobile}` : ""}
+                {profile?.email || "—"}{" "}
+                {profile?.mobile ? `• ${profile.mobile}` : ""}
               </div>
-              <div className="text-sm text-muted-foreground">{location || "—"}</div>
+              <div className="text-sm text-muted-foreground">
+                {location || "—"}
+              </div>
             </div>
           </CardContent>
         </Card>
@@ -325,17 +333,22 @@ export default function DetailPage() {
               <div className="space-y-4">
                 {profile.education.map((edu) => {
                   const cnt = edu.verifyCount || 0;
-                  const status = eduStatus({ row: edu, meId, meProfile, eduCreditMap });
+                  const status = eduStatus({
+                    row: edu,
+                    meId,
+                    meProfile,
+                    eduCreditMap,
+                  });
                   const label =
                     status === "already-verified"
-                      ? "Already veridate"
+                      ? "Already Veridate"
                       : status === "eligible"
                       ? busyEdu === String(edu._id)
                         ? "Verifying…"
-                        : "Veridate now"
+                        : "Veridate Now"
                       : status === "no-credits"
                       ? "No credits"
-                      : "Mismatch education";
+                      : "Mismatch Education";
 
                   return (
                     <SubSection key={String(edu._id)}>
@@ -343,14 +356,18 @@ export default function DetailPage() {
                         <div className="flex items-center gap-2">
                           <Badge className={badgeClass(cnt)}>
                             <CheckCircle2 className="h-3.5 w-3.5 mr-1" />
-                            {cnt} verified
+                            {cnt}{" "}
+                            {cnt === 1
+                              ? "Person has already verified"
+                              : "Persons have already verified"}
                           </Badge>
                         </div>
                         <Button
                           size="sm"
                           className={btnStyleByStatus(status)}
                           onClick={() =>
-                            status === "eligible" && onVerifyEdu(String(edu._id))
+                            status === "eligible" &&
+                            onVerifyEdu(String(edu._id))
                           }
                           disabled={
                             status !== "eligible" || busyEdu === String(edu._id)
@@ -386,7 +403,9 @@ export default function DetailPage() {
                 })}
               </div>
             ) : (
-              <div className="text-sm text-muted-foreground">No education added.</div>
+              <div className="text-sm text-muted-foreground">
+                No education added.
+              </div>
             )}
           </SectionWrapper>
         </AccordionSection>
@@ -406,17 +425,22 @@ export default function DetailPage() {
               <div className="space-y-4">
                 {profile.experience.map((exp) => {
                   const cnt = exp.verifyCount || 0;
-                  const status = expStatus({ row: exp, meId, meProfile, expCreditMap });
+                  const status = expStatus({
+                    row: exp,
+                    meId,
+                    meProfile,
+                    expCreditMap,
+                  });
                   const label =
                     status === "already-verified"
-                      ? "Already veridate"
+                      ? "Already Veridate"
                       : status === "eligible"
                       ? busyExp === String(exp._id)
                         ? "Verifying…"
-                        : "Veridate now"
+                        : "Veridate Now"
                       : status === "no-credits"
                       ? "No credits"
-                      : "Mismatch experience";
+                      : "Mismatch Experience";
 
                   return (
                     <SubSection key={String(exp._id)}>
@@ -424,14 +448,18 @@ export default function DetailPage() {
                         <div className="flex items-center gap-2">
                           <Badge className={badgeClass(cnt)}>
                             <CheckCircle2 className="h-3.5 w-3.5 mr-1" />
-                            {cnt} verified
+                            {cnt}{" "}
+                            {cnt === 1
+                              ? "Person has already verified"
+                              : "Persons have already verified"}
                           </Badge>
                         </div>
                         <Button
                           size="sm"
                           className={btnStyleByStatus(status)}
                           onClick={() =>
-                            status === "eligible" && onVerifyExp(String(exp._id))
+                            status === "eligible" &&
+                            onVerifyExp(String(exp._id))
                           }
                           disabled={
                             status !== "eligible" || busyExp === String(exp._id)
@@ -454,14 +482,19 @@ export default function DetailPage() {
                           <LinkText
                             href={
                               exp.experienceLetterFile
-                                ? fileUrl("experience", exp.experienceLetterFile)
+                                ? fileUrl(
+                                    "experience",
+                                    exp.experienceLetterFile
+                                  )
                                 : undefined
                             }
                           >
                             {exp.experienceLetterFile || "—"}
                           </LinkText>
                         </DLRow>
-                        <DLRow label="Job Functions">{joinArr(exp.jobFunctions)}</DLRow>
+                        <DLRow label="Job Functions">
+                          {joinArr(exp.jobFunctions)}
+                        </DLRow>
                         <DLRow label="Industry">{exp.industry}</DLRow>
                       </DefinitionList>
                     </SubSection>
@@ -469,7 +502,9 @@ export default function DetailPage() {
                 })}
               </div>
             ) : (
-              <div className="text-sm text-muted-foreground">No experience added.</div>
+              <div className="text-sm text-muted-foreground">
+                No experience added.
+              </div>
             )}
           </SectionWrapper>
         </AccordionSection>

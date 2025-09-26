@@ -8,7 +8,7 @@ export default function CreditText({ label, available = 0, used = 0, total }) {
     <div className="flex flex-col text-sm text-gray-600">
       
       <div>
-        Credits: Total={_total} Available={available} Used={used}
+        Credits: Total={_total}  Used={used} Available={available}
       </div>
     </div>
   );

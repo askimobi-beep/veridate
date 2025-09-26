@@ -80,13 +80,11 @@ export default function LoginPage() {
         className="z-10 w-full max-w-md bg-white/60 backdrop-blur-xl shadow-xl border border-white/20 rounded-2xl overflow-hidden"
       >
         <div className="p-8 flex flex-col items-center">
-          <div className="flex justify-center mb-20">
+          <div className="flex justify-center mb-16">
             <img src={logo} alt="Logo" className="h-14 w-auto" />
           </div>
 
-          {/* <h2 className="text-2xl font-bold text-center text-gray-800 mb-2">
-            Login to Your Account
-          </h2> */}
+    
 
           {/* Only show error if exists */}
           {error ? (
