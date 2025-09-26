@@ -37,7 +37,7 @@ const normalize = (val) => {
   if (val == null) return "";
   // coerce non-strings safely
   const s = typeof val === "string" ? val : String(val);
-  return s.trim().toLowerCase().replace(/\s+/g, " ")
+  return s.trim().toLowerCase().replace(/\s+/g, " ");
 };
 
 const normalizeInstitute = normalize;
