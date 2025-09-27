@@ -6,8 +6,18 @@ const { sendOTPEmail } = require("../utils/emailService");
 const { OAuth2Client } = require("google-auth-library");
 const axios = require("axios");
 const nodeCrypto = require("node:crypto");
+const crypto = require("crypto");
+const qs = require("querystring");
+const COOKIE_NAME = "li_oauth_state";
 
 const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
+
+const {
+  LINKEDIN_CLIENT_ID,
+  LINKEDIN_CLIENT_SECRET,
+  LINKEDIN_REDIRECT_URI,
+  CLIENT_APP_URL,
+} = process.env;
 
 exports.Registeruser = async (req, res) => {
   try {
@@ -42,7 +52,7 @@ exports.Registeruser = async (req, res) => {
         otp,
         otpExpiry,
         isVerified: false,
-        isBlocked: false
+        isBlocked: false,
       });
       await newUser.save();
     }
@@ -70,11 +80,15 @@ exports.Loginuser = async (req, res) => {
 
     // 🚫 block gate
     if (user.isBlocked) {
-      return res.status(403).json({ message: "Your account is blocked. Contact support." });
+      return res
+        .status(403)
+        .json({ message: "Your account is blocked. Contact support." });
     }
 
     if (!user.isVerified) {
-      return res.status(403).json({ message: "Please verify your email first" });
+      return res
+        .status(403)
+        .json({ message: "Please verify your email first" });
     }
 
     const isMatch = await bcrypt.compare(password, user.password);
@@ -102,7 +116,6 @@ exports.Loginuser = async (req, res) => {
     res.status(500).json({ message: "Internal Server Error" });
   }
 };
-
 
 exports.googleLogin = async (req, res) => {
   try {
@@ -133,13 +146,19 @@ exports.googleLogin = async (req, res) => {
     if (user) {
       // 🚫 block gate
       if (user.isBlocked) {
-        return res.status(403).json({ message: "Your account is blocked. Contact support." });
+        return res
+          .status(403)
+          .json({ message: "Your account is blocked. Contact support." });
       }
 
       const updates = {};
       if (!user.googleId) updates.googleId = googleId;
       if (picture && !user.picture) updates.picture = picture;
-      if (!user.isVerified) { updates.isVerified = true; updates.otp = null; updates.otpExpiry = null; }
+      if (!user.isVerified) {
+        updates.isVerified = true;
+        updates.otp = null;
+        updates.otpExpiry = null;
+      }
       if (!user.firstName && givenName) updates.firstName = givenName;
       if (!user.lastName && familyName) updates.lastName = familyName;
 
@@ -161,7 +180,10 @@ exports.googleLogin = async (req, res) => {
       });
     }
 
-    const token = generateToken({ id: user._id, email: user.email, role: user.role }, res);
+    const token = generateToken(
+      { id: user._id, email: user.email, role: user.role },
+      res
+    );
 
     return res.status(200).json({
       message: "Google login successful",
@@ -183,6 +205,174 @@ exports.googleLogin = async (req, res) => {
   }
 };
 
+exports.linkedinStart = async (req, res) => {
+  try {
+    const state = crypto.randomBytes(24).toString("hex");
+    // store state in short-lived, httpOnly cookie to prevent CSRF
+    res.cookie(COOKIE_NAME, state, {
+      httpOnly: true,
+      sameSite: "lax",
+      secure: false, // set true in prod over https
+      maxAge: 1000 * 60 * 10, // 10 minutes
+      path: "/",
+    });
+
+    // optional: remember where to send them after login
+    const from =
+      typeof req.query.from === "string" && req.query.from.length < 512
+        ? req.query.from
+        : "";
+
+    const authUrl = new URL("https://www.linkedin.com/oauth/v2/authorization");
+    authUrl.searchParams.set("response_type", "code");
+    authUrl.searchParams.set("client_id", LINKEDIN_CLIENT_ID);
+    authUrl.searchParams.set("redirect_uri", LINKEDIN_REDIRECT_URI);
+    authUrl.searchParams.set("scope", "openid profile email");
+    authUrl.searchParams.set("state", `${state}::${encodeURIComponent(from)}`);
+
+    return res.redirect(authUrl.toString());
+  } catch (err) {
+    console.error("LinkedIn start error:", err);
+    return res.redirect(`${CLIENT_APP_URL}/login?error=linkedin_start_failed`);
+  }
+};
+
+
+
+exports.linkedinCallback = async (req, res) => {
+  try {
+    const { code, state } = req.query;
+    if (!code || !state) {
+      return res.redirect(
+        `${CLIENT_APP_URL}/login?error=missing_code_or_state`
+      );
+    }
+
+    // validate state
+    const cookieState = req.cookies[COOKIE_NAME];
+    if (!cookieState) {
+      return res.redirect(`${CLIENT_APP_URL}/login?error=state_cookie_missing`);
+    }
+
+    const [stateValue, fromEncoded = ""] = String(state).split("::");
+    if (cookieState !== stateValue) {
+      return res.redirect(`${CLIENT_APP_URL}/login?error=state_mismatch`);
+    }
+    // clear state cookie
+    res.clearCookie(COOKIE_NAME, { path: "/" });
+
+    // 2a) exchange code for access token (+ id_token due to OIDC)
+    const tokenRes = await axios.post(
+      "https://www.linkedin.com/oauth/v2/accessToken",
+      qs.stringify({
+        grant_type: "authorization_code",
+        code,
+        redirect_uri: LINKEDIN_REDIRECT_URI,
+        client_id: LINKEDIN_CLIENT_ID,
+        client_secret: LINKEDIN_CLIENT_SECRET,
+      }),
+      { headers: { "Content-Type": "application/x-www-form-urlencoded" } }
+    );
+
+    const { access_token /*, expires_in, id_token */ } = tokenRes.data || {};
+    if (!access_token) {
+      return res.redirect(
+        `${CLIENT_APP_URL}/login?error=linkedin_token_missing`
+      );
+    }
+
+    // 2b) fetch user profile via OIDC userinfo (simple + stable)
+    const meRes = await axios.get("https://api.linkedin.com/v2/userinfo", {
+      headers: { Authorization: `Bearer ${access_token}` },
+    });
+
+    // expected fields (email may be absent)
+    const {
+      sub: linkedinId,
+      email,
+      email_verified: emailVerified,
+      given_name: givenName,
+      family_name: familyName,
+      picture,
+      name,
+    } = meRes.data || {};
+
+    // hard requirements: we need a stable id; prefer email for your DB if required
+    if (!linkedinId) {
+      return res.redirect(
+        `${CLIENT_APP_URL}/login?error=linkedin_profile_missing`
+      );
+    }
+
+    // if your User schema requires unique email, you can reject when missing:
+    if (!email) {
+      // You could instead ask user to add an email flow here if you want to support email-less accounts.
+      return res.redirect(`${CLIENT_APP_URL}/login?error=linkedin_no_email`);
+    }
+
+    const normalizedEmail = String(email).toLowerCase();
+
+    // 2c) find or create
+    let user = await User.findOne({ email: normalizedEmail });
+
+    if (user) {
+      // blocked gate
+      if (user.isBlocked) {
+        return res.redirect(`${CLIENT_APP_URL}/login?error=account_blocked`);
+      }
+
+      const updates = {};
+      if (!user.linkedinId) updates.linkedinId = linkedinId;
+      if (picture && !user.picture) updates.picture = picture;
+      if (!user.firstName && (givenName || name))
+        updates.firstName = givenName || name?.split(" ")[0] || "User";
+      if (!user.lastName && familyName) updates.lastName = familyName;
+      if (!user.isVerified) {
+        updates.isVerified = !!emailVerified;
+        updates.otp = null;
+        updates.otpExpiry = null;
+      }
+      if (!user.provider) updates.provider = "linkedin";
+
+      if (Object.keys(updates).length) {
+        user = await User.findByIdAndUpdate(user._id, updates, { new: true });
+      }
+    } else {
+      // new user via LinkedIn
+      user = await User.create({
+        firstName: givenName || (name ? name.split(" ")[0] : "User"),
+        lastName: familyName || "",
+        email: normalizedEmail,
+        password: undefined,
+        role: "user",
+        isVerified: !!emailVerified, // trust OIDC email_verified when provided
+        linkedinId,
+        picture: picture || undefined,
+        provider: "linkedin",
+      });
+    }
+
+    // 2d) issue your JWT (httpOnly cookie or return in body — match your Google flow)
+    generateToken({ id: user._id, email: user.email, role: user.role }, res);
+
+    // 2e) bounce back to app; front-end will call /auth/me and route
+    const from = decodeURIComponent(fromEncoded || "");
+    const next = from || "/dashboard";
+    return res.redirect(
+      `${CLIENT_APP_URL}/oauth/callback?provider=linkedin&ok=1&next=${encodeURIComponent(
+        next
+      )}`
+    );
+  } catch (err) {
+    console.error(
+      "LinkedIn callback error:",
+      err?.response?.data || err.message || err
+    );
+    return res.redirect(
+      `${CLIENT_APP_URL}/login?error=linkedin_callback_failed`
+    );
+  }
+};
 
 exports.facebookLogin = async (req, res) => {
   try {
@@ -404,7 +594,6 @@ exports.verifyOTP = async (req, res) => {
 //   }
 // };
 
-
 exports.getMe = async (req, res) => {
   try {
     const userId = req.user?.id; // set by protect middleware
@@ -420,7 +609,9 @@ exports.getMe = async (req, res) => {
     }
 
     // fetch profile but only profilePic
-    const profile = await Profile.findOne({ user: userId }).select("profilePic");
+    const profile = await Profile.findOne({ user: userId }).select(
+      "profilePic"
+    );
 
     // attach profilePic if exists
     const responseUser = {

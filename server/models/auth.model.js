@@ -53,10 +53,11 @@ const UserSchema = new mongoose.Schema(
     // OAuth
     googleId: { type: String, index: true },
     facebookId: { type: String, index: true },
+    linkedinId: { type: String, index: true },
     picture: { type: String },
     provider: {
       type: String,
-      enum: ["local", "google", "facebook"],
+      enum: ["local", "google", "facebook" , "linkedin"],
       default: "local",
     },
 

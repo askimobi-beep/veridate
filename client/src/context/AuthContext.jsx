@@ -11,7 +11,7 @@ export const AuthProvider = ({ children }) => {
 
   const login = async (credentials) => {
     const res = await axiosInstance.post("auth/login-user", credentials);
-    await checkAuth(); 
+    await checkAuth();
     return res;
   };
 
@@ -21,8 +21,21 @@ export const AuthProvider = ({ children }) => {
     return res;
   };
 
+  const startLinkedInLogin = () => {
+    const from =
+      window.location.pathname + window.location.search + window.location.hash;
+    const api =
+      import.meta.env.VITE_API_BASE_URL || "http://localhost:8000/api/v1";
+    window.location.href = `${api}/auth/linkedin?from=${encodeURIComponent(
+      from
+    )}`;
+  };
+
   const facebookLogin = async (accessToken, userID) => {
-    const res = await axiosInstance.post("auth/facebook", { accessToken, userID });
+    const res = await axiosInstance.post("auth/facebook", {
+      accessToken,
+      userID,
+    });
     setUser(res.data.user);
     return res;
   };
@@ -46,12 +59,24 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  useEffect(() => { checkAuth(); }, []);
+  useEffect(() => {
+    checkAuth();
+  }, []);
 
   return (
-    <AuthContext.Provider value={{
-      user, loading, login, googleLogin, facebookLogin, logout, isLoggingOutRef , checkAuth
-    }}>
+    <AuthContext.Provider
+      value={{
+        user,
+        loading,
+        login,
+        googleLogin,
+        facebookLogin,
+        logout,
+        isLoggingOutRef,
+        checkAuth,
+        startLinkedInLogin,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );

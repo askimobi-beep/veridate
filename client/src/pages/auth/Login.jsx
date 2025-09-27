@@ -10,7 +10,7 @@ import FacebookSignIn from "@/components/auth/FacebookSignIn";
 import logo from "@/assets/logo/logo.png";
 
 export default function LoginPage() {
-  const { user, login, loading: authLoading } = useAuth();
+  const { user, login, loading: authLoading, startLinkedInLogin } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   // console.log("Location state 👉", location.state);
@@ -83,8 +83,6 @@ export default function LoginPage() {
           <div className="flex justify-center mb-16">
             <img src={logo} alt="Logo" className="h-14 w-auto" />
           </div>
-
-    
 
           {/* Only show error if exists */}
           {error ? (
@@ -171,21 +169,10 @@ export default function LoginPage() {
               {/* LinkedIn SignIn */}
               <Button
                 type="button"
-                onClick={() => {
-                  // hook up your LinkedIn login logic here
-                  console.log("LinkedIn sign in clicked");
-                }}
+                onClick={startLinkedInLogin}
                 className="w-full bg-[#0A66C2] hover:bg-[#004182] text-white font-semibold flex items-center justify-center gap-2"
               >
-                {/* LinkedIn SVG */}
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  viewBox="0 0 448 512"
-                  className="w-5 h-5"
-                  fill="currentColor"
-                >
-                  <path d="M100.28 448H7.4V148.9h92.88zm-46.44-341C24 107 0 83 0 53.4a53.4 53.4 0 11106.8 0c0 29.6-23.9 53.6-53 53.6zM447.9 448h-92.4V302.4c0-34.7-12.5-58.4-43.6-58.4-23.8 0-38 16-44.3 31.4-2.3 5.6-2.9 13.4-2.9 21.3V448h-92.4s1.2-260.2 0-286.1h92.4v40.6c12.3-19 34.3-46.1 83.5-46.1 61 0 107 39.8 107 125.2V448z" />
-                </svg>
+                {/* LinkedIn SVG... */}
                 Continue with LinkedIn
               </Button>
             </div>
