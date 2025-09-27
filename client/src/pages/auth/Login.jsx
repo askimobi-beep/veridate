@@ -8,6 +8,7 @@ import { motion } from "framer-motion";
 import GoogleSignIn from "@/components/auth/GoogleSignIn";
 import FacebookSignIn from "@/components/auth/FacebookSignIn";
 import logo from "@/assets/logo/logo.png";
+import { Linkedin } from "lucide-react";
 
 export default function LoginPage() {
   const { user, login, loading: authLoading, startLinkedInLogin } = useAuth();
@@ -170,10 +171,17 @@ export default function LoginPage() {
               <Button
                 type="button"
                 onClick={startLinkedInLogin}
-                className="w-full bg-[#0A66C2] hover:bg-[#004182] text-white font-semibold flex items-center justify-center gap-2"
+                className="w-full bg-[#0A66C2] hover:bg-[#004182] text-white font-medium flex items-center justify-start rounded shadow-sm overflow-hidden"
               >
-                {/* LinkedIn SVG... */}
-                Continue with LinkedIn
+                {/* Left white square with LinkedIn logo */}
+                <div className=" flex items-center justify-center w-2">
+                 <i className="fa-brands fa-linkedin text-3xl mt-1"></i>
+                </div>
+                {/* Button text */}
+                <span className="flex-1 text-center">
+                  Continue with LinkedIn 
+                   
+                </span>
               </Button>
             </div>
           </div>

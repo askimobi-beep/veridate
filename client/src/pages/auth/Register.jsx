@@ -4,6 +4,7 @@ import { useState } from "react";
 import AppInput from "@/components/form/AppInput";
 import { Button } from "@/components/ui/button";
 import { Mail, Lock, User, Loader2 } from "lucide-react";
+import { useAuth } from "@/context/AuthContext";
 import { motion } from "framer-motion";
 import axiosInstance from "@/utils/axiosInstance";
 import { useSnackbar } from "notistack";
@@ -22,6 +23,7 @@ export default function RegisterPage() {
     confirmPassword: "",
   });
   const [submitting, setSubmitting] = useState(false);
+  const { startLinkedInLogin } = useAuth();
 
   // OTP modal control
   const [otpOpen, setOtpOpen] = useState(false);
@@ -44,7 +46,9 @@ export default function RegisterPage() {
       !formData.email ||
       !formData.password
     ) {
-      enqueueSnackbar("Please fill all required fields.", { variant: "warning" });
+      enqueueSnackbar("Please fill all required fields.", {
+        variant: "warning",
+      });
       return;
     }
     if (formData.password !== formData.confirmPassword) {
@@ -82,7 +86,6 @@ export default function RegisterPage() {
   };
 
   return (
-    
     <div className="min-h-screen w-full flex items-center justify-center px-4 relative overflow-hidden">
       <motion.div
         initial={{ opacity: 0, y: 40 }}
@@ -98,7 +101,10 @@ export default function RegisterPage() {
 
         {/* Register Form */}
         {/* CHANGED: cap inner width like LoginPage */}
-        <form onSubmit={handleRegister} className="w-full max-w-[400px] mx-auto space-y-4">
+        <form
+          onSubmit={handleRegister}
+          className="w-full max-w-[400px] mx-auto space-y-4"
+        >
           <div className="grid grid-cols-2 gap-4">
             <AppInput
               name="firstName"
@@ -175,7 +181,9 @@ export default function RegisterPage() {
           <div className="w-full max-w-[400px] mx-auto">
             <GoogleSignIn
               onError={(msg) =>
-                enqueueSnackbar(msg || "Google sign-in failed.", { variant: "error" })
+                enqueueSnackbar(msg || "Google sign-in failed.", {
+                  variant: "error",
+                })
               }
             />
           </div>
@@ -184,26 +192,15 @@ export default function RegisterPage() {
           <div className="w-full max-w-[400px] mx-auto">
             <Button
               type="button"
-              onClick={() => {
-                try {
-                  console.log("LinkedIn sign in clicked");
-                } catch (err) {
-                  enqueueSnackbar(err?.message || "LinkedIn sign-in failed.", {
-                    variant: "error",
-                  });
-                }
-              }}
-              className="w-full bg-[#0A66C2] hover:bg-[#004182] text-white font-semibold flex items-center justify-center gap-2"
+              onClick={startLinkedInLogin}
+              className="w-full bg-[#0A66C2] hover:bg-[#004182] text-white font-medium flex items-center justify-start rounded shadow-sm overflow-hidden"
             >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                viewBox="0 0 448 512"
-                className="w-5 h-5"
-                fill="currentColor"
-              >
-                <path d="M100.28 448H7.4V148.9h92.88zm-46.44-341C24 107 0 83 0 53.4a53.4 53.4 0 11106.8 0c0 29.6-23.9 53.6-53 53.6zM447.9 448h-92.4V302.4c0-34.7-12.5-58.4-43.6-58.4-23.8 0-38 16-44.3 31.4-2.3 5.6-2.9 13.4-2.9 21.3V448h-92.4s1.2-260.2 0-286.1h92.4v40.6c12.3-19 34.3-46.1 83.5-46.1 61 0 107 39.8 107 125.2V448z" />
-              </svg>
-              Continue with LinkedIn
+              {/* Left white square with LinkedIn logo */}
+              <div className=" flex items-center justify-center w-2">
+                <i className="fa-brands fa-linkedin text-3xl mt-1"></i>
+              </div>
+              {/* Button text */}
+              <span className="flex-1 text-center">Continue with LinkedIn</span>
             </Button>
           </div>
         </div>
