@@ -5,8 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Lock } from "lucide-react";
 import { motion } from "framer-motion";
 import logo from "@/assets/logo/logo.png";
-
-const API_BASE = import.meta.env.VITE_API_BASE || "";
+import axiosInstance from "@/utils/axiosInstance";
 
 export default function ResetPasswordPage() {
   const [params] = useSearchParams();
@@ -23,38 +22,37 @@ export default function ResetPasswordPage() {
 
   useEffect(() => {
     let ignore = false;
+
     async function verify() {
       setChecking(true);
       setError("");
       try {
-        const res = await fetch(
-          `${API_BASE}/api/v1/auth/reset-password/verify?token=${encodeURIComponent(
-            token
-          )}&email=${encodeURIComponent(email)}`,
-          { credentials: "include" }
-        );
-        const data = await res.json().catch(() => ({}));
-        if (!ignore) setValid(!!data?.valid);
+        const res = await axiosInstance.get("/auth/reset-password/verify", {
+          params: { token, email },
+        });
+        if (!ignore) setValid(!!res?.data?.valid);
       } catch (e) {
         if (!ignore) setValid(false);
       } finally {
         if (!ignore) setChecking(false);
       }
     }
-    if (token && email) verify();
-    else {
+
+    if (token && email) {
+      verify();
+    } else {
       setValid(false);
       setChecking(false);
     }
-    return () => {
-      ignore = true;
-    };
+
+    return () => { ignore = true; };
   }, [token, email]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
     setMessage("");
+
     if (password !== confirm) {
       setError("Passwords do not match.");
       return;
@@ -63,21 +61,17 @@ export default function ResetPasswordPage() {
       setError("Use at least 8 characters.");
       return;
     }
+
     setSubmitting(true);
     try {
-      const res = await fetch(`${API_BASE}/api/v1/auth/reset-password`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify({ token, email, password }),
+      await axiosInstance.post("/api/v1/auth/reset-password", {
+        token,
+        email,
+        password,
       });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) {
-        throw new Error(data?.message || "Failed to reset password.");
-      }
       setMessage("Password reset successful. You can now sign in.");
     } catch (err) {
-      setError(err.message || "Something went wrong.");
+      setError(err?.response?.data?.message || err?.message || "Something went wrong.");
     } finally {
       setSubmitting(false);
     }
@@ -110,10 +104,7 @@ export default function ResetPasswordPage() {
               {message ? (
                 <div className="w-full max-w-[400px]">
                   <p className="text-center text-sm text-green-600 mb-4">{message}</p>
-                  <Link
-                    to="/"
-                    className="block text-center text-orange-600 hover:underline"
-                  >
+                  <Link to="/" className="block text-center text-orange-600 hover:underline">
                     Go to login
                   </Link>
                 </div>
@@ -172,10 +163,7 @@ export default function ResetPasswordPage() {
               <p className="text-sm text-gray-600 mb-6 text-center">
                 Please request a new reset link.
               </p>
-              <Link
-                to="/forgot-password"
-                className="text-orange-600 hover:underline"
-              >
+              <Link to="/forgot-password" className="text-orange-600 hover:underline">
                 Request a new link
               </Link>
             </>
