@@ -36,6 +36,7 @@ const UserSchema = new mongoose.Schema(
       match: [/^\S+@\S+\.\S+$/, "Invalid email format"],
     },
     password: { type: String },
+    passwordChangedAt: { type: Date },
 
     role: { type: String, enum: ["user", "admin"], default: "user" },
 
@@ -63,6 +64,9 @@ const UserSchema = new mongoose.Schema(
 
     // Moderation
     isBlocked: { type: Boolean, default: false },
+
+    resetPasswordToken: { type: String, index: true },
+    resetPasswordExpires: { type: Date },
   },
   { timestamps: true }
 );

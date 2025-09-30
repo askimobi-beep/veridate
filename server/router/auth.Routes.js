@@ -9,6 +9,9 @@ const {
   facebookLogin,
   linkedinStart,
   linkedinCallback,
+  requestPasswordReset,
+  verifyPasswordResetToken,
+  resetPassword,
 } = require("../controllers/auth.Controller");
 const { protect } = require("../middlewares/authMiddleware");
 
@@ -23,5 +26,11 @@ router.get("/linkedin/callback", linkedinCallback);
 router.post("/facebook", facebookLogin);
 router.get("/me", protect, getMe); // 🛡️ Protected route
 router.post("/logout-user", logoutUser);
+
+// Password-Reset
+router.post("/forgot-password", requestPasswordReset);
+router.get("/reset-password/verify", verifyPasswordResetToken);
+router.post("/reset-password", resetPassword);
+
 
 module.exports = router;

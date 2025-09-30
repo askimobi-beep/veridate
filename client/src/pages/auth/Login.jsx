@@ -6,15 +6,13 @@ import { Button } from "@/components/ui/button";
 import { Mail, Lock } from "lucide-react";
 import { motion } from "framer-motion";
 import GoogleSignIn from "@/components/auth/GoogleSignIn";
-import FacebookSignIn from "@/components/auth/FacebookSignIn";
 import logo from "@/assets/logo/logo.png";
-import { Linkedin } from "lucide-react";
+import AuthSplash from "@/components/auth/AuthSplash";
 
 export default function LoginPage() {
   const { user, login, loading: authLoading, startLinkedInLogin } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
-  // console.log("Location state 👉", location.state);
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -67,7 +65,7 @@ export default function LoginPage() {
     }
   };
 
-  if (authLoading) return null;
+  if (authLoading) return <AuthSplash />;
 
   return (
     <div className="min-h-screen w-full flex items-center justify-center px-4 relative overflow-hidden">
@@ -146,9 +144,12 @@ export default function LoginPage() {
                 />
                 Remember me
               </label>
-              <a href="#" className="text-orange-600 hover:underline">
+              <Link
+                to="/forgot-password"
+                className="text-orange-600 hover:underline"
+              >
                 Forgot Password?
-              </a>
+              </Link>
             </div>
 
             {/* Submit */}
@@ -175,12 +176,11 @@ export default function LoginPage() {
               >
                 {/* Left white square with LinkedIn logo */}
                 <div className=" flex items-center justify-center w-2">
-                 <i className="fa-brands fa-linkedin text-3xl mt-1"></i>
+                  <i className="fa-brands fa-linkedin text-3xl mt-1"></i>
                 </div>
                 {/* Button text */}
                 <span className="flex-1 text-center">
-                  Continue with LinkedIn 
-                   
+                  Continue with LinkedIn
                 </span>
               </Button>
             </div>

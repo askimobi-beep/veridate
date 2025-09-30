@@ -10,12 +10,14 @@ export const AuthProvider = ({ children }) => {
   const isLoggingOutRef = useRef(false); // 👈 NEW
 
   const login = async (credentials) => {
+    setLoading(true);
     const res = await axiosInstance.post("auth/login-user", credentials);
     await checkAuth();
     return res;
   };
 
   const googleLogin = async (credential) => {
+    setLoading(true);
     const res = await axiosInstance.post("auth/google", { credential });
     await checkAuth();
     return res;
@@ -49,6 +51,7 @@ export const AuthProvider = ({ children }) => {
   };
 
   const checkAuth = async () => {
+    setLoading(true);
     try {
       const res = await axiosInstance.get("auth/me");
       setUser(res.data.user);

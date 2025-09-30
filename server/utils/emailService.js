@@ -6,7 +6,7 @@ const transporter = nodemailer.createTransport({
   service: "gmail",
   auth: {
     user: process.env.GMAIL_USER,
-    pass: process.env.GMAIL_PASS,
+    pass: process.env.GMAIL_PASS, // Use an App Password for Gmail
   },
 });
 
@@ -34,7 +34,6 @@ const sendOTPEmail = async (to, otp) => {
             This code will expire in <b>10 minutes</b>.
           </p>
 
-        
           <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;" />
 
           <p style="font-size: 13px; color: #777; text-align: center; margin: 0;">
@@ -48,4 +47,35 @@ const sendOTPEmail = async (to, otp) => {
   await transporter.sendMail(mailOptions);
 };
 
-module.exports = { sendOTPEmail };
+const sendPasswordResetEmail = async (to, resetUrl) => {
+  const mailOptions = {
+    from: `Veridate <${process.env.GMAIL_USER}>`,
+    to,
+    subject: "Reset your password",
+    html: `
+      <div style="background: #f7f9fc; padding: 40px; font-family: 'Segoe UI', Tahoma, sans-serif; color: #333;">
+        <div style="max-width: 500px; margin: auto; background: white; border-radius: 16px; padding: 32px; box-shadow: 0 10px 25px rgba(0,0,0,0.08); border: 1px solid #eef1f7;">
+          <h2 style="font-size: 20px; font-weight: 700; color: #2d2d2d; margin-top: 0;">Reset your password</h2>
+          <p style="font-size: 15px; line-height: 1.6; color: #444;">
+            We received a request to reset your password. This link is valid for <b>15 minutes</b> and can be used once.
+          </p>
+          <p style="text-align: center; margin: 24px 0;">
+            <a href="${resetUrl}" style="display: inline-block; padding: 12px 18px; border-radius: 10px; background: #2563eb; color: #fff; text-decoration: none; font-weight: 600;">
+              Reset Password
+            </a>
+          </p>
+          <p style="font-size: 13px; color: #777;">
+            If you didn't request this, you can safely ignore this email.
+          </p>
+        </div>
+      </div>
+    `,
+  };
+
+  await transporter.sendMail(mailOptions);
+};
+
+module.exports = {
+  sendOTPEmail,
+  sendPasswordResetEmail,
+};

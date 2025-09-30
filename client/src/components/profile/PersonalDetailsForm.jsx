@@ -10,7 +10,6 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import {
-  countries,
   genders,
   maritalStatuses,
   residentStatuses,
@@ -73,17 +72,8 @@ export default function PersonalDetailsForm({
   onAskConfirm,
   savePersonalInfo,
   saving,
-  userId,
 }) {
-  const baseUrl =
-    import.meta.env.VITE_PROFILE_BASE_URL ||
-    (typeof window !== "undefined" && window.location?.origin) ||
-    "http://localhost:5173";
-
-  const shareUrl = useMemo(() => {
-    const id = userId || formData?.id || "UNKNOWN_ID";
-    return `${baseUrl}/dashboard/profiles/${id}`;
-  }, [baseUrl, userId, formData?.id]);
+ 
 
   const [countriesList, setCountriesList] = useState([]);
   const [cityOptions, setCityOptions] = useState([]);
@@ -194,6 +184,8 @@ export default function PersonalDetailsForm({
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [formData.country]);
+
+
 
   return (
     <>
@@ -422,7 +414,7 @@ export default function PersonalDetailsForm({
           value={formData.nationality}
           onChange={handleChange}
           options={countriesList}
-          placeholder="Pakistan"
+          placeholder="Select your Nationality"
           disabled={isDisabled(locked, "nationality")}
         />
 
