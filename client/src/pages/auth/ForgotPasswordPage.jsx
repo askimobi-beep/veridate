@@ -5,7 +5,7 @@ import { Mail } from "lucide-react";
 import { motion } from "framer-motion";
 import logo from "@/assets/logo/logo.png";
 
-const API_BASE = import.meta.env.VITE_API_BASE || "";
+const API_BASE = import.meta.env.VITE_API_BASE_URL || "";
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState("");
