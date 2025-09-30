@@ -4,8 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Mail } from "lucide-react";
 import { motion } from "framer-motion";
 import logo from "@/assets/logo/logo.png";
-
-const API_BASE = import.meta.env.VITE_API_BASE_URL || "";
+import axiosInstance from "@/utils/axiosInstance";
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState("");
@@ -19,20 +18,18 @@ export default function ForgotPasswordPage() {
     setMessage("");
     setSubmitting(true);
     try {
-      const res = await fetch(`${API_BASE}/api/v1/auth/forgot-password`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify({ email }),
+      const res = await axiosInstance.post("/auth/forgot-password", {
+        email,
       });
+
       // Always returns 200 with generic msg per backend
-      if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
-        throw new Error(data?.message || "Failed to request reset.");
+      if (res.status !== 200) {
+        throw new Error(res?.data?.message || "Failed to request reset.");
       }
+
       setMessage("If that email exists, we’ve sent a reset link.");
     } catch (err) {
-      setError(err.message || "Something went wrong.");
+      setError(err.response?.data?.message || err.message || "Something went wrong.");
     } finally {
       setSubmitting(false);
     }
