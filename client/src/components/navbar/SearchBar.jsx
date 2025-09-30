@@ -1,7 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-
-const API_BASE = import.meta.env?.VITE_API_BASE || "http://localhost:8000";
+import axiosInstance from "@/utils/axiosInstance";
 
 export default function SearchBar({
   placeholder = "Search directory…",
@@ -16,8 +15,7 @@ export default function SearchBar({
   const navigate = useNavigate();
   const abortRef = useRef(null);
 
-  const looksLikeEmail = (val) =>
-    /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val.trim());
+  const looksLikeEmail = (val) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val.trim());
 
   const handleChange = (e) => {
     const val = e.target.value;
@@ -27,10 +25,8 @@ export default function SearchBar({
 
   const handleSelect = (item) => {
     if (item?.user) {
-      // Navigate to the profile detail page
       navigate(`/dashboard/profiles/${item.user}`);
     } else {
-      // Fallback to directory if user ID missing
       navigate(`/dashboard/directory?q=${encodeURIComponent(query.trim())}`);
     }
     setQuery("");
@@ -38,7 +34,7 @@ export default function SearchBar({
     setResults([]);
   };
 
-  // Debounced search
+  // Debounced search (with axios + AbortController)
   useEffect(() => {
     const q = query.trim();
     if (!q) {
@@ -52,34 +48,28 @@ export default function SearchBar({
       try {
         if (abortRef.current) abortRef.current.abort();
         abortRef.current = new AbortController();
+
         const isEmail = looksLikeEmail(q);
-        const params = new URLSearchParams({
-          page: "1",
-          limit: "10",
-          [isEmail ? "email" : "name"]: q,
-        }).toString();
 
         setLoading(true);
         setError("");
 
-        const res = await fetch(
-          `${API_BASE}/api/v1/profile/directory?${params}`,
-          {
-            credentials: "include",
-            signal: abortRef.current.signal,
-          }
-        );
+        const res = await axiosInstance.get("/api/v1/profile/directory", {
+          params: {
+            page: 1,
+            limit: 10,
+            [isEmail ? "email" : "name"]: q,
+          },
+          signal: abortRef.current.signal, // axios v1+ supports AbortController
+          withCredentials: true, // redundant if set in instance, but harmless
+        });
 
-        if (!res.ok) {
-          const data = await res.json().catch(() => ({}));
-          throw new Error(data?.message || "Failed to search.");
-        }
-
-        const data = await res.json();
-        setResults(Array.isArray(data?.data) ? data.data : []);
+        const items = Array.isArray(res?.data?.data) ? res.data.data : [];
+        setResults(items);
       } catch (err) {
-        if (err.name !== "AbortError") {
-          setError(err.message || "Something went wrong.");
+        // Ignore aborts; surface other errors
+        if (err.name !== "CanceledError" && err.name !== "AbortError") {
+          setError(err?.response?.data?.message || err?.message || "Something went wrong.");
           setResults([]);
         }
       } finally {
@@ -113,9 +103,7 @@ export default function SearchBar({
           )}
 
           {!loading && !error && results.length === 0 && (
-            <div className="px-4 py-2 text-sm text-gray-600">
-              No results found
-            </div>
+            <div className="px-4 py-2 text-sm text-gray-600">No results found</div>
           )}
 
           {!loading &&
