@@ -54,7 +54,7 @@ export default function SearchBar({
         setLoading(true);
         setError("");
 
-        const res = await axiosInstance.get("/api/v1/profile/directory", {
+        const res = await axiosInstance.get("/profile/directory", {
           params: {
             page: 1,
             limit: 10,
