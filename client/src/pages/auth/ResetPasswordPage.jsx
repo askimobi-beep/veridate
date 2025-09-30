@@ -64,7 +64,7 @@ export default function ResetPasswordPage() {
 
     setSubmitting(true);
     try {
-      await axiosInstance.post("/api/v1/auth/reset-password", {
+      await axiosInstance.post("/auth/reset-password", {
         token,
         email,
         password,
