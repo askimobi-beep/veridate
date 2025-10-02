@@ -87,13 +87,13 @@ export default function SearchBar({
         value={query}
         onChange={handleChange}
         placeholder={placeholder}
-        className={`w-full border border-gray-300 bg-white/80 px-4 py-2 text-sm outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-200 transition ${inputClassName}`}
+        className={`w-full border rounded-xl border-gray-300 bg-white/80 px-4 py-2 text-sm outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-200 transition ${inputClassName}`}
         onFocus={() => setShowResults(query.trim().length > 0)}
         onBlur={() => setTimeout(() => setShowResults(false), 150)}
       />
 
       {showResults && (
-        <div className="absolute mt-1 w-full bg-white border border-gray-200 rounded-md shadow-md z-50 max-h-80 overflow-auto">
+        <div className="absolute  mt-1 w-full bg-white border border-gray-200 rounded-xl shadow-md z-50 max-h-80 overflow-auto">
           {loading && (
             <div className="px-4 py-2 text-sm text-gray-600">Searching…</div>
           )}

@@ -60,7 +60,7 @@ export default function UserMenu({ user, onLogout }) {
         onClick={() => setOpen((v) => !v)}
         aria-haspopup="menu"
         aria-expanded={open}
-        className="group flex items-center gap-2 rounded-full pl-1 pr-2 py-1.5 ring-1 ring-black/5 hover:bg-white/70 transition"
+        className="group flex items-center gap-2 rounded-xl pl-1 pr-2 py-1.5 ring-1 ring-black/5 hover:bg-white/70 transition"
       >
         <Avatar className="h-9 w-9 ring-1 ring-black/5">
           <AvatarImage

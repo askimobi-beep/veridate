@@ -354,7 +354,7 @@ export default function DetailPage() {
                     <SubSection key={String(edu._id)}>
                       <div className="flex items-center justify-between mb-3">
                         <div className="flex items-center gap-2">
-                          <Badge className={badgeClass(cnt)}>
+                          <Badge className={`${badgeClass(cnt)} rounded-lg`}>
                             <CheckCircle2 className="h-3.5 w-3.5 mr-1" />
                             {cnt}{" "}
                             {cnt === 1
@@ -364,7 +364,7 @@ export default function DetailPage() {
                         </div>
                         <Button
                           size="sm"
-                          className={btnStyleByStatus(status)}
+                          className={`${btnStyleByStatus(status)} rounded-xl`}
                           onClick={() =>
                             status === "eligible" &&
                             onVerifyEdu(String(edu._id))
@@ -446,7 +446,7 @@ export default function DetailPage() {
                     <SubSection key={String(exp._id)}>
                       <div className="flex items-center justify-between mb-3">
                         <div className="flex items-center gap-2">
-                          <Badge className={badgeClass(cnt)}>
+                          <Badge className={`${badgeClass(cnt)} rounded-lg`}>
                             <CheckCircle2 className="h-3.5 w-3.5 mr-1" />
                             {cnt}{" "}
                             {cnt === 1
@@ -456,7 +456,7 @@ export default function DetailPage() {
                         </div>
                         <Button
                           size="sm"
-                          className={btnStyleByStatus(status)}
+                          className={`${btnStyleByStatus(status)} rounded-xl`}
                           onClick={() =>
                             status === "eligible" &&
                             onVerifyExp(String(exp._id))
