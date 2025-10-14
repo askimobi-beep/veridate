@@ -104,9 +104,9 @@ export default function PersonalDetailsForm({
         {labelText}
       </span>
       <div className="flex items-center gap-2 text-xs text-gray-500">
-        <span className="min-w-[44px] text-right">
+        {/* <span className="min-w-[44px] text-right">
           {isHidden(fieldKey) ? "Hidden" : "Visible"}
-        </span>
+        </span> */}
         <BlockSwitch
           checked={!isHidden(fieldKey)}
           onChange={(checked) => setVisibility(fieldKey, checked)}
@@ -297,9 +297,9 @@ export default function PersonalDetailsForm({
                 </TooltipProvider>
               </div>
               <div className="flex items-center gap-2 text-xs text-gray-500">
-                <span className="min-w-[44px] text-right">
+                {/* <span className="min-w-[44px] text-right">
                   {isHidden("mobile") ? "Hidden" : "Visible"}
-                </span>
+                </span> */}
                 <BlockSwitch
                   checked={!isHidden("mobile")}
                   onChange={(checked) => setVisibility("mobile", checked)}

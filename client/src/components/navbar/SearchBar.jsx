@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import axiosInstance from "@/utils/axiosInstance";
 
 export default function SearchBar({
-  placeholder = "Search directory…",
+  placeholder = "Search Candidate by Name, Email, Degree Title and Job Title",
   className = "",
   inputClassName = "",
 }) {
@@ -141,7 +141,7 @@ export default function SearchBar({
                 ) : null}
               </div>
             ))}
-
+{/* 
           {!loading && results.length > 0 && (
             <div
               onMouseDown={(e) => e.preventDefault()}
@@ -152,7 +152,7 @@ export default function SearchBar({
             >
               Open full directory
             </div>
-          )}
+          )} */}
         </div>
       )}
     </div>

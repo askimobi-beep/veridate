@@ -62,7 +62,7 @@ exports.verifyEducation = async (req, res) => {
     if (!targetUserId || !eduId) {
       return res
         .status(400)
-        .json({ message: "targetUserId and eduId are required (24-hex ids)" });
+        .json({ message: "targetUserId and eduId are required" });
     }
     if (
       !mongoose.Types.ObjectId.isValid(targetUserId) ||
@@ -81,9 +81,7 @@ exports.verifyEducation = async (req, res) => {
     if (!targetProfile)
       return res.status(404).json({ message: "Target profile not found" });
 
-    const edu = (targetProfile.education || []).find(
-      (e) => String(e._id) === eduId
-    );
+    const edu = (targetProfile.education || []).find((e) => String(e._id) === eduId);
     if (!edu) return res.status(404).json({ message: "Education row not found" });
 
     const institute = edu.institute || "";

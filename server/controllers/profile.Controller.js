@@ -2,6 +2,7 @@
 const Profile = require("../models/Profile");
 const User = require("../models/auth.model");
 const mongoose = require("mongoose");
+const OpenAI = require("openai");
 const {
   Types: { ObjectId },
 } = mongoose;
@@ -65,6 +66,13 @@ function redactEduExpArrays(p) {
 
   return p;
 }
+
+const client = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY,
+});
+
+
+console.log("API key?", process.env.OPENAI_API_KEY ? "Present" : "Missing");
 
 
 const normalizeDigits = (s) => (s || "").replace(/\D+/g, ""); // keep only 0-9
@@ -943,5 +951,75 @@ exports.getProfile = async (req, res) => {
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Something went wrong" });
+  }
+};
+
+
+exports.profileSummary = async (req, res) => {
+  try {
+    const { userId, context } = req.body;
+
+    let dataForAI = context;
+    if (!dataForAI && userId) {
+      const p = await Profile.findOne({ user: userId }).lean();
+      if (!p) return res.status(404).json({ error: "Profile not found" });
+      const redacted = redactEduExpArrays(redactPersonalFields(p));
+      dataForAI = {
+        name: redacted.name,
+        city: redacted.city,
+        country: redacted.country,
+        // expose only what we need
+        education: (redacted.education || []).map((e) => ({
+          degreeTitle: e.degreeTitle,
+          institute: e.institute,
+          startDate: e.startDate,
+          endDate: e.endDate,
+        })),
+        experience: (redacted.experience || []).map((e) => ({
+          jobTitle: e.jobTitle,
+          company: e.company,
+          industry: e.industry,
+          jobFunctions: e.jobFunctions,
+          startDate: e.startDate,
+          endDate: e.endDate,
+        })),
+      };
+    }
+    if (!dataForAI) {
+      return res.status(400).json({ error: "Missing context or userId" });
+    }
+
+    // tight system instructions = consistent summaries
+    const systemInstructions =
+      "You write tight, neutral, recruiter-friendly summaries of a candidate. 2–4 sentences. Avoid fluff, avoid unverifiable claims. Prefer most recent role, total experience (~years), key industries/functions, and top degrees. If data is missing, don’t invent it.";
+
+    // Responses API — simple, reliable (OpenAI’s recommended path)
+    // Docs: responses.create + output_text field.
+    const r = await client.responses.create({
+      model: "gpt-4o-mini", // good cost/quality. swap to 'gpt-4o' if you want richer wording.
+      instructions: systemInstructions,
+      input: [
+        {
+          role: "user",
+          content:
+            "Summarize this candidate for a directory card. Return plain text only.\n\n" +
+            JSON.stringify(dataForAI, null, 2),
+        },
+      ],
+      max_output_tokens: 220,
+    });
+
+    const summary =
+      (r && (r.output_text || "").trim()) ||
+      ""; // `.output_text` is the easiest way to read the final text
+
+    if (!summary) {
+      return res.status(502).json({ error: "Empty summary from model" });
+    }
+
+    return res.status(200).json({ summary });
+  } catch (err) {
+    console.error("profile-summary error:", err?.message || err);
+    return res.status(500).json({ error: "Failed to generate summary" });
   }
 };

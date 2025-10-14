@@ -9,6 +9,7 @@ import SearchBar from "./SearchBar";
 
 export default function Navbar() {
   const { user, logout, authLoading } = useAuth();
+
   const navigate = useNavigate();
   const { pathname } = useLocation(); // keeping in case you style active states later
 

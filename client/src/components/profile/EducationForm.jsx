@@ -192,9 +192,9 @@ export default function EducationForm({
                     </label>
 
                     <div className="flex items-center gap-2">
-                      <span className="text-xs text-gray-500 select-none">
+                      {/* <span className="text-xs text-gray-500 select-none">
                         {hasHidden(edu, "degreeFile") ? "Hidden" : "Visible"}
-                      </span>
+                      </span> */}
                       <BlockSwitch
                         checked={hasHidden(edu, "degreeFile")}
                         onChange={() =>

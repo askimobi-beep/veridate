@@ -288,11 +288,11 @@ export default function ExperienceForm({
                     </label>
 
                     <div className="flex items-center gap-2">
-                      <span className="text-xs text-gray-500 select-none">
+                      {/* <span className="text-xs text-gray-500 select-none">
                         {hasHidden(exp, "experienceLetterFile")
                           ? "Hidden"
                           : "Visible"}
-                      </span>
+                      </span> */}
                       <BlockSwitch
                         checked={hasHidden(exp, "experienceLetterFile")}
                         onChange={() =>

@@ -9,6 +9,7 @@ const {
   listProfilesPublic,
   getProfileByUserId,
   saveProfilePhoto,
+  profileSummary,
 } = require("../controllers/profile.Controller");
 
 const upload = require("../middlewares/uploadMiddleware");
@@ -56,7 +57,7 @@ router.post(
   upload.any(), // ✅ ACCEPT ANY FIELD NAMES, we'll filter by prefix server-side
   saveExperience
 );
-
+router.post("/ai/profile-summary", softAuth, profileSummary);
 router.get("/directory", softAuth, listProfilesPublic);
 
 router.get("/getonid/:userId", getProfileByUserId);

@@ -18,6 +18,8 @@ import usePersonalInformationForm from "@/hooks/usePersonalInformationForm";
 import { toYMD } from "@/lib/dates";
 import { getProfileMe } from "@/lib/profileApi";
 import { useAuth } from "@/context/AuthContext";
+import ProfilePdf from "@/components/profile/ProfilePdf";
+import ProfilePdfDownload from "@/components/profile/ProfilePdf";
 
 export default function PersonalInformation() {
   const {
@@ -367,6 +369,7 @@ export default function PersonalInformation() {
   return (
     <div className="min-h-screen w-full flex items-start justify-center px-4 py-10 relative overflow-hidden">
       <div className="relative z-10 w-full max-w-5xl">
+      <ProfilePdfDownload userId={user?user._id:null}/>
         <ProfileHeader
           user={formData}
           profilePicRef={profilePicRef}
