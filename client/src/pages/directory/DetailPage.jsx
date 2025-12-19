@@ -387,28 +387,40 @@ export default function DetailPage() {
     ? reviewRatings.reduce((acc, curr) => acc + curr, 0) / reviewRatings.length
     : 0;
   const sortedReviewEntries = useMemo(() => {
-    const list = [...reviewEntries];
+    const list = reviewEntries.map((entry, index) => {
+      const rawTime =
+        entry?.createdAt || entry?.updatedAt || entry?.timestamp || 0;
+      const timeValue = rawTime ? new Date(rawTime).getTime() : 0;
+      const time = Number.isFinite(timeValue) ? timeValue : 0;
+      const ratingValue = Number(entry?.rating);
+      const rating = Number.isFinite(ratingValue) ? ratingValue : 0;
+      return { entry, index, time, rating };
+    });
+
     const byDateDesc = (a, b) => {
-      const aTime = a?.createdAt ? new Date(a.createdAt).getTime() : 0;
-      const bTime = b?.createdAt ? new Date(b.createdAt).getTime() : 0;
-      return bTime - aTime;
+      const diff = b.time - a.time;
+      return diff !== 0 ? diff : a.index - b.index;
     };
 
     if (reviewSort === "highest") {
-      return list.sort((a, b) => {
-        const diff = Number(b?.rating || 0) - Number(a?.rating || 0);
-        return diff !== 0 ? diff : byDateDesc(a, b);
-      });
+      return list
+        .sort((a, b) => {
+          const diff = b.rating - a.rating;
+          return diff !== 0 ? diff : byDateDesc(a, b);
+        })
+        .map((item) => item.entry);
     }
 
     if (reviewSort === "lowest") {
-      return list.sort((a, b) => {
-        const diff = Number(a?.rating || 0) - Number(b?.rating || 0);
-        return diff !== 0 ? diff : byDateDesc(a, b);
-      });
+      return list
+        .sort((a, b) => {
+          const diff = a.rating - b.rating;
+          return diff !== 0 ? diff : byDateDesc(a, b);
+        })
+        .map((item) => item.entry);
     }
 
-    return list.sort(byDateDesc);
+    return list.sort(byDateDesc).map((item) => item.entry);
   }, [reviewEntries, reviewSort]);
 
   const baseURL = useMemo(
