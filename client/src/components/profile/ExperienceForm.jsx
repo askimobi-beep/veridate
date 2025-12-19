@@ -1,5 +1,5 @@
 // components/profile/ExperienceForm.jsx
-import React from "react";
+import React, { useState } from "react";
 import AppInput from "@/components/form/AppInput";
 import AppSelect from "@/components/form/AppSelect";
 import FileUploader from "@/components/form/FileUploader";
@@ -9,6 +9,12 @@ import { FileText, Save } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import BlockSwitch from "@/components/form/Switch";
 import CreditText from "../creditshow/CreditBadge";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 // ------ dropdown options ------
 const jobTitles = [
@@ -50,6 +56,7 @@ const EXPERIENCE_UNLOCKED = new Set([
   "experienceLetterFile",
   "jobFunctions",
   "hiddenFields",
+  "projects",
 ]);
 
 const isExpDisabled = (rowLocked, field) =>
@@ -82,12 +89,25 @@ export default function ExperienceForm({
   isRowSaving, // (index) => boolean
 }) {
   const norm = (s) => (s || "").trim().toLowerCase().replace(/\s+/g, " ");
+  const [creditInfoOpen, setCreditInfoOpen] = useState(false);
 
   // derive "Other" mode for selects
   const isOtherSelected = (list, value) => !!value && !list.includes(value);
 
   return (
     <>
+      <Dialog open={creditInfoOpen} onOpenChange={setCreditInfoOpen}>
+        <DialogContent className="bg-white">
+          <DialogHeader>
+            <DialogTitle>Credits guide</DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-gray-700">
+            A short walkthrough on how experience verification credits work is
+            coming soon.
+          </p>
+        </DialogContent>
+      </Dialog>
+
       <AnimatePresence initial={false}>
         {experienceList.map((exp, index) => {
           // ✅ instant row lock (local) OR section lock when server-locked
@@ -117,6 +137,41 @@ export default function ExperienceForm({
           const used = bucket?.used ?? 0;
           const total =
             typeof bucket?.total === "number" ? bucket.total : available + used;
+          const creditLabelCandidate = [
+            bucket?.company,
+            bucket?.companyName,
+            exp.company,
+          ].find((val) => typeof val === "string" && val.trim().length > 0);
+          const creditLabel = creditLabelCandidate
+            ? creditLabelCandidate.trim()
+            : "";
+
+          const verifications = Array.isArray(exp?.verifications)
+            ? exp.verifications
+            : [];
+          const verifiedBy = Array.isArray(exp?.verifiedBy)
+            ? exp.verifiedBy
+            : [];
+          const uniqueVerifierIds = new Set(
+            [
+              ...verifications.map((entry) =>
+                typeof entry?.user === "string"
+                  ? entry.user
+                  : entry?.user?._id || entry?.user?.id
+              ),
+              ...verifiedBy.map((val) =>
+                typeof val === "string" ? val : val?._id || val?.id
+              ),
+            ].filter(Boolean)
+          );
+          const verifyCount =
+            typeof exp?.verifyCount === "number" ? exp.verifyCount : 0;
+          const totalVerifiers = Math.max(
+            verifyCount,
+            uniqueVerifierIds.size,
+            verifications.length,
+            verifiedBy.length
+          );
 
           return (
             <motion.div
@@ -124,7 +179,6 @@ export default function ExperienceForm({
               layout
               className="origin-top mb-6 p-5 rounded-2xl border border-gray-200 bg-white shadow-sm space-y-4"
             >
-             
               {/* Row header */}
               <div className="mb-1 text-left">
                 <div className="text-lg font-bold text-gray-900">
@@ -132,19 +186,17 @@ export default function ExperienceForm({
                     ? exp.jobTitle
                     : `Experience ${index + 1}`}
                 </div>
-
-                {/* Plain text credits under the heading */}
-                {bucket ? (
-                  <div className="mt-0.5 text-left">
-                    <CreditText
-                      available={available}
-                      used={used}
-                      total={total}
-                    />
-                  </div>
-                ) : null}
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+              <div className="text-sm text-gray-600 text-start">
+                {totalVerifiers > 0
+                  ? `${totalVerifiers} ${
+                      totalVerifiers === 1 ? "user has" : "users have"
+                    } verified this experience.`
+                  : "No users have verified this experience yet."}
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
                 {/* Job Title (dropdown + optional "Other" input) */}
                 <div className="flex flex-col gap-2">
                   <AppSelect
@@ -279,12 +331,87 @@ export default function ExperienceForm({
                   />
                 </div>
 
+                {/* Projects (Experience) */}
+                <div className="md:col-span-2 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-medium text-gray-700">
+                      Projects
+                    </span>
+                    <button
+                      type="button"
+                      className="text-sm text-orange-700 hover:underline"
+                      onClick={() => {
+                        const list = Array.isArray(exp.projects)
+                          ? exp.projects
+                          : [];
+                        updateExperience(index, "projects", [
+                          ...list,
+                          { projectTitle: "", projectDescription: "" },
+                        ]);
+                      }}
+                      disabled={isExpDisabled(rowLocked, "projects")}
+                    >
+                      + Add Project
+                    </button>
+                  </div>
+
+                  {(exp.projects || []).map((p, pi) => (
+                    <div
+                      key={pi}
+                      className="grid grid-cols-1 md:grid-cols-2 gap-3 border rounded-xl p-3 bg-gray-50"
+                    >
+                      <AppInput
+                        label="Project Title"
+                        value={p.projectTitle || ""}
+                        onChange={(e) => {
+                          const list = [...(exp.projects || [])];
+                          list[pi] = {
+                            ...list[pi],
+                            projectTitle: e.target.value,
+                          };
+                          updateExperience(index, "projects", list);
+                        }}
+                        placeholder="e.g. Internal CRM Revamp"
+                        disabled={isExpDisabled(rowLocked, "projects")}
+                      />
+                      <AppInput
+                        label="Project Description"
+                        value={p.projectDescription || ""}
+                        onChange={(e) => {
+                          const list = [...(exp.projects || [])];
+                          list[pi] = {
+                            ...list[pi],
+                            projectDescription: e.target.value,
+                          };
+                          updateExperience(index, "projects", list);
+                        }}
+                        placeholder="Outcomes, stack, role…"
+                        disabled={isExpDisabled(rowLocked, "projects")}
+                      />
+                      <div className="md:col-span-2 flex justify-end">
+                        <button
+                          type="button"
+                          className="text-xs text-red-600 hover:underline"
+                          onClick={() => {
+                            const list = [...(exp.projects || [])];
+                            list.splice(pi, 1);
+                            updateExperience(index, "projects", list);
+                          }}
+                          disabled={isExpDisabled(rowLocked, "projects")}
+                        >
+                          Remove
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
                 {/* Full-width experience letter uploader with switch header */}
                 <div className="md:col-span-2">
                   <div className="flex items-center justify-between mb-2">
                     <label className="text-sm font-medium text-gray-700 flex items-center gap-2">
                       <FileText className="h-4 w-4 text-orange-600" />
-                      Upload Experience Letter (PDF / Image)
+                      Upload Experience Letter (PDF)
                     </label>
 
                     <div className="flex items-center gap-2">
@@ -316,7 +443,7 @@ export default function ExperienceForm({
                       if (letterRefs?.current) letterRefs.current[index] = el;
                     }}
                     name={`experienceLetterFile-${index}`}
-                    accept="application/pdf,image/*"
+                    accept="application/pdf"
                     icon={FileText}
                     onChange={(file) =>
                       updateExperience(index, "experienceLetterFile", file)
@@ -326,49 +453,78 @@ export default function ExperienceForm({
                   />
                 </div>
               </div>
+
+              <div className="rounded-xl border border-gray-200 bg-gray-50 p-4">
+                <div className="flex flex-wrap items-center gap-3">
+                  {bucket ? (
+                    <CreditText
+                      label={creditLabel}
+                      available={available}
+                      used={used}
+                      total={total}
+                    />
+                  ) : (
+                    <span className="text-sm text-gray-500">
+                      No verification credits recorded yet for this experience.
+                    </span>
+                  )}
+                </div>
+              </div>
+
               {/* Row actions */}
-              <div className="flex justify-end gap-3 pt-1">
-                {!rowLocked && (
+              <div className="flex flex-col gap-3 pt-1 sm:flex-row sm:justify-end">
+                <div className="flex items-center gap-3 self-end sm:self-auto">
                   <Button
-                    variant="destructive"
+                    variant="link"
                     type="button"
-                    onClick={(e) => {
-                      e.stopPropagation(); // don’t toggle accordion
-                      removeExperience(index);
-                    }}
+                    className="px-0 text-orange-700"
+                    onClick={() => setCreditInfoOpen(true)}
                   >
-                    Remove
+                    See how these credits work
                   </Button>
-                )}
 
-                <Button
-                  type="button"
-                  disabled={savingThis || !isCompanyWebsiteValid}
-                  onClick={(e) => {
-                    e.stopPropagation(); // don’t toggle accordion
+                  {!rowLocked && (
+                    <Button
+                      variant="destructive"
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation(); // don't toggle accordion
+                        removeExperience(index);
+                      }}
+                    >
+                      Remove
+                    </Button>
+                  )}
 
-                    const val = (exp.companyWebsite || "").trim();
-                    if (!companyWebsiteRegex.test(val)) {
-                      updateExperience(
-                        index,
-                        "error_companyWebsite",
-                        "Only valid website URLs allowed (e.g. https://company.com/)"
+                  <Button
+                    type="button"
+                    disabled={savingThis || !isCompanyWebsiteValid}
+                    onClick={(e) => {
+                      e.stopPropagation(); // don't toggle accordion
+
+                      const val = (exp.companyWebsite || "").trim();
+                      if (!companyWebsiteRegex.test(val)) {
+                        updateExperience(
+                          index,
+                          "error_companyWebsite",
+                          "Only valid website URLs allowed (e.g. https://company.com/)"
+                        );
+                        return;
+                      }
+                      updateExperience(index, "error_companyWebsite", "");
+
+                      onAskConfirm?.(
+                        `experience:${index}`,
+                        `Experience ${index + 1}`,
+                        () => saveExperience(index, experienceList[index])
                       );
-                      return;
-                    }
-                    updateExperience(index, "error_companyWebsite", "");
-
-                    onAskConfirm?.(
-                      `experience:${index}`,
-                      `Experience ${index + 1}`,
-                      () => saveExperience(index, experienceList[index])
-                    );
-                  }}
-                  className="inline-flex items-center gap-2 bg-orange-600 hover:bg-orange-700 text-white"
-                >
-                  <Save className="h-4 w-4" />
-                  {savingThis ? "Saving..." : "Save"}
-                </Button>
+                    }}
+                    className="inline-flex items-center gap-2 bg-orange-600 hover:bg-orange-700 text-white"
+                  >
+                    <Save className="h-4 w-4" />
+                    {savingThis ? "Saving..." : "Save"}
+                  </Button>
+                </div>
               </div>
             </motion.div>
           );

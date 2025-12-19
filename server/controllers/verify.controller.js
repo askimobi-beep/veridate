@@ -51,6 +51,7 @@ exports.verifyEducation = async (req, res) => {
   try {
     const verifierId = req.user?.id;
     let { targetUserId, eduId } = req.params;
+    const { rating: rawRating, comment: rawComment } = req.body || {};
 
     // sanitize ids
     targetUserId = extractHex24(targetUserId);
@@ -75,6 +76,18 @@ exports.verifyEducation = async (req, res) => {
         .status(400)
         .json({ message: "You can't verify your own education" });
     }
+
+    const parsedRating = Number(rawRating);
+    if (!Number.isInteger(parsedRating) || parsedRating < 1 || parsedRating > 5) {
+      return res
+        .status(400)
+        .json({ message: "A star rating between 1 and 5 is required" });
+    }
+
+    const commentText =
+      typeof rawComment === "string"
+        ? rawComment.trim().slice(0, 1000)
+        : "";
 
     // 1) load target edu row
     const targetProfile = await Profile.findOne({ user: targetUserId }).lean();
@@ -142,6 +155,14 @@ exports.verifyEducation = async (req, res) => {
       {
         $addToSet: { "education.$.verifiedBy": oid },
         $inc: { "education.$.verifyCount": 1 },
+        $push: {
+          "education.$.verifications": {
+            user: oid,
+            rating: parsedRating,
+            comment: commentText,
+            createdAt: new Date(),
+          },
+        },
       }
     );
 
@@ -219,7 +240,13 @@ exports.verifyEducation = async (req, res) => {
     const [verifierUser, targetUser, refreshedTargetProfile] = await Promise.all([
       User.findById(verifierId).select("verifyCredits.education").lean(),
       User.findById(targetUserId).select("verifyCredits.education").lean(),
-      Profile.findOne({ user: targetUserId }).select("education").lean(),
+      Profile.findOne({ user: targetUserId })
+        .select("education")
+        .populate({
+          path: "education.verifications.user",
+          select: "name email profilePic",
+        })
+        .lean(),
     ]);
 
     const withComputedTotals = (u) => {
@@ -251,6 +278,13 @@ exports.verifyEducation = async (req, res) => {
         _id: r._id,
         institute: r.institute,
         verifyCount: r.verifyCount || 0,
+        verifiedBy: r.verifiedBy || [],
+        verifications: (r.verifications || []).map((entry) => ({
+          user: entry.user,
+          rating: entry.rating,
+          comment: entry.comment,
+          createdAt: entry.createdAt,
+        })),
       })),
     });
   } catch (err) {
@@ -266,6 +300,7 @@ exports.verifyExperience = async (req, res) => {
   try {
     const verifierId = req.user?.id;
     let { targetUserId, expId } = req.params;
+    const { rating: rawRating, comment: rawComment } = req.body || {};
 
     // sanitize ids
     targetUserId = extractHex24(targetUserId);
@@ -290,6 +325,18 @@ exports.verifyExperience = async (req, res) => {
         .status(400)
         .json({ message: "You can't verify your own experience" });
     }
+
+    const parsedRating = Number(rawRating);
+    if (!Number.isInteger(parsedRating) || parsedRating < 1 || parsedRating > 5) {
+      return res
+        .status(400)
+        .json({ message: "A star rating between 1 and 5 is required" });
+    }
+
+    const commentText =
+      typeof rawComment === "string"
+        ? rawComment.trim().slice(0, 1000)
+        : "";
 
     // 1) load target exp row
     const targetProfile = await Profile.findOne({ user: targetUserId }).lean();
@@ -357,6 +404,14 @@ exports.verifyExperience = async (req, res) => {
       {
         $addToSet: { "experience.$.verifiedBy": oid },
         $inc: { "experience.$.verifyCount": 1 },
+        $push: {
+          "experience.$.verifications": {
+            user: oid,
+            rating: parsedRating,
+            comment: commentText,
+            createdAt: new Date(),
+          },
+        },
       }
     );
 
@@ -434,7 +489,13 @@ exports.verifyExperience = async (req, res) => {
     const [verifierUser, targetUser, refreshedTargetProfile] = await Promise.all([
       User.findById(verifierId).select("verifyCredits.experience").lean(),
       User.findById(targetUserId).select("verifyCredits.experience").lean(),
-      Profile.findOne({ user: targetUserId }).select("experience").lean(),
+      Profile.findOne({ user: targetUserId })
+        .select("experience")
+        .populate({
+          path: "experience.verifications.user",
+          select: "name email profilePic",
+        })
+        .lean(),
     ]);
 
     const withComputedTotals = (u) => {
@@ -466,6 +527,13 @@ exports.verifyExperience = async (req, res) => {
         _id: r._id,
         company: r.company,
         verifyCount: r.verifyCount || 0,
+        verifiedBy: r.verifiedBy || [],
+        verifications: (r.verifications || []).map((entry) => ({
+          user: entry.user,
+          rating: entry.rating,
+          comment: entry.comment,
+          createdAt: entry.createdAt,
+        })),
       })),
     });
   } catch (err) {

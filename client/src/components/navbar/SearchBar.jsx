@@ -2,6 +2,38 @@ import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import axiosInstance from "@/utils/axiosInstance";
 
+const tokenStartsWithQuery = (value, query) => {
+  if (!value) return false;
+  const lower = value.toLowerCase();
+  if (lower.startsWith(query)) return true;
+  return lower
+    .split(/[\s@._-]+/)
+    .some((token) => token.length && token.startsWith(query));
+};
+
+const matchesQuery = (item, rawQuery, isEmailQuery = false) => {
+  if (!rawQuery) return false;
+  const query = rawQuery.toLowerCase();
+
+  const name = item?.name || "";
+  const email = item?.email || "";
+  const degreeList = Array.isArray(item?.education)
+    ? item.education.map((edu) => edu?.degreeTitle || "")
+    : typeof item?.education === "object" && item?.education
+    ? [item.education.degreeTitle || ""]
+    : [];
+  const jobTitles = Array.isArray(item?.experience)
+    ? item.experience.map((exp) => exp?.jobTitle || "")
+    : [];
+
+  return (
+    tokenStartsWithQuery(name, query) ||
+    degreeList.some((degree) => tokenStartsWithQuery(degree, query)) ||
+    jobTitles.some((title) => tokenStartsWithQuery(title, query)) ||
+    (isEmailQuery && tokenStartsWithQuery(email, query))
+  );
+};
+
 export default function SearchBar({
   placeholder = "Search Candidate by Name, Email, Degree Title and Job Title",
   className = "",
@@ -65,7 +97,8 @@ export default function SearchBar({
         });
 
         const items = Array.isArray(res?.data?.data) ? res.data.data : [];
-        setResults(items);
+        const filtered = items.filter((item) => matchesQuery(item, q, isEmail));
+        setResults(filtered);
       } catch (err) {
         // Ignore aborts; surface other errors
         if (err.name !== "CanceledError" && err.name !== "AbortError") {

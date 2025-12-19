@@ -1,6 +1,40 @@
 // models/Profile.js
 const mongoose = require("mongoose");
 
+const VerificationReviewSchema = new mongoose.Schema(
+  {
+    user: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+    },
+    rating: {
+      type: Number,
+      min: 1,
+      max: 5,
+      required: true,
+    },
+    comment: {
+      type: String,
+      trim: true,
+      default: "",
+    },
+    createdAt: {
+      type: Date,
+      default: Date.now,
+    },
+  },
+  { _id: false }
+);
+
+const ProjectSchema = new mongoose.Schema(
+  {
+    projectTitle: { type: String, default: "" },
+    projectDescription: { type: String, default: "" },
+  },
+  { _id: false }
+);
+
 const EducationSchema = new mongoose.Schema({
   degreeTitle: String,
   startDate: Date,
@@ -9,15 +43,12 @@ const EducationSchema = new mongoose.Schema({
   instituteWebsite: String,
   degreeFile: String,
   hiddenFields: [String],
-
   verifyCount: { type: Number, default: 0 },
   verifiedBy: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
-
-  // helps matching with User.verifyCredits buckets
+  verifications: { type: [VerificationReviewSchema], default: [] },
   instituteKey: { type: String, index: true },
+  projects: { type: [ProjectSchema], default: [] },
 });
-
-
 
 const ExperienceSchema = new mongoose.Schema({
   jobTitle: String,
@@ -29,17 +60,21 @@ const ExperienceSchema = new mongoose.Schema({
   jobFunctions: [String],
   industry: String,
   hiddenFields: [String],
-
   verifyCount: { type: Number, default: 0 },
   verifiedBy: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
-
-  // normalized key to align with User.verifyCredits.experience buckets
+  verifications: { type: [VerificationReviewSchema], default: [] },
   companyKey: { type: String, index: true },
+  projects: { type: [ProjectSchema], default: [] },
 });
 
 const ProfileSchema = new mongoose.Schema(
   {
-    user: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true, unique: true },
+    user: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+      unique: true,
+    },
 
     // --- personal ---
     name: String,

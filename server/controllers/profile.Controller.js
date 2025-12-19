@@ -70,11 +70,6 @@ function redactEduExpArrays(p) {
 const client = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
-
-
-console.log("API key?", process.env.OPENAI_API_KEY ? "Present" : "Missing");
-
-
 const normalizeDigits = (s) => (s || "").replace(/\D+/g, ""); // keep only 0-9
 const normalizeCode = (s) => {
   const t = (s || "").trim();
@@ -83,123 +78,16 @@ const normalizeCode = (s) => {
   return digits ? `+${digits}` : "";
 };
 
-
-
-/* =========================
-   SAVE PERSONAL INFO
-   ========================= */
-// exports.savePersonalInfo = async (req, res) => {
-//   try {
-//     const userId = req.user.id;
-//     const profile = await Profile.findOne({ user: userId });
-
-//     const ALLOWED_WHEN_LOCKED = new Set([
-//       "email",
-//       "mobile",
-//       "maritalStatus",
-//       "city",
-//       "country",
-//       "residentStatus",
-//       "nationality",
-//       "shiftPreferences",
-//       "workAuthorization",
-//       "personalHiddenFields",
-//     ]);
-
-//     const filesUpdate = {};
-//     if (req.files?.resume?.[0])
-//       filesUpdate.resume = req.files.resume[0].filename;
-//     if (req.files?.profilePic?.[0])
-//       filesUpdate.profilePic = req.files.profilePic[0].filename;
-
-//     const fields = [
-//       "name",
-//       "email",
-//       "fatherName",
-//       "mobile",
-//       "cnic",
-//       "city",
-//       "country",
-//       "gender",
-//       "maritalStatus",
-//       "residentStatus",
-//       "nationality",
-//       "dob",
-//       "shiftPreferences",
-//       "workAuthorization",
-//       "personalHiddenFields",
-//     ];
-
-//     const bodyUpdate = {};
-//     for (const key of fields) {
-//       if (req.body[key] !== undefined) {
-//         if (
-//           key === "shiftPreferences" ||
-//           key === "workAuthorization" ||
-//           key === "personalHiddenFields"
-//         ) {
-//           try {
-//             bodyUpdate[key] = Array.isArray(req.body[key])
-//               ? req.body[key]
-//               : JSON.parse(req.body[key] || "[]");
-//           } catch {
-//             bodyUpdate[key] = [];
-//           }
-//         } else {
-//           bodyUpdate[key] = req.body[key];
-//         }
-//       }
-//     }
-
-//     if (profile) {
-//       if (filesUpdate.resume && profile.resume)
-//         removeOldPersonalFile("resume", profile.resume);
-//       if (filesUpdate.profilePic && profile.profilePic)
-//         removeOldPersonalFile("profilePic", profile.profilePic);
-//     }
-
-//     if (!profile?.personalInfoLocked) {
-//       const updated = await Profile.findOneAndUpdate(
-//         { user: userId },
-//         { $set: { ...bodyUpdate, ...filesUpdate, personalInfoLocked: true } },
-//         { new: true, upsert: true }
-//       );
-//       return res
-//         .status(200)
-//         .json({ message: "Personal info saved & locked", profile: updated });
-//     }
-
-//     const lockedUpdate = {};
-//     for (const [k, v] of Object.entries(bodyUpdate)) {
-//       if (ALLOWED_WHEN_LOCKED.has(k)) lockedUpdate[k] = v;
-//     }
-//     Object.assign(lockedUpdate, filesUpdate);
-
-//     if (!Object.keys(lockedUpdate).length) {
-//       return res
-//         .status(403)
-//         .json({
-//           error:
-//             "This section is locked. Only permitted fields can be updated.",
-//         });
-//     }
-
-//     const updated = await Profile.findOneAndUpdate(
-//       { user: userId },
-//       { $set: lockedUpdate },
-//       { new: true }
-//     );
-//     return res
-//       .status(200)
-//       .json({ message: "Personal info updated", profile: updated });
-//   } catch (err) {
-//     console.error(err);
-//     res.status(500).json({ error: "Failed to save personal info" });
-//   }
-// };
-
-// add next to savePersonalInfo
-
+function normalizeProjects(input) {
+  const arr = Array.isArray(input) ? input : [];
+  return arr
+    .map((p) => ({
+      projectTitle: typeof p?.projectTitle === "string" ? p.projectTitle : "",
+      projectDescription:
+        typeof p?.projectDescription === "string" ? p.projectDescription : "",
+    }))
+    .filter((p) => p.projectTitle || p.projectDescription);
+}
 
 exports.savePersonalInfo = async (req, res) => {
   try {
@@ -223,8 +111,10 @@ exports.savePersonalInfo = async (req, res) => {
 
     // file payloads (unchanged)
     const filesUpdate = {};
-    if (req.files?.resume?.[0]) filesUpdate.resume = req.files.resume[0].filename;
-    if (req.files?.profilePic?.[0]) filesUpdate.profilePic = req.files.profilePic[0].filename;
+    if (req.files?.resume?.[0])
+      filesUpdate.resume = req.files.resume[0].filename;
+    if (req.files?.profilePic?.[0])
+      filesUpdate.profilePic = req.files.profilePic[0].filename;
 
     // read body fields (now includes mobileCountryCode)
     const fields = [
@@ -249,7 +139,11 @@ exports.savePersonalInfo = async (req, res) => {
     const bodyUpdate = {};
     for (const key of fields) {
       if (req.body[key] !== undefined) {
-        if (key === "shiftPreferences" || key === "workAuthorization" || key === "personalHiddenFields") {
+        if (
+          key === "shiftPreferences" ||
+          key === "workAuthorization" ||
+          key === "personalHiddenFields"
+        ) {
           try {
             bodyUpdate[key] = Array.isArray(req.body[key])
               ? req.body[key]
@@ -266,7 +160,9 @@ exports.savePersonalInfo = async (req, res) => {
     // 👇 merge country code + local number into a single mobile string
     // example: code "+92" and number "3001234567" -> "+923001234567"
     {
-      const code = normalizeCode(bodyUpdate.mobileCountryCode || req.body.mobileCountryCode);
+      const code = normalizeCode(
+        bodyUpdate.mobileCountryCode || req.body.mobileCountryCode
+      );
       const num = normalizeDigits(bodyUpdate.mobile || req.body.mobile);
 
       if (num) {
@@ -279,8 +175,10 @@ exports.savePersonalInfo = async (req, res) => {
 
     // cleanup old files if replacing
     if (profile) {
-      if (filesUpdate.resume && profile.resume) removeOldPersonalFile?.("resume", profile.resume);
-      if (filesUpdate.profilePic && profile.profilePic) removeOldPersonalFile?.("profilePic", profile.profilePic);
+      if (filesUpdate.resume && profile.resume)
+        removeOldPersonalFile?.("resume", profile.resume);
+      if (filesUpdate.profilePic && profile.profilePic)
+        removeOldPersonalFile?.("profilePic", profile.profilePic);
     }
 
     // if section not locked yet → set + lock
@@ -290,7 +188,9 @@ exports.savePersonalInfo = async (req, res) => {
         { $set: { ...bodyUpdate, ...filesUpdate, personalInfoLocked: true } },
         { new: true, upsert: true }
       );
-      return res.status(200).json({ message: "Personal info saved & locked", profile: updated });
+      return res
+        .status(200)
+        .json({ message: "Personal info saved & locked", profile: updated });
     }
 
     // section locked → only allow selected fields
@@ -301,9 +201,9 @@ exports.savePersonalInfo = async (req, res) => {
     Object.assign(lockedUpdate, filesUpdate);
 
     if (!Object.keys(lockedUpdate).length) {
-      return res
-        .status(403)
-        .json({ error: "This section is locked. Only permitted fields can be updated." });
+      return res.status(403).json({
+        error: "This section is locked. Only permitted fields can be updated.",
+      });
     }
 
     const updated = await Profile.findOneAndUpdate(
@@ -312,13 +212,14 @@ exports.savePersonalInfo = async (req, res) => {
       { new: true }
     );
 
-    return res.status(200).json({ message: "Personal info updated", profile: updated });
+    return res
+      .status(200)
+      .json({ message: "Personal info updated", profile: updated });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Failed to save personal info" });
   }
 };
-
 
 exports.saveProfilePhoto = async (req, res) => {
   try {
@@ -369,14 +270,13 @@ exports.saveProfilePhoto = async (req, res) => {
   }
 };
 
-
 async function ensureUserEduCredits(userId, eduRows) {
   const institutes = (eduRows || [])
-    .map(r => ({
+    .map((r) => ({
       institute: r.institute || "",
       instituteKey: normalizeInstitute(r.institute || ""),
     }))
-    .filter(r => r.instituteKey);
+    .filter((r) => r.instituteKey);
 
   if (!institutes.length) return;
 
@@ -384,7 +284,7 @@ async function ensureUserEduCredits(userId, eduRows) {
   if (!user) return;
 
   const existing = new Set(
-    (user.verifyCredits?.education || []).map(b => b.instituteKey)
+    (user.verifyCredits?.education || []).map((b) => b.instituteKey)
   );
 
   const toAdd = [];
@@ -422,6 +322,7 @@ exports.saveEducation = async (req, res) => {
       "instituteWebsite",
       "degreeFile",
       "hiddenFields",
+      "projects",
     ]);
 
     // parse rows
@@ -487,6 +388,7 @@ exports.saveEducation = async (req, res) => {
         instituteWebsite: e?.instituteWebsite || "",
         degreeFile: e?.degreeFile || null,
         hiddenFields: Array.isArray(e?.hiddenFields) ? e.hiddenFields : [],
+        projects: normalizeProjects(e?.projects),
       }));
 
       const updated = await Profile.findOneAndUpdate(
@@ -534,6 +436,8 @@ exports.saveEducation = async (req, res) => {
 
           if (k === "hiddenFields") {
             next.hiddenFields = Array.isArray(v) ? v : [];
+          } else if (k === "projects") {
+            next.projects = normalizeProjects(v);
           } else {
             next[k] = v ?? next[k];
           }
@@ -550,6 +454,7 @@ exports.saveEducation = async (req, res) => {
           hiddenFields: Array.isArray(inc?.hiddenFields)
             ? inc.hiddenFields
             : [],
+          projects: normalizeProjects(inc?.projects),
         });
       }
     }
@@ -562,18 +467,15 @@ exports.saveEducation = async (req, res) => {
 
     await ensureUserEduCredits(userId, updated.education);
 
-    return res
-      .status(200)
-      .json({
-        message: "Education updated (existing rows locked; new rows added)",
-        profile: updated,
-      });
+    return res.status(200).json({
+      message: "Education updated (existing rows locked; new rows added)",
+      profile: updated,
+    });
   } catch (err) {
     console.error(err);
     return res.status(500).json({ error: "Failed to save education" });
   }
 };
-
 
 async function ensureUserExpCredits(userId, expRows) {
   const companies = (expRows || [])
@@ -614,7 +516,6 @@ async function ensureUserExpCredits(userId, expRows) {
   }
 }
 
-
 exports.saveExperience = async (req, res) => {
   try {
     const userId = req.user.id;
@@ -626,6 +527,7 @@ exports.saveExperience = async (req, res) => {
       "experienceLetterFile",
       "jobFunctions",
       "hiddenFields",
+      "projects",
     ]);
 
     // parse incoming rows
@@ -642,8 +544,13 @@ exports.saveExperience = async (req, res) => {
       ? req.files
       : req.files?.experienceFiles ?? [];
 
-    const expFiles = (Array.isArray(allIncomingFiles) ? allIncomingFiles : [allIncomingFiles]).filter(
-      (f) => f && typeof f.fieldname === "string" && f.fieldname.startsWith("experienceFiles")
+    const expFiles = (
+      Array.isArray(allIncomingFiles) ? allIncomingFiles : [allIncomingFiles]
+    ).filter(
+      (f) =>
+        f &&
+        typeof f.fieldname === "string" &&
+        f.fieldname.startsWith("experienceFiles")
     );
 
     // map bracketed files
@@ -661,7 +568,8 @@ exports.saveExperience = async (req, res) => {
     expFiles
       .filter((f) => !/\[\d+\]/.test(f.fieldname))
       .forEach((f) => {
-        while (seq < incoming.length && incoming[seq]?.experienceLetterFile) seq++;
+        while (seq < incoming.length && incoming[seq]?.experienceLetterFile)
+          seq++;
         if (seq < incoming.length) {
           incoming[seq].experienceLetterFile = f.filename;
           seq++;
@@ -672,7 +580,8 @@ exports.saveExperience = async (req, res) => {
     if (!profile?.experienceLocked) {
       if (Array.isArray(profile?.experience)) {
         for (const row of profile.experience) {
-          if (row?.experienceLetterFile) removeOldExperienceFile(row.experienceLetterFile);
+          if (row?.experienceLetterFile)
+            removeOldExperienceFile(row.experienceLetterFile);
         }
       }
 
@@ -688,6 +597,7 @@ exports.saveExperience = async (req, res) => {
         hiddenFields: Array.isArray(e?.hiddenFields) ? e.hiddenFields : [],
         // 👇 add normalized key so verifyExperience can match buckets
         companyKey: normalizeInstitute(e?.company || ""),
+        projects: normalizeProjects(e?.projects),
       }));
 
       const updated = await Profile.findOneAndUpdate(
@@ -699,7 +609,9 @@ exports.saveExperience = async (req, res) => {
       // 👇 seed per-company credits on User
       await ensureUserExpCredits(userId, updated.experience);
 
-      return res.status(200).json({ message: "Experience saved & locked", profile: updated });
+      return res
+        .status(200)
+        .json({ message: "Experience saved & locked", profile: updated });
     }
 
     // PATCH existing + APPEND new
@@ -715,7 +627,9 @@ exports.saveExperience = async (req, res) => {
       let targetIdx = -1;
 
       if (inc._id && byId.has(String(inc._id))) {
-        targetIdx = patched.findIndex((x) => String(x?._id) === String(inc._id));
+        targetIdx = patched.findIndex(
+          (x) => String(x?._id) === String(inc._id)
+        );
       } else if (i < patched.length && !patched[i]?._id) {
         targetIdx = i;
       }
@@ -728,14 +642,21 @@ exports.saveExperience = async (req, res) => {
         for (const [k, v] of Object.entries(inc)) {
           if (!ALLOWED_WHEN_LOCKED.has(k)) continue;
 
-          if (k === "experienceLetterFile" && v && v !== prev.experienceLetterFile) {
-            if (prev.experienceLetterFile) removeOldExperienceFile(prev.experienceLetterFile);
+          if (
+            k === "experienceLetterFile" &&
+            v &&
+            v !== prev.experienceLetterFile
+          ) {
+            if (prev.experienceLetterFile)
+              removeOldExperienceFile(prev.experienceLetterFile);
           }
 
           if (k === "hiddenFields") {
             next.hiddenFields = Array.isArray(v) ? v : [];
           } else if (k === "jobFunctions") {
             next.jobFunctions = Array.isArray(v) ? v : [];
+          } else if (k === "projects") {
+            next.projects = normalizeProjects(v);
           } else {
             next[k] = v ?? next[k];
           }
@@ -752,10 +673,15 @@ exports.saveExperience = async (req, res) => {
           company: inc?.company || "",
           companyWebsite: inc?.companyWebsite || "",
           experienceLetterFile: inc?.experienceLetterFile || null,
-          jobFunctions: Array.isArray(inc?.jobFunctions) ? inc.jobFunctions : [],
+          jobFunctions: Array.isArray(inc?.jobFunctions)
+            ? inc.jobFunctions
+            : [],
           industry: inc?.industry || "",
-          hiddenFields: Array.isArray(inc?.hiddenFields) ? inc.hiddenFields : [],
+          hiddenFields: Array.isArray(inc?.hiddenFields)
+            ? inc.hiddenFields
+            : [],
           companyKey: normalizeInstitute(inc?.company || ""),
+          projects: normalizeProjects(inc?.projects),
         });
       }
     }
@@ -923,7 +849,16 @@ exports.getProfileByUserId = async (req, res) => {
       return res.status(400).json({ error: "User ID is required" });
     }
 
-    const profile = await Profile.findOne({ user: userId }).lean();
+    const profile = await Profile.findOne({ user: userId })
+      .populate({
+        path: "education.verifications.user",
+        select: "name email profilePic",
+      })
+      .populate({
+        path: "experience.verifications.user",
+        select: "name email profilePic",
+      })
+      .lean();
 
     if (!profile) {
       return res.status(404).json({ error: "Profile not found" });
@@ -945,7 +880,15 @@ exports.getProfileByUserId = async (req, res) => {
    ========================= */
 exports.getProfile = async (req, res) => {
   try {
-    const profile = await Profile.findOne({ user: req.user.id });
+    const profile = await Profile.findOne({ user: req.user.id })
+      .populate({
+        path: "education.verifications.user",
+        select: "name email profilePic",
+      })
+      .populate({
+        path: "experience.verifications.user",
+        select: "name email profilePic",
+      });
     if (!profile) return res.status(404).json({ message: "No profile found" });
     res.status(200).json(profile);
   } catch (err) {
@@ -953,7 +896,6 @@ exports.getProfile = async (req, res) => {
     res.status(500).json({ error: "Something went wrong" });
   }
 };
-
 
 exports.profileSummary = async (req, res) => {
   try {
@@ -1009,9 +951,7 @@ exports.profileSummary = async (req, res) => {
       max_output_tokens: 220,
     });
 
-    const summary =
-      (r && (r.output_text || "").trim()) ||
-      ""; // `.output_text` is the easiest way to read the final text
+    const summary = (r && (r.output_text || "").trim()) || ""; // `.output_text` is the easiest way to read the final text
 
     if (!summary) {
       return res.status(502).json({ error: "Empty summary from model" });
@@ -1021,5 +961,63 @@ exports.profileSummary = async (req, res) => {
   } catch (err) {
     console.error("profile-summary error:", err?.message || err);
     return res.status(500).json({ error: "Failed to generate summary" });
+  }
+};
+
+// ---- controller ----
+exports.profileChat = async (req, res) => {
+  try {
+    const { userId, question, context } = req.body;
+
+    if (!question || (!userId && !context)) {
+      return res
+        .status(400)
+        .json({ error: "Missing question and/or userId/context" });
+    }
+
+    let dataForAI = context;
+    if (!dataForAI && userId) {
+      const p = await Profile.findOne({ user: userId }).lean();
+      if (!p) return res.status(404).json({ error: "Profile not found" });
+      dataForAI = buildAIContext(p);
+    }
+
+    const systemInstructions = [
+      "You are a strict, on-record profile assistant.",
+      "Answer only from the provided JSON profile. If a detail is missing, respond professionally that it is not listed.",
+      "Prefer concise, factual replies. When years are asked, derive from start/end dates only.",
+      "Treat a missing endDate as 'present/current'.",
+      "If multiple records exist, use 'facts.mostRecentExp' and 'facts.mostRecentEdu' when relevant.",
+      "If dates are completely missing, use the first record in the array and say dates are not listed.",
+      "If the question is not about the candidate's profile, refuse briefly.",
+    ].join(" ");
+
+    const userPrompt = [
+      "PROFILE (JSON):",
+      JSON.stringify(dataForAI, null, 2),
+      "",
+      "QUESTION:",
+      question,
+      "",
+      "Return plain text only. Keep it direct.",
+      "If a specific year is requested, extract from relevant endDate. If not available, say it's not listed.",
+    ].join("\n");
+
+    const r = await client.responses.create({
+      model: "gpt-4o-mini",
+      instructions: systemInstructions,
+      input: [{ role: "user", content: userPrompt }],
+      max_output_tokens: 350,
+    });
+
+    const answer = (r && (r.output_text || "").trim()) || "";
+    if (!answer) {
+      return res.status(502).json({ error: "Empty answer from model" });
+    }
+
+    return res.status(200).json({ answer });
+  } catch (err) {
+    console.error("profile-chat error:", err?.message || err);
+    return res.status(500).json({ error: "Failed to answer question" });
   }
 };

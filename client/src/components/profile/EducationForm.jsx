@@ -1,5 +1,5 @@
 // components/profile/EducationForm.jsx
-import React from "react";
+import React, { useState } from "react";
 import AppInput from "@/components/form/AppInput";
 import AppSelect from "@/components/form/AppSelect";
 import FileUploader from "@/components/form/FileUploader";
@@ -8,6 +8,12 @@ import { FileText, Save } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import BlockSwitch from "@/components/form/Switch";
 import CreditBadge from "../creditshow/CreditBadge";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 const degreeOptions = [
   "Bachelor of Science",
@@ -37,6 +43,7 @@ const EDUCATION_UNLOCKED = new Set([
   "instituteWebsite",
   "degreeFile",
   "hiddenFields",
+  "projects",
 ]);
 
 const isEduDisabled = (rowLocked, field) =>
@@ -68,9 +75,22 @@ export default function EducationForm({
 }) {
   const norm = (s) => (s || "").trim().toLowerCase().replace(/\s+/g, " ");
   const websiteRegex = /^https:\/\/[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+  const [creditInfoOpen, setCreditInfoOpen] = useState(false);
 
   return (
     <>
+      <Dialog open={creditInfoOpen} onOpenChange={setCreditInfoOpen}>
+        <DialogContent className="bg-white">
+          <DialogHeader>
+            <DialogTitle>Credits guide</DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-gray-700">
+            A short walkthrough on how education verification credits work is
+            coming soon.
+          </p>
+        </DialogContent>
+      </Dialog>
+
       <AnimatePresence initial={false}>
         {educationList.map((edu, index) => {
           const rowLocked = !!edu?.rowLocked || (!!edu?._id && locked);
@@ -80,6 +100,33 @@ export default function EducationForm({
           const key = edu.instituteKey || norm(edu.institute);
           const bucket =
             key && eduCreditByKey?.get ? eduCreditByKey.get(key) : null;
+
+          const verifications = Array.isArray(edu?.verifications)
+            ? edu.verifications
+            : [];
+          const verifiedBy = Array.isArray(edu?.verifiedBy)
+            ? edu.verifiedBy
+            : [];
+          const uniqueVerifierIds = new Set(
+            [
+              ...verifications.map((entry) =>
+                typeof entry?.user === "string"
+                  ? entry.user
+                  : entry?.user?._id || entry?.user?.id
+              ),
+              ...verifiedBy.map((val) =>
+                typeof val === "string" ? val : val?._id || val?.id
+              ),
+            ].filter(Boolean)
+          );
+          const verifyCount =
+            typeof edu?.verifyCount === "number" ? edu.verifyCount : 0;
+          const totalVerifiers = Math.max(
+            verifyCount,
+            uniqueVerifierIds.size,
+            verifications.length,
+            verifiedBy.length
+          );
 
           const isWebsiteValid = websiteRegex.test(
             (edu.instituteWebsite || "").trim()
@@ -91,7 +138,6 @@ export default function EducationForm({
               layout
               className="origin-top mb-6 p-5 rounded-2xl border border-gray-200 bg-white shadow-sm space-y-4"
             >
-            
               {/* Row header */}
               <div className="mb-1 text-left">
                 <div className="text-lg font-bold text-gray-900">
@@ -99,17 +145,14 @@ export default function EducationForm({
                     ? edu.degreeTitle
                     : `Education ${index + 1}`}
                 </div>
+              </div>
 
-                {bucket ? (
-                  <div className="mt-1 text-sm">
-                    <CreditBadge
-                      label={bucket.institute || "—"}
-                      available={bucket.available ?? 0}
-                      used={bucket.used ?? 0}
-                      total={bucket.total}
-                    />
-                  </div>
-                ) : null}
+              <div className="text-sm text-gray-600 text-start">
+                {totalVerifiers > 0
+                  ? `${totalVerifiers} ${
+                      totalVerifiers === 1 ? "user has" : "users have"
+                    } verified this education.`
+                  : "No users have verified this education yet."}
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
@@ -188,7 +231,7 @@ export default function EducationForm({
                   <div className="flex items-center justify-between mb-2">
                     <label className="text-sm font-medium text-gray-700 flex items-center gap-2">
                       <FileText className="h-4 w-4 text-orange-600" />
-                      Upload Degree (PDF / Image)
+                      Upload Degree (PDF)
                     </label>
 
                     <div className="flex items-center gap-2">
@@ -211,6 +254,81 @@ export default function EducationForm({
                     </div>
                   </div>
 
+                  {/* Projects (Education) */}
+                  <div className="md:col-span-2 space-y-3 mb-4">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-medium text-gray-700">
+                        Projects
+                      </span>
+                      <button
+                        type="button"
+                        className="text-sm text-orange-700 hover:underline"
+                        onClick={() => {
+                          const list = Array.isArray(edu.projects)
+                            ? edu.projects
+                            : [];
+                          updateEducation(index, "projects", [
+                            ...list,
+                            { projectTitle: "", projectDescription: "" },
+                          ]);
+                        }}
+                        disabled={isEduDisabled(rowLocked, "projects")}
+                      >
+                        + Add Project
+                      </button>
+                    </div>
+
+                    {(edu.projects || []).map((p, pi) => (
+                      <div
+                        key={pi}
+                        className="grid grid-cols-1 md:grid-cols-2 gap-3 border rounded-xl p-3 bg-gray-50"
+                      >
+                        <AppInput
+                          label="Project Title"
+                          value={p.projectTitle || ""}
+                          onChange={(e) => {
+                            const list = [...(edu.projects || [])];
+                            list[pi] = {
+                              ...list[pi],
+                              projectTitle: e.target.value,
+                            };
+                            updateEducation(index, "projects", list);
+                          }}
+                          placeholder="e.g. Final Year Thesis"
+                          disabled={isEduDisabled(rowLocked, "projects")}
+                        />
+                        <AppInput
+                          label="Project Description"
+                          value={p.projectDescription || ""}
+                          onChange={(e) => {
+                            const list = [...(edu.projects || [])];
+                            list[pi] = {
+                              ...list[pi],
+                              projectDescription: e.target.value,
+                            };
+                            updateEducation(index, "projects", list);
+                          }}
+                          placeholder="What did you build / learn?"
+                          disabled={isEduDisabled(rowLocked, "projects")}
+                        />
+                        <div className="md:col-span-2 flex justify-end">
+                          <button
+                            type="button"
+                            className="text-xs text-red-600 hover:underline"
+                            onClick={() => {
+                              const list = [...(edu.projects || [])];
+                              list.splice(pi, 1);
+                              updateEducation(index, "projects", list);
+                            }}
+                            disabled={isEduDisabled(rowLocked, "projects")}
+                          >
+                            Remove
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
                   <FileUploader
                     ref={(el) =>
                       degreeRefs?.current
@@ -218,7 +336,7 @@ export default function EducationForm({
                         : null
                     }
                     name={`degreeFile-${index}`}
-                    accept="application/pdf,image/*"
+                    accept="application/pdf"
                     icon={FileText}
                     onChange={(file) =>
                       updateEducation(index, "degreeFile", file)
@@ -229,47 +347,75 @@ export default function EducationForm({
                 </div>
               </div>
 
+              <div className="rounded-xl border border-gray-200 bg-gray-50 p-4">
+                <div className="flex flex-wrap items-center gap-3">
+                  {bucket ? (
+                    <CreditBadge
+                      label={bucket?.institute || edu.institute || ""}
+                      available={bucket.available ?? 0}
+                      used={bucket.used ?? 0}
+                      total={bucket.total}
+                    />
+                  ) : (
+                    <span className="text-sm text-gray-500">
+                      No verification credits recorded yet for this education.
+                    </span>
+                  )}
+                </div>
+              </div>
+
               {/* Row actions */}
-              <div className="flex justify-end gap-3 pt-1">
-                {!rowLocked && (
+              <div className="flex flex-col gap-3 pt-1 sm:flex-row sm:justify-end">
+                <div className="flex items-center gap-3 self-end sm:self-auto">
                   <Button
-                    variant="destructive"
+                    variant="link"
                     type="button"
+                    className="px-0 text-orange-700"
+                    onClick={() => setCreditInfoOpen(true)}
+                  >
+                    See how these credits work
+                  </Button>
+
+                  {!rowLocked && (
+                    <Button
+                      variant="destructive"
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        removeEducation(index);
+                      }}
+                    >
+                      Remove
+                    </Button>
+                  )}
+
+                  <Button
+                    type="button"
+                    disabled={savingThis || !isWebsiteValid}
                     onClick={(e) => {
                       e.stopPropagation();
-                      removeEducation(index);
-                    }}
-                  >
-                    Remove
-                  </Button>
-                )}
-
-                <Button
-                  type="button"
-                  disabled={savingThis || !isWebsiteValid}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    const val = (edu.instituteWebsite || "").trim();
-                    if (!websiteRegex.test(val)) {
-                      updateEducation(
-                        index,
-                        "error_instituteWebsite",
-                        "Only valid website URLs allowed (e.g. https://ucp.edu.pk/)"
+                      const val = (edu.instituteWebsite || "").trim();
+                      if (!websiteRegex.test(val)) {
+                        updateEducation(
+                          index,
+                          "error_instituteWebsite",
+                          "Only valid website URLs allowed (e.g. https://ucp.edu.pk/)"
+                        );
+                        return;
+                      }
+                      updateEducation(index, "error_instituteWebsite", "");
+                      onAskConfirm?.(
+                        `education:${index}`,
+                        `Education ${index + 1}`,
+                        () => saveEducation(index, educationList[index])
                       );
-                      return;
-                    }
-                    updateEducation(index, "error_instituteWebsite", "");
-                    onAskConfirm?.(
-                      `education:${index}`,
-                      `Education ${index + 1}`,
-                      () => saveEducation(index, educationList[index])
-                    );
-                  }}
-                  className="inline-flex items-center gap-2 bg-orange-600 hover:bg-orange-700 text-white"
-                >
-                  <Save className="h-4 w-4" />
-                  {savingThis ? "Saving..." : "Save"}
-                </Button>
+                    }}
+                    className="inline-flex items-center gap-2 bg-orange-600 hover:bg-orange-700 text-white"
+                  >
+                    <Save className="h-4 w-4" />
+                    {savingThis ? "Saving..." : "Save"}
+                  </Button>
+                </div>
               </div>
             </motion.div>
           );

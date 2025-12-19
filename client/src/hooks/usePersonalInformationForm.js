@@ -32,6 +32,7 @@ const getEmptyForm = () => ({
       instituteWebsite: "",
       degreeFile: null,
       hiddenFields: [],
+      projects: [], 
     },
   ],
 
@@ -47,6 +48,7 @@ const getEmptyForm = () => ({
       jobFunctions: [],
       industry: "",
       hiddenFields: [],
+      projects: [],
     },
   ],
 });

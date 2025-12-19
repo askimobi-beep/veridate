@@ -6,25 +6,41 @@ import { cn } from "@/lib/utils";
  * Renders a stylish credit summary badge.
  * Note: `label` is currently only used by EducationForm (optional heading).
  */
-export default function CreditText({ label, available = 0, used = 0, total }) {
+export default function CreditText({
+  label,
+  available = 0,
+  used = 0,
+  total,
+  className,
+}) {
   const _available = Number(available || 0);
   const _used = Number(used || 0);
   // Compute total if not explicitly passed (using computed value from mongoose lean call)
   const _total = typeof total === "number" ? total : _available + _used;
 
   return (
-    <div className="flex flex-wrap items-center gap-2">
+    <div
+      className={cn(
+        "flex flex-wrap items-center gap-2 text-sm text-gray-700",
+        className
+      )}
+    >
       {/* Optional Label (used for Institute/Company name in forms) */}
-      Verfication Credits
+      {/* {label ? (
+        <span className="font-medium text-gray-900">{label}</span>
+      ) : null} */}
 
+      <span className="text-xs font-semibold  tracking-wide text-gray-500">
+        Veridation Credits
+      </span>
 
       {/* Total Credits (Blue) */}
-      <BadgePill
+      {/* <BadgePill
         icon={Gauge}
         label="Total"
         value={_total}
         className="bg-blue-600/10 text-blue-700"
-      />
+      /> */}
 
       {/* Used Credits (Red) */}
       <BadgePill

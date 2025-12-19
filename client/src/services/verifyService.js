@@ -2,7 +2,7 @@ import axiosInstance from "@/utils/axiosInstance";
 
 const isHex24 = (s) => typeof s === "string" && /^[a-f0-9]{24}$/i.test(s);
 
-export async function verifyEducationRow(targetUserId, eduId) {
+export async function verifyEducationRow(targetUserId, eduId, review = {}) {
   if (!isHex24(targetUserId) || !isHex24(eduId)) {
     return {
       success: false,
@@ -10,11 +10,24 @@ export async function verifyEducationRow(targetUserId, eduId) {
     };
   }
 
+  const rating = Number(review.rating);
+  if (!Number.isInteger(rating) || rating < 1 || rating > 5) {
+    return {
+      success: false,
+      error: "A star rating between 1 and 5 is required to Veridate.",
+    };
+  }
+
+  const body = { rating };
+  if (typeof review.comment === "string") {
+    body.comment = review.comment.trim();
+  }
+
   try {
     const url = `/verify/profiles/${encodeURIComponent(
       targetUserId
     )}/verify/education/${encodeURIComponent(eduId)}`;
-    const { data } = await axiosInstance.post(url);
+    const { data } = await axiosInstance.post(url, body);
 
     return {
       success: true,
@@ -35,7 +48,7 @@ export async function verifyEducationRow(targetUserId, eduId) {
   }
 }
 
-export async function verifyExperienceRow(targetUserId, expId) {
+export async function verifyExperienceRow(targetUserId, expId, review = {}) {
   if (!isHex24(targetUserId) || !isHex24(expId)) {
     return {
       success: false,
@@ -43,11 +56,24 @@ export async function verifyExperienceRow(targetUserId, expId) {
     };
   }
 
+  const rating = Number(review.rating);
+  if (!Number.isInteger(rating) || rating < 1 || rating > 5) {
+    return {
+      success: false,
+      error: "A star rating between 1 and 5 is required to Veridate.",
+    };
+  }
+
+  const body = { rating };
+  if (typeof review.comment === "string") {
+    body.comment = review.comment.trim();
+  }
+
   try {
     const url = `/verify/profiles/${encodeURIComponent(
       targetUserId
     )}/verify/experience/${encodeURIComponent(expId)}`;
-    const { data } = await axiosInstance.post(url);
+    const { data } = await axiosInstance.post(url, body);
 
     return {
       success: true,
