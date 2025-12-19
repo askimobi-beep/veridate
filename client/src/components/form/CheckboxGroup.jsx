@@ -7,6 +7,7 @@ export default function CheckboxGroup({
   selected,
   onChange,
   disabled = false,
+  gridClassName = "",
 }) {
   const handleToggle = (value) => {
     if (disabled) return;
@@ -23,7 +24,7 @@ export default function CheckboxGroup({
            {title}
         </h3>
       )}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+      <div className={cn("grid grid-cols-1 sm:grid-cols-2 gap-2", gridClassName)}>
         {options.map((opt) => (
           <label
             key={opt}

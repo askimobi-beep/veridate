@@ -196,7 +196,7 @@ export default function ExperienceForm({
                   : "No users have verified this experience yet."}
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
                 {/* Job Title (dropdown + optional "Other" input) */}
                 <div className="flex flex-col gap-2">
                   <AppSelect
@@ -328,6 +328,7 @@ export default function ExperienceForm({
                       updateExperience(index, "jobFunctions", updated)
                     }
                     disabled={isExpDisabled(rowLocked, "jobFunctions")}
+                    gridClassName="gap-6"
                   />
                 </div>
 
@@ -358,7 +359,7 @@ export default function ExperienceForm({
                   {(exp.projects || []).map((p, pi) => (
                     <div
                       key={pi}
-                      className="grid grid-cols-1 md:grid-cols-2 gap-3 border rounded-xl p-3 bg-gray-50"
+                      className="grid grid-cols-1 md:grid-cols-2 gap-6 border rounded-xl p-3 bg-gray-50"
                     >
                       <AppInput
                         label="Project Title"
@@ -443,7 +444,7 @@ export default function ExperienceForm({
                       if (letterRefs?.current) letterRefs.current[index] = el;
                     }}
                     name={`experienceLetterFile-${index}`}
-                    accept="application/pdf"
+                    accept="Application/Pdf"
                     icon={FileText}
                     onChange={(file) =>
                       updateExperience(index, "experienceLetterFile", file)

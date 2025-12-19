@@ -210,7 +210,7 @@ export default function PersonalDetailsForm({
       </div>
 
       {/* Form */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-5">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-5">
         <AppInput
           label={<span>Legal Name</span>}
           name="name"
@@ -290,7 +290,7 @@ export default function PersonalDetailsForm({
                       className="max-w-sm rounded-xl border border-gray-200 shadow-lg p-3 bg-white"
                     >
                       <div className="text-sm font-semibold text-gray-900 mb-1">
-                        Unverified – Get Verified
+                        Unverified
                       </div>
                     </TooltipContent>
                   </Tooltip>
@@ -429,7 +429,7 @@ export default function PersonalDetailsForm({
         />
       </div>
 
-      <div className="mt-6 grid grid-cols-1 md:grid-cols-1 gap-4">
+      <div className="mt-6 grid grid-cols-1 md:grid-cols-1 gap-6">
         <CheckboxGroup
           title="Shift Preferences"
           options={shiftOptions}
@@ -438,6 +438,7 @@ export default function PersonalDetailsForm({
             handleCustomChange("shiftPreferences", updated)
           }
           disabled={isDisabled(locked, "shiftPreferences")}
+          gridClassName="gap-6"
         />
 
         <CheckboxGroup
@@ -448,6 +449,7 @@ export default function PersonalDetailsForm({
             handleCustomChange("workAuthorization", updated)
           }
           disabled={isDisabled(locked, "workAuthorization")}
+          gridClassName="gap-6"
         />
       </div>
 

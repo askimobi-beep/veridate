@@ -155,7 +155,7 @@ export default function EducationForm({
                   : "No users have verified this education yet."}
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
                 <AppSelect
                   name={`degreeTitle-${index}`}
                   label="Degree Title"
@@ -281,7 +281,7 @@ export default function EducationForm({
                     {(edu.projects || []).map((p, pi) => (
                       <div
                         key={pi}
-                        className="grid grid-cols-1 md:grid-cols-2 gap-3 border rounded-xl p-3 bg-gray-50"
+                        className="grid grid-cols-1 md:grid-cols-2 gap-6 border rounded-xl p-3 bg-gray-50"
                       >
                         <AppInput
                           label="Project Title"
@@ -336,7 +336,7 @@ export default function EducationForm({
                         : null
                     }
                     name={`degreeFile-${index}`}
-                    accept="application/pdf"
+                    accept="Application/Pdf"
                     icon={FileText}
                     onChange={(file) =>
                       updateEducation(index, "degreeFile", file)
