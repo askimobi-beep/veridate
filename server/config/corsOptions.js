@@ -1,6 +1,6 @@
 const allowedOrigins = [
   "https://localhost:5173",
-  "https://veridate.vercel.app/",
+  "https://veridate.vercel.app",
 ];
 
 const corsOptions = {
