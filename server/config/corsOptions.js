@@ -1,10 +1,8 @@
 const allowedOrigins = [
   "http://localhost:5173",
   "https://localhost:5173",
-  "https://veridate.store",
-  "https://www.veridate.store",
-  "https://app.veridate.store",
-  "https://www.app.veridate.store",
+  "https://veridate.vercel.app",
+
 ];
 
 
