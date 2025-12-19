@@ -1,7 +1,12 @@
 const allowedOrigins = [
+  "http://localhost:5173",
   "https://localhost:5173",
-  "https://veridate.vercel.app",
+  "https://veridate.store",
+  "https://www.veridate.store",
+  "https://app.veridate.store",
+  "https://www.app.veridate.store",
 ];
+
 
 const corsOptions = {
   origin: (origin, callback) => {
