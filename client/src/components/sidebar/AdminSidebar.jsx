@@ -4,6 +4,7 @@ import { cn } from "@/lib/utils";
 import { useAuth } from "@/context/AuthContext";
 import {
   LayoutDashboard,
+  Building2,
   Settings,
   LogOut,
 } from "lucide-react";
@@ -14,6 +15,7 @@ const groups = [
     items: [
       { to: "/admin", icon: LayoutDashboard, label: "Dashboard" },
       { to: "/admin/users", icon: LayoutDashboard, label: "Users" },
+      { to: "/admin/organizations", icon: Building2, label: "Organizations" },
     ],
   },
 ];

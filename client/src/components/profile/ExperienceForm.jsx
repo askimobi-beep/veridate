@@ -27,8 +27,6 @@ const jobTitles = [
   "Other",
 ];
 
-const companies = ["Google", "Microsoft", "Amazon", "Meta", "Apple", "Other"];
-
 const industries = [
   "Software",
   "Finance",
@@ -84,6 +82,7 @@ export default function ExperienceForm({
   locked, // section-level lock
   letterRefs, // refs array for per-row uploader
   expCreditByKey, // optional Map for credits
+  companyOptions = [],
   saveExperience, // (index, row) -> row-wise save
   onAskConfirm, // (value, title, actionFn)
   isRowSaving, // (index) => boolean
@@ -117,12 +116,16 @@ export default function ExperienceForm({
 
           // dropdown glue for "Other"
           const jobTitleOther = isOtherSelected(jobTitles, exp.jobTitle);
-          const companyOther = isOtherSelected(companies, exp.company);
-
           const jobTitleSelectValue = jobTitleOther
             ? "Other"
             : exp.jobTitle || "";
-          const companySelectValue = companyOther ? "Other" : exp.company || "";
+          const baseCompanies = Array.isArray(companyOptions)
+            ? companyOptions
+            : [];
+          const companyChoices =
+            exp.company && !baseCompanies.includes(exp.company)
+              ? [...baseCompanies, exp.company]
+              : baseCompanies;
 
           const isCompanyWebsiteValid = companyWebsiteRegex.test(
             (exp.companyWebsite || "").trim()
@@ -235,32 +238,14 @@ export default function ExperienceForm({
                   <AppSelect
                     name={`company-${index}`}
                     label="Company"
-                    value={companySelectValue}
+                    value={exp.company || ""}
                     onChange={(e) => {
                       const val = e.target.value;
-                      if (val === "Other") {
-                        if (!companyOther) {
-                          updateExperience(index, "company", "");
-                        }
-                      } else {
-                        updateExperience(index, "company", val);
-                      }
+                      updateExperience(index, "company", val);
                     }}
-                    options={companies}
+                    options={companyChoices}
                     disabled={isExpDisabled(rowLocked, "company")}
                   />
-                  {companyOther && (
-                    <AppInput
-                      name={`companyOther-${index}`}
-                      label="Custom Company"
-                      value={exp.company || ""}
-                      onChange={(e) =>
-                        updateExperience(index, "company", e.target.value)
-                      }
-                      placeholder="Type your company"
-                      disabled={isExpDisabled(rowLocked, "company")}
-                    />
-                  )}
                 </div>
 
                 <AppInput
@@ -460,6 +445,7 @@ export default function ExperienceForm({
                   {bucket ? (
                     <CreditText
                       label={creditLabel}
+                      context="experience"
                       available={available}
                       used={used}
                       total={total}

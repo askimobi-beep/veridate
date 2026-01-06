@@ -3,7 +3,9 @@ const Users = require("../models/auth.model");
 // Get all users
 exports.GetAllUsers = async (req, res) => {
   try {
-    const users = await Users.find(); // fetch all users
+    const users = await Users.find().select(
+      "-password -resetPasswordToken -resetPasswordExpires -otp -otpExpiry"
+    ); // fetch all users without sensitive fields
     res.status(200).json({
       success: true,
       count: users.length,

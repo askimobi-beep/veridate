@@ -20,6 +20,7 @@ import { getProfileMe } from "@/lib/profileApi";
 import { useAuth } from "@/context/AuthContext";
 import ProfilePdf from "@/components/profile/ProfilePdf";
 import ProfilePdfDownload from "@/components/profile/ProfilePdf";
+import { fetchOrganizations } from "@/services/organizationService";
 
 export default function PersonalInformation() {
   const {
@@ -55,6 +56,10 @@ export default function PersonalInformation() {
   const { enqueueSnackbar } = useSnackbar();
   const [open, setOpen] = useState("pi");
   const [locked, setLocked] = useState({});
+  const [orgOptions, setOrgOptions] = useState({
+    companies: [],
+    universities: [],
+  });
 
   const { user, loading: authLoading } = useAuth();
 
@@ -251,6 +256,44 @@ export default function PersonalInformation() {
     }
   }, [authLoading, user, setFormData]);
 
+  useEffect(() => {
+    let mounted = true;
+    const uniqueSorted = (arr) =>
+      Array.from(
+        new Set(
+          arr
+            .map((val) => String(val || "").trim())
+            .filter((val) => val.length > 0)
+        )
+      ).sort((a, b) => a.localeCompare(b));
+
+    const loadOrganizations = async () => {
+      try {
+        const rows = await fetchOrganizations();
+        if (!mounted) return;
+        const companies = rows
+          .filter((r) => r.role === "company")
+          .map((r) => r.name);
+        const universities = rows
+          .filter((r) => r.role === "university")
+          .map((r) => r.name);
+        setOrgOptions({
+          companies: uniqueSorted(companies),
+          universities: uniqueSorted(universities),
+        });
+      } catch (err) {
+        if (mounted) {
+          console.error("Failed to load organizations", err);
+        }
+      }
+    };
+
+    if (!authLoading) loadOrganizations();
+    return () => {
+      mounted = false;
+    };
+  }, [authLoading]);
+
   // fetch full profile — ✅ also preserves rowLocked from local state
   useEffect(() => {
     const load = async () => {
@@ -441,6 +484,7 @@ export default function PersonalInformation() {
               locked={!!locked.education}
               degreeRefs={degreeRefs}
               eduCreditByKey={eduCreditByKey}
+              instituteOptions={orgOptions.universities}
               saveEducation={saveEducationRow}
               isRowSaving={isRowSaving}
               onAskConfirm={onAskConfirm}
@@ -467,6 +511,7 @@ export default function PersonalInformation() {
               locked={!!locked.experience}
               letterRefs={letterRefs}
               expCreditByKey={expCreditByKey}
+              companyOptions={orgOptions.companies}
               // saveExperience={saveExperience}
               onAskConfirm={onAskConfirm}
               // saving={saving}

@@ -33,6 +33,13 @@ const creditSearchText = (u) => {
   return `${edu} ${exp}`.trim();
 };
 
+const userDisplayName = (u) => {
+  const orgName = String(u?.organizationName || "").trim();
+  if (orgName) return orgName;
+  const full = [u?.firstName, u?.lastName].filter(Boolean).join(" ").trim();
+  return full || "—";
+};
+
 export default function UsersTable({ users, onPatch }) {
   const [q, setQ] = useState("");
   const [sort, setSort] = useState({ key: "createdAt", dir: "desc" });
@@ -46,7 +53,7 @@ export default function UsersTable({ users, onPatch }) {
     if (needle) {
       arr = arr.filter((u) =>
         [
-          u.firstName, u.lastName, u.email, u.role, u.provider,
+          u.firstName, u.lastName, u.organizationName, u.email, u.role, u.provider,
           creditSearchText(u), // include institute/company names
         ]
           .join(" ")
@@ -134,7 +141,7 @@ export default function UsersTable({ users, onPatch }) {
                       transition={{ duration: 0.12 }}
                       className="border-b last:border-0"
                     >
-                      <TableCell className="font-medium">{u.firstName} {u.lastName}</TableCell>
+                      <TableCell className="font-medium">{userDisplayName(u)}</TableCell>
                       <TableCell className="truncate max-w-[240px]">{u.email}</TableCell>
                       <TableCell>
                         <Badge variant="secondary" className="capitalize">{u.provider || "local"}</Badge>

@@ -5,6 +5,7 @@ import authRoutes from "./authRoutes";
 import adminRoutes from "./adminRoutes";
 import Userlanding from '@/pages/user/index'
 import dashboardRoutes from "./dashboardRoutes";
+import orgRoutes from "./orgRoutes";
 import LoginPage from "@/pages/auth/Login";
 import AdminLayout from "../layouts/AdminLayout";
 
@@ -20,6 +21,11 @@ const router = createBrowserRouter([
     path: '/dashboard',
     element: <Userlanding/>,
     children: [...dashboardRoutes],
+  },
+  {
+    path: "/org",
+    element: <Userlanding />,
+    children: [...orgRoutes],
   },
   { 
     path: '/admin',

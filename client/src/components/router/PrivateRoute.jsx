@@ -20,7 +20,13 @@ const PrivateRoute = ({ allowedRoles = [] }) => {
 
   if (allowedRoles.length > 0 && !allowedRoles.includes(user.role)) {
     const role = String(user.role || "").toLowerCase().trim();
-    return <Navigate to={role === "admin" ? "/admin" : "/dashboard"} replace />;
+    if (role === "admin") {
+      return <Navigate to="/admin" replace />;
+    }
+    if (role === "company" || role === "university") {
+      return <Navigate to="/org" replace />;
+    }
+    return <Navigate to="/dashboard" replace />;
   }
 
   return <Outlet />;

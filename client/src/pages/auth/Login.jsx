@@ -39,6 +39,8 @@ export default function LoginPage() {
         .toLowerCase()
         .trim();
       if (role === "admin") navigate("/admin", { replace: true });
+      else if (role === "company" || role === "university")
+        navigate("/org", { replace: true });
       else navigate("/dashboard", { replace: true });
     }
   }, [authLoading, user, fromPath, navigate]);

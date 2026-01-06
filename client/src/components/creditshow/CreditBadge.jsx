@@ -12,16 +12,24 @@ export default function CreditText({
   used = 0,
   total,
   className,
+  context = "education",
 }) {
   const _available = Number(available || 0);
   const _used = Number(used || 0);
   // Compute total if not explicitly passed (using computed value from mongoose lean call)
   const _total = typeof total === "number" ? total : _available + _used;
+  const isExperience = context === "experience";
+  const usedText = isExperience
+    ? "Credits that you have already used to veridate other users similar work experience."
+    : "Credits that you have already used to veridate other users similar education.";
+  const availableText = isExperience
+    ? "Credits that are available to veridate other users similar work experience."
+    : "Credits that are available to veridate other users similar education.";
 
   return (
     <div
       className={cn(
-        "flex flex-wrap items-center gap-2 text-sm text-gray-700",
+        "flex flex-col gap-2 text-sm text-gray-700",
         className
       )}
     >
@@ -30,33 +38,31 @@ export default function CreditText({
         <span className="font-medium text-gray-900">{label}</span>
       ) : null} */}
 
-      <span className="text-xs font-semibold  tracking-wide text-gray-500">
-        Veridation Credits
-      </span>
+      <div className="flex flex-wrap items-center gap-2">
+        {/* Used Credits (Red) */}
+        <BadgePill
+          icon={Clock}
+          label="Used"
+          value={_used}
+          className="bg-red-600/10 text-red-700"
+        />
+        <span className="text-xs font-semibold tracking-wide text-gray-500">
+          {usedText}
+        </span>
+      </div>
 
-      {/* Total Credits (Blue) */}
-      {/* <BadgePill
-        icon={Gauge}
-        label="Total"
-        value={_total}
-        className="bg-blue-600/10 text-blue-700"
-      /> */}
-
-      {/* Used Credits (Red) */}
-      <BadgePill
-        icon={Clock}
-        label="Used"
-        value={_used}
-        className="bg-red-600/10 text-red-700"
-      />
-
-      {/* Available Credits (Green) */}
-      <BadgePill
-        icon={CheckCircle}
-        label="Available"
-        value={_available}
-        className="bg-green-600/10 text-green-700"
-      />
+      <div className="flex flex-wrap items-center gap-2">
+        {/* Available Credits (Green) */}
+        <BadgePill
+          icon={CheckCircle}
+          label="Available"
+          value={_available}
+          className="bg-green-600/10 text-green-700"
+        />
+        <span className="text-xs font-semibold tracking-wide text-gray-500">
+          {availableText}
+        </span>
+      </div>
     </div>
   );
 }

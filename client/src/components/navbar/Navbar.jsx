@@ -9,6 +9,8 @@ import SearchBar from "./SearchBar";
 
 export default function Navbar() {
   const { user, logout, authLoading } = useAuth();
+  const role = String(user?.role || "").toLowerCase().trim();
+  const canSearch = !user || role === "user";
 
   const navigate = useNavigate();
   const { pathname } = useLocation(); // keeping in case you style active states later
@@ -23,6 +25,7 @@ export default function Navbar() {
   }, [logout, navigate]);
 
   const goDirectory = (q) => {
+    if (role && role !== "user") return;
     if (q && q.length > 0) {
       navigate(`/dashboard/directory?q=${encodeURIComponent(q)}`);
     } else {
@@ -44,7 +47,7 @@ export default function Navbar() {
 
           {/* Center: Directory Search */}
           <div className="flex items-center justify-center">
-            <SearchBar onSearch={goDirectory} />
+            {canSearch ? <SearchBar onSearch={goDirectory} /> : null}
           </div>
 
           {/* Right: User menu / Login */}

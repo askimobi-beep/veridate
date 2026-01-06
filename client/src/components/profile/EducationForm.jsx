@@ -26,17 +26,6 @@ const degreeOptions = [
   "Other",
 ];
 
-const instituteOptions = [
-  "University of Punjab",
-  "Lahore University of Management Sciences (LUMS)",
-  "University of Karachi",
-  "Quaid-i-Azam University",
-  "Aga Khan University",
-  "COMSATS University",
-  "University of Engineering and Technology",
-  "Other",
-];
-
 // fields editable even when row is locked
 const EDUCATION_UNLOCKED = new Set([
   "endDate",
@@ -69,6 +58,7 @@ export default function EducationForm({
   locked, // section-level lock
   degreeRefs,
   eduCreditByKey,
+  instituteOptions = [],
   saveEducation, // (index, row)
   onAskConfirm, // (sectionValue, sectionTitle, actionFn)
   isRowSaving, // (index) => boolean
@@ -96,6 +86,14 @@ export default function EducationForm({
           const rowLocked = !!edu?.rowLocked || (!!edu?._id && locked);
           const savingThis =
             typeof isRowSaving === "function" ? isRowSaving(index) : false;
+
+          const baseInstitutes = Array.isArray(instituteOptions)
+            ? instituteOptions
+            : [];
+          const instituteChoices =
+            edu.institute && !baseInstitutes.includes(edu.institute)
+              ? [...baseInstitutes, edu.institute]
+              : baseInstitutes;
 
           const key = edu.instituteKey || norm(edu.institute);
           const bucket =
@@ -176,7 +174,7 @@ export default function EducationForm({
                   onChange={(e) =>
                     updateEducation(index, "institute", e.target.value)
                   }
-                  options={instituteOptions}
+                  options={instituteChoices}
                   disabled={isEduDisabled(rowLocked, "institute")}
                 />
 
@@ -352,6 +350,7 @@ export default function EducationForm({
                   {bucket ? (
                     <CreditBadge
                       label={bucket?.institute || edu.institute || ""}
+                      context="education"
                       available={bucket.available ?? 0}
                       used={bucket.used ?? 0}
                       total={bucket.total}

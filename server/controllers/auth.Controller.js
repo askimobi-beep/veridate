@@ -60,8 +60,13 @@ exports.Loginuser = async (req, res) => {
     const { email, password } = req.body;
 
     const user = await User.findOne({ email });
-    if (!user || !user.password) {
+    if (!user) {
       return res.status(400).json({ message: "Invalid email or password" });
+    }
+    if (!user.password) {
+      return res.status(403).json({
+        message: "Password not set. Use the invite or reset link to set it.",
+      });
     }
 
     // 🚫 block gate
@@ -92,8 +97,11 @@ exports.Loginuser = async (req, res) => {
         _id: user._id,
         firstName: user.firstName,
         lastName: user.lastName,
+        organizationName: user.organizationName,
         email: user.email,
         role: user.role,
+        contact: user.contact,
+        website: user.website,
         createdAt: user.createdAt,
       },
     });

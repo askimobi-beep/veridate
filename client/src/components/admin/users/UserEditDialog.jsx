@@ -127,7 +127,7 @@ export default function UserEditDialog({ open, onOpenChange, user, onUpdated }) 
               name="role"
               value={draft.role}
               onChange={(e) => setField("role", e.target.value)}
-              options={["user", "admin"]}
+              options={["user", "admin", "company", "university"]}
             />
             <div className="space-y-1">
               <label className="text-sm font-medium text-gray-700">Blocked</label>

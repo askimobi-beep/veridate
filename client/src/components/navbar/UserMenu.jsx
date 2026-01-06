@@ -22,6 +22,13 @@ export default function UserMenu({ user, onLogout }) {
   const btnRef = useRef(null);
   const menuRef = useRef(null);
   const navigate = useNavigate();
+  const role = String(user?.role || "").toLowerCase().trim();
+  const displayName =
+    String(user?.organizationName || "").trim() ||
+    [user?.firstName, user?.lastName].filter(Boolean).join(" ").trim() ||
+    "User";
+  const homePath =
+    role === "admin" ? "/admin" : role === "company" || role === "university" ? "/org" : "/dashboard";
 
   // close on click outside
   useEffect(() => {
@@ -67,13 +74,13 @@ export default function UserMenu({ user, onLogout }) {
             src={`${import.meta.env.VITE_API_PIC_URL}/uploads/profile/${
               user?.profilePic
             }`}
-            alt={user?.firstName}
+            alt={displayName}
           />
-          <AvatarFallback>{getInitial(user?.firstName)}</AvatarFallback>
+          <AvatarFallback>{getInitial(displayName)}</AvatarFallback>
         </Avatar>
         <div className="hidden sm:flex flex-col items-start leading-tight">
           <span className="text-sm font-semibold text-gray-900">
-            {user?.firstName}
+            {displayName}
           </span>
           <span className="text-[11px] text-gray-500 max-w-[180px] truncate">
             {user?.email}
@@ -102,13 +109,13 @@ export default function UserMenu({ user, onLogout }) {
                     src={`${import.meta.env.VITE_API_PIC_URL}/uploads/profile/${
                       user?.profilePic
                     }`}
-                    alt={user?.firstName}
+                    alt={displayName}
                   />
-                  <AvatarFallback>{getInitial(user?.firstName)}</AvatarFallback>
+                  <AvatarFallback>{getInitial(displayName)}</AvatarFallback>
                 </Avatar>
                 <div className="min-w-0">
                   <div className="text-sm font-semibold text-gray-900 truncate">
-                    {user?.firstName} {user?.lastName}
+                    {displayName}
                   </div>
                   <div className="text-xs text-gray-500 truncate">
                     {user?.email}
@@ -120,11 +127,11 @@ export default function UserMenu({ user, onLogout }) {
             {/* Actions */}
             <div className="py-2">
               <button
-                onClick={() => go("/dashboard")}
+                onClick={() => go(homePath)}
                 className="w-full flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition"
               >
                 <User className="h-4 w-4" />
-                Profile
+                {role === "user" ? "Profile" : "Dashboard"}
               </button>
 
               {/* <button

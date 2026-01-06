@@ -1,6 +1,29 @@
 // models/User.js
 const mongoose = require("mongoose");
 
+const resolveRole = function () {
+  if (this?.role) return this.role;
+  if (typeof this?.get === "function") {
+    const docRole = this.get("role");
+    if (docRole) return docRole;
+  }
+  if (typeof this?.getUpdate === "function") {
+    const update = this.getUpdate() || {};
+    return update.role || update.$set?.role;
+  }
+  return undefined;
+};
+
+const requiresPersonName = function () {
+  const role = resolveRole.call(this);
+  return !["company", "university"].includes(role);
+};
+
+const requiresOrgFields = function () {
+  const role = resolveRole.call(this);
+  return ["company", "university"].includes(role);
+};
+
 const EduCreditSchema = new mongoose.Schema(
   {
     institute: { type: String, required: true },
@@ -25,8 +48,8 @@ const ExpCreditSchema = new mongoose.Schema(
 
 const UserSchema = new mongoose.Schema(
   {
-    firstName: { type: String, required: true, trim: true },
-    lastName: { type: String, required: true, trim: true },
+    firstName: { type: String, required: requiresPersonName, trim: true },
+    lastName: { type: String, required: requiresPersonName, trim: true },
     email: {
       type: String,
       required: true,
@@ -38,7 +61,16 @@ const UserSchema = new mongoose.Schema(
     password: { type: String },
     passwordChangedAt: { type: Date },
 
-    role: { type: String, enum: ["user", "admin"], default: "user" },
+    role: {
+      type: String,
+      enum: ["user", "admin", "company", "university"],
+      default: "user",
+    },
+
+    organizationName: { type: String, trim: true, required: requiresOrgFields },
+    organizationKey: { type: String, index: true },
+    contact: { type: String, trim: true, required: requiresOrgFields },
+    website: { type: String, trim: true, required: requiresOrgFields },
 
     // 🔥 credits per institute
     verifyCredits: {

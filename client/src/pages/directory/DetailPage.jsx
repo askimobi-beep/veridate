@@ -127,10 +127,11 @@ const btnStyleByStatus = (status) => {
 };
 
 // === shared helpers for labels/badges (keep brand wording) ===
-function verifyCountText(count) {
-  return count === 1
-    ? "Person has already verified"
-    : "Persons have already verified";
+function verifyCountText(count, type) {
+  const detail = type === "experience" ? "experience" : "education";
+  const noun = count === 1 ? "user" : "users";
+  const verb = count === 1 ? "has" : "have";
+  return `${noun} ${verb} already veridated this ${detail}`;
 }
 
 function getVerifyLabel(type, status, isBusy) {
@@ -194,11 +195,11 @@ function ReviewStars({ value = 5, onChange, readOnly = false, size = "lg", class
   );
 }
 
-function VerifyBadge({ count }) {
+function VerifyBadge({ count, type }) {
   return (
     <Badge className={`${badgeClass(count)} rounded-lg`}>
       <CheckCircle2 className="h-3.5 w-3.5 mr-1" />
-      {count} {verifyCountText(count)}
+      {count} {verifyCountText(count, type)}
     </Badge>
   );
 }
@@ -240,13 +241,17 @@ function VerificationPreview({ verifications = [], onOpen }) {
     <button
       type="button"
       onClick={onOpen}
-      className="mt-2 w-full rounded-lg border border-orange-300 bg-gradient-to-r from-orange-500 via-orange-400 to-amber-300 px-3 py-2 text-left text-white shadow transition hover:brightness-110 hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2"
+      className="mt-2 w-full sm:w-auto sm:min-w-[285px] rounded-lg border border-orange-300 bg-gradient-to-r from-orange-500 via-orange-400 to-amber-300 px-3 py-2 text-left text-white shadow transition hover:brightness-110 hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2"
     >
-      <div className="flex items-center gap-2">
-        <ReviewStars value={average} readOnly size="sm" className="drop-shadow-sm" />
+      <div className="flex flex-col items-start gap-1">
+        <div className="flex items-center gap-2">
+          <ReviewStars value={average} readOnly size="sm" className="drop-shadow-sm" />
+          <span className="text-xs font-semibold text-white drop-shadow-sm">
+            {average.toFixed(1)} / 5
+          </span>
+        </div>
         <span className="text-xs font-semibold text-white drop-shadow-sm">
-          {average.toFixed(1)} / 5 | {numericRatings.length} review
-          {numericRatings.length > 1 ? "s" : ""}
+          {numericRatings.length} review{numericRatings.length > 1 ? "s" : ""}
         </span>
       </div>
       
@@ -1116,7 +1121,7 @@ export default function DetailPage() {
                     <SubSection key={String(edu._id)}>
                       <div className="flex items-center justify-between mb-3">
                         <div className="flex items-center gap-2">
-                          <VerifyBadge count={cnt} />
+                          <VerifyBadge count={cnt} type="education" />
                         </div>
                         <VerifyButton
                           type="education"
@@ -1172,7 +1177,7 @@ export default function DetailPage() {
                     <SubSection key={String(exp._id)}>
                       <div className="flex items-center justify-between mb-3">
                         <div className="flex items-center gap-2">
-                          <VerifyBadge count={cnt} />
+                          <VerifyBadge count={cnt} type="experience" />
                         </div>
                         <VerifyButton
                           type="experience"
