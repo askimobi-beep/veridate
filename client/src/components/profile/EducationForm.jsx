@@ -32,7 +32,6 @@ const EDUCATION_UNLOCKED = new Set([
   "instituteWebsite",
   "degreeFile",
   "hiddenFields",
-  "projects",
 ]);
 
 const isEduDisabled = (rowLocked, field) =>
@@ -250,81 +249,6 @@ export default function EducationForm({
                         }
                       />
                     </div>
-                  </div>
-
-                  {/* Projects (Education) */}
-                  <div className="md:col-span-2 space-y-3 mb-4">
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm font-medium text-gray-700">
-                        Projects
-                      </span>
-                      <button
-                        type="button"
-                        className="text-sm text-orange-700 hover:underline"
-                        onClick={() => {
-                          const list = Array.isArray(edu.projects)
-                            ? edu.projects
-                            : [];
-                          updateEducation(index, "projects", [
-                            ...list,
-                            { projectTitle: "", projectDescription: "" },
-                          ]);
-                        }}
-                        disabled={isEduDisabled(rowLocked, "projects")}
-                      >
-                        + Add Project
-                      </button>
-                    </div>
-
-                    {(edu.projects || []).map((p, pi) => (
-                      <div
-                        key={pi}
-                        className="grid grid-cols-1 md:grid-cols-2 gap-6 border rounded-xl p-3 bg-gray-50"
-                      >
-                        <AppInput
-                          label="Project Title"
-                          value={p.projectTitle || ""}
-                          onChange={(e) => {
-                            const list = [...(edu.projects || [])];
-                            list[pi] = {
-                              ...list[pi],
-                              projectTitle: e.target.value,
-                            };
-                            updateEducation(index, "projects", list);
-                          }}
-                          placeholder="e.g. Final Year Thesis"
-                          disabled={isEduDisabled(rowLocked, "projects")}
-                        />
-                        <AppInput
-                          label="Project Description"
-                          value={p.projectDescription || ""}
-                          onChange={(e) => {
-                            const list = [...(edu.projects || [])];
-                            list[pi] = {
-                              ...list[pi],
-                              projectDescription: e.target.value,
-                            };
-                            updateEducation(index, "projects", list);
-                          }}
-                          placeholder="What did you build / learn?"
-                          disabled={isEduDisabled(rowLocked, "projects")}
-                        />
-                        <div className="md:col-span-2 flex justify-end">
-                          <button
-                            type="button"
-                            className="text-xs text-red-600 hover:underline"
-                            onClick={() => {
-                              const list = [...(edu.projects || [])];
-                              list.splice(pi, 1);
-                              updateEducation(index, "projects", list);
-                            }}
-                            disabled={isEduDisabled(rowLocked, "projects")}
-                          >
-                            Remove
-                          </button>
-                        </div>
-                      </div>
-                    ))}
                   </div>
 
                   <FileUploader

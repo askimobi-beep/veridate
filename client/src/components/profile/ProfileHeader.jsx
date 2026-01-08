@@ -24,6 +24,7 @@ export default function ProfileHeader({
   onShare,
   copied,
   shareUrl,
+  extraActions = null,
 }) {
   // const BASE_UPLOAD_URL = "https://api.veridate.store/uploads";
   const BASE_UPLOAD_URL = `${import.meta.env.VITE_API_PIC_URL}/uploads`;
@@ -108,6 +109,7 @@ export default function ProfileHeader({
 
       {/* RIGHT: share controls (goes to the far-right) */}
       <div className="ml-auto flex items-center gap-2">
+        {extraActions}
         <button
           type="button"
           onClick={onShare}

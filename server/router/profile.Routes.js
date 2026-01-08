@@ -6,6 +6,7 @@ const {
   saveEducation,
   getProfile,
   saveExperience,
+  saveProject,
   listProfilesPublic,
   getProfileByUserId,
   saveProfilePhoto,
@@ -57,6 +58,12 @@ router.post(
   protect,
   upload.any(), // ✅ ACCEPT ANY FIELD NAMES, we'll filter by prefix server-side
   saveExperience
+);
+router.post(
+  "/save-projects",
+  protect,
+  upload.none(),
+  saveProject
 );
 router.post("/ai/profile-summary", softAuth, profileSummary);
 router.get("/directory", softAuth, listProfilesPublic);

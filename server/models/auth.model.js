@@ -46,6 +46,17 @@ const ExpCreditSchema = new mongoose.Schema(
   { _id: false }
 );
 
+const ProjectCreditSchema = new mongoose.Schema(
+  {
+    company: { type: String, required: true },
+    companyKey: { type: String, required: true, index: true },
+    available: { type: Number, default: 1, min: 0 },
+    used: { type: Number, default: 0, min: 0 },
+    total: { type: Number, default: 1, min: 0 },
+  },
+  { _id: false }
+);
+
 const UserSchema = new mongoose.Schema(
   {
     firstName: { type: String, required: requiresPersonName, trim: true },
@@ -76,6 +87,7 @@ const UserSchema = new mongoose.Schema(
     verifyCredits: {
       education: { type: [EduCreditSchema], default: [] },
       experience: { type: [ExpCreditSchema], default: [] },
+      projects: { type: [ProjectCreditSchema], default: [] },
     },
 
     // OTP flow

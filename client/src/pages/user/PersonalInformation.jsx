@@ -5,6 +5,7 @@ import {
   BriefcaseBusiness as Briefcase,
   FileText,
   UserRound,
+  ClipboardList,
 } from "lucide-react";
 
 import AccordionSection from "@/components/common/AccordionSection";
@@ -12,13 +13,13 @@ import ProfileHeader from "@/components/profile/ProfileHeader";
 import PersonalDetailsForm from "@/components/profile/PersonalDetailsForm";
 import EducationForm from "@/components/profile/EducationForm";
 import ExperienceForm from "@/components/profile/ExperienceForm";
+import ProjectForm from "@/components/profile/ProjectForm";
 import ConfirmDialog from "@/components/common/ConfirmDialog";
 
 import usePersonalInformationForm from "@/hooks/usePersonalInformationForm";
 import { toYMD } from "@/lib/dates";
 import { getProfileMe } from "@/lib/profileApi";
 import { useAuth } from "@/context/AuthContext";
-import ProfilePdf from "@/components/profile/ProfilePdf";
 import ProfilePdfDownload from "@/components/profile/ProfilePdf";
 import { fetchOrganizations } from "@/services/organizationService";
 
@@ -42,6 +43,13 @@ export default function PersonalInformation() {
     saveExperience,
     saveExperienceRow,
     isExpRowSaving,
+    // projects
+    addProject,
+    updateProject,
+    removeProject,
+    saveProjects,
+    saveProjectRow,
+    isProjectRowSaving,
     // personal
     savePersonalInfo,
     saveProfilePhoto,
@@ -70,11 +78,18 @@ export default function PersonalInformation() {
   const expBuckets = Array.isArray(user?.verifyCredits?.experience)
     ? user.verifyCredits.experience
     : [];
+  const projectBuckets = Array.isArray(user?.verifyCredits?.projects)
+    ? user.verifyCredits.projects
+    : [];
   const eduTotalAvailable = eduBuckets.reduce(
     (a, b) => a + (b?.available || 0),
     0
   );
   const expTotalAvailable = expBuckets.reduce(
+    (a, b) => a + (b?.available || 0),
+    0
+  );
+  const projectTotalAvailable = projectBuckets.reduce(
     (a, b) => a + (b?.available || 0),
     0
   );
@@ -98,6 +113,26 @@ export default function PersonalInformation() {
     }
     return m;
   }, [user?.verifyCredits?.experience]);
+
+  const projectCreditByKey = useMemo(() => {
+    const m = new Map();
+    for (const b of projectBuckets) {
+      if (!b) continue;
+      const key = b.companyKey || norm(b.company);
+      if (key) m.set(key, b);
+    }
+    return m;
+  }, [user?.verifyCredits?.projects]);
+
+  const projectCompanyOptions = useMemo(() => {
+    const list = Array.isArray(formData?.experience) ? formData.experience : [];
+    const unique = new Set(
+      list
+        .map((exp) => String(exp?.company || "").trim())
+        .filter((val) => val.length > 0)
+    );
+    return Array.from(unique).sort((a, b) => a.localeCompare(b));
+  }, [formData?.experience]);
 
   // uploader refs
   const resumeRef = useRef(null);
@@ -155,6 +190,26 @@ export default function PersonalInformation() {
               false,
           }))
         : prev.experience,
+      projects: Array.isArray(data.projects)
+        ? data.projects.map((p, i) => ({
+            ...p,
+            startDate: toYMD(p.startDate),
+            endDate: toYMD(p.endDate),
+            projectUrl: p.projectUrl || "",
+            projectMember: Array.isArray(p.projectMember)
+              ? p.projectMember
+              : typeof p.projectMember === "string"
+              ? p.projectMember
+                  .split(",")
+                  .map((member) => member.trim())
+                  .filter((member) => member.length > 0)
+              : [],
+            rowLocked:
+              (typeof p.rowLocked === "boolean" ? p.rowLocked : undefined) ??
+              prev.projects?.[i]?.rowLocked ??
+              false,
+          }))
+            : prev.projects,
     }));
   };
 
@@ -172,7 +227,8 @@ export default function PersonalInformation() {
         if (
           pendingValue === "pi" ||
           pendingValue === "experience" ||
-          pendingValue === "education"
+          pendingValue === "education" ||
+          pendingValue === "projects"
         ) {
           setLocked((prev) => ({ ...prev, [pendingValue]: true }));
         }
@@ -223,6 +279,17 @@ export default function PersonalInformation() {
         if (pendingValue === "experience") {
           letterRefs.current.forEach((r) => r?.reset?.());
           clearExperienceFiles();
+        }
+
+        if (
+          typeof pendingValue === "string" &&
+          pendingValue.startsWith("projects:")
+        ) {
+          setOpen("projects");
+        }
+
+        if (pendingValue === "projects") {
+          setOpen("projects");
         }
       } else {
         enqueueSnackbar(res?.error || `Failed to save ${pendingTitle}`, {
@@ -346,12 +413,45 @@ export default function PersonalInformation() {
                   hiddenFields: [],
                 },
               ],
+          projects: Array.isArray(data.projects)
+            ? data.projects.map((p, i) => ({
+                ...p,
+                startDate: toYMD(p.startDate),
+                endDate: toYMD(p.endDate),
+                projectUrl: p.projectUrl || "",
+                projectMember: Array.isArray(p.projectMember)
+                  ? p.projectMember
+                  : typeof p.projectMember === "string"
+                  ? p.projectMember
+                      .split(",")
+                      .map((member) => member.trim())
+                      .filter((member) => member.length > 0)
+                  : [],
+                rowLocked:
+                  (typeof p.rowLocked === "boolean" ? p.rowLocked : undefined) ??
+                  prev.projects?.[i]?.rowLocked ??
+                  false,
+              }))
+            : prev.projects || [
+                {
+                  projectTitle: "",
+                  company: "",
+                  projectUrl: "",
+                  startDate: "",
+                  endDate: "",
+                  department: "",
+                  projectMember: [],
+                  role: "",
+                  description: "",
+                },
+              ],
         }));
 
         setLocked({
           pi: data.personalInfoLocked,
           education: data.educationLocked,
           experience: data.experienceLocked,
+          projects: data.projectLocked,
         });
       } catch (err) {
         console.error("Failed to load profile", err);
@@ -412,7 +512,6 @@ export default function PersonalInformation() {
   return (
     <div className="min-h-screen w-full flex items-start justify-center px-4 py-10 relative overflow-hidden">
       <div className="relative z-10 w-full max-w-5xl">
-      <ProfilePdfDownload userId={user?user._id:null}/>
         <ProfileHeader
           user={formData}
           profilePicRef={profilePicRef}
@@ -435,6 +534,7 @@ export default function PersonalInformation() {
           onShare={handleShare}
           copied={copied}
           shareUrl={shareUrl}
+          extraActions={<ProfilePdfDownload userId={user?._id} inline />}
         />
 
         <form onSubmit={handleSubmit} className="space-y-6">
@@ -517,6 +617,31 @@ export default function PersonalInformation() {
               // saving={saving}
               saveExperience={saveExperienceRow} // ✅ row-wise
               isRowSaving={isExpRowSaving} // ✅ per-row spinner/disable
+            />
+          </AccordionSection>
+          <AccordionSection
+            title="Projects"
+            icon={ClipboardList}
+            value="projects"
+            openValue={open}
+            setOpenValue={setOpen}
+            onSave={async () => await saveProjects()}
+            saving={saving}
+            onAskConfirm={onAskConfirm}
+            locked={!!locked.projects}
+            verifyCredits={projectTotalAvailable}
+          >
+            <ProjectForm
+              projectList={formData.projects}
+              addProject={addProject}
+              removeProject={removeProject}
+              updateProject={updateProject}
+              locked={!!locked.projects}
+              projectCreditByKey={projectCreditByKey}
+              companyOptions={projectCompanyOptions}
+              saveProject={saveProjectRow}
+              isRowSaving={isProjectRowSaving}
+              onAskConfirm={onAskConfirm}
             />
           </AccordionSection>
         </form>

@@ -11,7 +11,7 @@ const {
   removeOldEducationFile,
   removeOldExperienceFile,
 } = require("../utils/fileCleanup");
-const { normalizeInstitute } = require("../utils/normalize");
+const { normalizeInstitute, normalizeCompany } = require("../utils/normalize");
 
 // --- Personal privacy keys ---
 const PERSONAL_PRIVACY_KEYS = new Set([
@@ -87,6 +87,36 @@ function normalizeProjects(input) {
         typeof p?.projectDescription === "string" ? p.projectDescription : "",
     }))
     .filter((p) => p.projectTitle || p.projectDescription);
+}
+
+function normalizeProjectRow(p) {
+  const normalizeProjectMembers = (val) => {
+    if (Array.isArray(val)) {
+      return val
+        .map((v) => String(v || "").trim())
+        .filter((v) => v.length > 0);
+    }
+    if (typeof val === "string") {
+      return val
+        .split(",")
+        .map((v) => v.trim())
+        .filter((v) => v.length > 0);
+    }
+    return [];
+  };
+
+  return {
+    projectTitle: typeof p?.projectTitle === "string" ? p.projectTitle : "",
+    company: typeof p?.company === "string" ? p.company : "",
+    projectUrl: typeof p?.projectUrl === "string" ? p.projectUrl : "",
+    startDate: p?.startDate || "",
+    endDate: p?.endDate || "",
+    department: typeof p?.department === "string" ? p.department : "",
+    projectMember: normalizeProjectMembers(p?.projectMember),
+    role: typeof p?.role === "string" ? p.role : "",
+    description: typeof p?.description === "string" ? p.description : "",
+    companyKey: normalizeCompany(p?.company || ""),
+  };
 }
 
 exports.savePersonalInfo = async (req, res) => {
@@ -516,6 +546,45 @@ async function ensureUserExpCredits(userId, expRows) {
   }
 }
 
+async function ensureUserProjectCredits(userId, projectRows) {
+  const companies = (projectRows || [])
+    .map((r) => ({
+      company: r.company || "",
+      companyKey: r.companyKey || normalizeCompany(r.company || ""),
+    }))
+    .filter((r) => r.companyKey);
+
+  if (!companies.length) return;
+
+  const user = await User.findById(userId).lean();
+  if (!user) return;
+
+  const existing = new Set(
+    (user.verifyCredits?.projects || []).map((b) => b.companyKey)
+  );
+
+  const toAdd = [];
+  for (const r of companies) {
+    if (!existing.has(r.companyKey)) {
+      toAdd.push({
+        company: r.company,
+        companyKey: r.companyKey,
+        available: 1,
+        used: 0,
+        total: 1,
+      });
+      existing.add(r.companyKey);
+    }
+  }
+
+  if (toAdd.length) {
+    await User.updateOne(
+      { _id: userId },
+      { $push: { "verifyCredits.projects": { $each: toAdd } } }
+    );
+  }
+}
+
 exports.saveExperience = async (req, res) => {
   try {
     const userId = req.user.id;
@@ -705,6 +774,101 @@ exports.saveExperience = async (req, res) => {
   }
 };
 
+exports.saveProject = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const profile = await Profile.findOne({ user: userId });
+
+    const ALLOWED_WHEN_LOCKED = new Set([
+      "projectTitle",
+      "projectUrl",
+      "endDate",
+      "department",
+      "projectMember",
+      "role",
+      "description",
+    ]);
+
+    let incoming = [];
+    try {
+      incoming = JSON.parse(req.body.projects || "[]");
+      if (!Array.isArray(incoming)) incoming = [];
+    } catch {
+      incoming = [];
+    }
+
+    if (!profile?.projectLocked) {
+      const cleaned = incoming.map((p) => normalizeProjectRow(p));
+
+      const updated = await Profile.findOneAndUpdate(
+        { user: userId },
+        { $set: { projects: cleaned, projectLocked: true } },
+        { new: true, upsert: true }
+      );
+
+      await ensureUserProjectCredits(userId, updated.projects);
+
+      return res
+        .status(200)
+        .json({ message: "Projects saved & locked", profile: updated });
+    }
+
+    const current = Array.isArray(profile.projects) ? profile.projects : [];
+    const patched = current.map((r) => ({ ...(r.toObject?.() ?? r) }));
+    const byId = new Map(
+      patched
+        .map((r, idx) => (r?._id ? [String(r._id), idx] : null))
+        .filter(Boolean)
+    );
+
+    for (let i = 0; i < incoming.length; i++) {
+      const inc = incoming[i] || {};
+      let targetIdx = -1;
+
+      if (inc._id && byId.has(String(inc._id))) {
+        targetIdx = byId.get(String(inc._id));
+      } else if (i < patched.length && !patched[i]?._id) {
+        targetIdx = i;
+      }
+
+      if (targetIdx >= 0) {
+        const prev = patched[targetIdx];
+        const next = { ...prev };
+
+        for (const [k, v] of Object.entries(inc)) {
+          if (!ALLOWED_WHEN_LOCKED.has(k)) continue;
+          if (k === "projectMember") {
+            next.projectMember = normalizeProjectRow({ projectMember: v })
+              .projectMember;
+          } else {
+            next[k] = v ?? next[k];
+          }
+        }
+
+        patched[targetIdx] = next;
+      } else {
+        patched.push(normalizeProjectRow(inc));
+      }
+    }
+
+    const updated = await Profile.findOneAndUpdate(
+      { user: userId },
+      { $set: { projects: patched } },
+      { new: true }
+    );
+
+    await ensureUserProjectCredits(userId, updated.projects);
+
+    return res.status(200).json({
+      message: "Projects updated (existing rows locked; new rows added)",
+      profile: updated,
+    });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ error: "Failed to save projects" });
+  }
+};
+
 /* =========================
    PUBLIC DIRECTORY (respects personal + per-row hidden)
    ========================= */
@@ -858,6 +1022,10 @@ exports.getProfileByUserId = async (req, res) => {
         path: "experience.verifications.user",
         select: "name email profilePic",
       })
+      .populate({
+        path: "projects.verifications.user",
+        select: "name email profilePic",
+      })
       .lean();
 
     if (!profile) {
@@ -887,6 +1055,10 @@ exports.getProfile = async (req, res) => {
       })
       .populate({
         path: "experience.verifications.user",
+        select: "name email profilePic",
+      })
+      .populate({
+        path: "projects.verifications.user",
         select: "name email profilePic",
       });
     if (!profile) return res.status(404).json({ message: "No profile found" });

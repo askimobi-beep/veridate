@@ -93,3 +93,49 @@ export async function verifyExperienceRow(targetUserId, expId, review = {}) {
     };
   }
 }
+
+export async function verifyProjectRow(targetUserId, projectId, review = {}) {
+  if (!isHex24(targetUserId) || !isHex24(projectId)) {
+    return {
+      success: false,
+      error: "Invalid IDs: target user or project ID is malformed.",
+    };
+  }
+
+  const rating = Number(review.rating);
+  if (!Number.isInteger(rating) || rating < 1 || rating > 5) {
+    return {
+      success: false,
+      error: "A star rating between 1 and 5 is required to Veridate.",
+    };
+  }
+
+  const body = { rating };
+  if (typeof review.comment === "string") {
+    body.comment = review.comment.trim();
+  }
+
+  try {
+    const url = `/verify/profiles/${encodeURIComponent(
+      targetUserId
+    )}/verify/projects/${encodeURIComponent(projectId)}`;
+    const { data } = await axiosInstance.post(url, body);
+
+    return {
+      success: true,
+      data: data, // contains {verifier, target, projects}
+      error: null,
+    };
+  } catch (e) {
+    const message =
+      e?.response?.data?.message ||
+      e?.response?.data?.error ||
+      "Failed to process project verification request.";
+
+    return {
+      success: false,
+      data: null,
+      error: message,
+    };
+  }
+}

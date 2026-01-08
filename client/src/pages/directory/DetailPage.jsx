@@ -7,6 +7,7 @@ import {
   ArrowLeft,
   FileText,
   Briefcase,
+  ClipboardList,
   CheckCircle2,
   Heart,
   Share2,
@@ -34,6 +35,7 @@ import { useAuth } from "@/context/AuthContext";
 import {
   verifyEducationRow,
   verifyExperienceRow,
+  verifyProjectRow,
 } from "@/services/verifyService";
 import ProfileChatBox from "./ProfileChatBox";
 import ProfileSummaryCard from "@/components/directory/ProfileSummaryCard";
@@ -112,6 +114,28 @@ function expStatus({ row, meId, meProfile, expCreditMap }) {
   return "eligible";
 }
 
+function projectStatus({ row, meId, meProfile, projectCreditMap }) {
+  const already =
+    Array.isArray(row?.verifiedBy) &&
+    row.verifiedBy.some((x) => String(x) === String(meId));
+  if (already) return "already-verified";
+
+  const key = row?.companyKey || normalizeCompany(row?.company);
+  if (!key) return "ineligible";
+
+  const hasSame =
+    Array.isArray(meProfile?.experience) &&
+    meProfile.experience.some(
+      (e) => (e.companyKey || normalizeCompany(e.company)) === key
+    );
+  if (!hasSame) return "ineligible";
+
+  const bucket = projectCreditMap.get(key);
+  if (!bucket || (bucket.available || 0) <= 0) return "no-credits";
+
+  return "eligible";
+}
+
 const btnStyleByStatus = (status) => {
   switch (status) {
     case "already-verified":
@@ -128,7 +152,12 @@ const btnStyleByStatus = (status) => {
 
 // === shared helpers for labels/badges (keep brand wording) ===
 function verifyCountText(count, type) {
-  const detail = type === "experience" ? "experience" : "education";
+  const detail =
+    type === "experience"
+      ? "experience"
+      : type === "project"
+      ? "project"
+      : "education";
   const noun = count === 1 ? "user" : "users";
   const verb = count === 1 ? "has" : "have";
   return `${noun} ${verb} already veridated this ${detail}`;
@@ -141,9 +170,13 @@ function getVerifyLabel(type, status, isBusy) {
   if (status === "no-credits")
     return "Unable to Veridate: No credits available";
   // ineligible message depends on type
-  return type === "education"
-    ? "Unable to Veridate: Education don't match"
-    : "Unable to Veridate: Company don't match";
+  if (type === "education") {
+    return "Unable to Veridate: Education don't match";
+  }
+  if (type === "project") {
+    return "Unable to Veridate: Company don't match";
+  }
+  return "Unable to Veridate: Company don't match";
 }
 
 // === small presentational helpers ===
@@ -354,6 +387,27 @@ function ExperienceDetails({ exp, fileUrl }) {
   );
 }
 
+function ProjectDetails({ project }) {
+  const members = Array.isArray(project.projectMember)
+    ? project.projectMember.join(", ")
+    : project.projectMember;
+  return (
+    <DefinitionList>
+      <DLRow label="Project Title">{project.projectTitle}</DLRow>
+      <DLRow label="Work Experience">{project.company}</DLRow>
+      <DLRow label="Project URL">
+        <LinkText href={project.projectUrl}>{project.projectUrl}</LinkText>
+      </DLRow>
+      <DLRow label="Start">{fmtDate(project.startDate)}</DLRow>
+      <DLRow label="End">{fmtDate(project.endDate)}</DLRow>
+      <DLRow label="Department">{project.department}</DLRow>
+      <DLRow label="Project members">{members}</DLRow>
+      <DLRow label="Role">{project.role}</DLRow>
+      <DLRow label="Description">{project.description}</DLRow>
+    </DefinitionList>
+  );
+}
+
 export default function DetailPage() {
   const { userId } = useParams();
   const { enqueueSnackbar } = useSnackbar();
@@ -367,6 +421,7 @@ export default function DetailPage() {
 
   const [busyEdu, setBusyEdu] = useState("");
   const [busyExp, setBusyExp] = useState("");
+  const [busyProject, setBusyProject] = useState("");
   const [reviewModal, setReviewModal] = useState({
     open: false,
     type: null,
@@ -479,6 +534,11 @@ export default function DetailPage() {
     return creditsToMap(buckets, "companyKey");
   }, [authUser]);
 
+  const projectCreditMap = useMemo(() => {
+    const buckets = authUser?.verifyCredits?.projects || [];
+    return creditsToMap(buckets, "companyKey");
+  }, [authUser]);
+
   const resetReviewState = () => {
     setReviewModal({ open: false, type: null, rowId: "" });
     setReviewRating(5);
@@ -503,6 +563,8 @@ export default function DetailPage() {
     openReviewDialog("education", eduId);
   const beginExperienceReview = (expId) =>
     openReviewDialog("experience", expId);
+  const beginProjectReview = (projectId) =>
+    openReviewDialog("project", projectId);
 
   const openReviewListModal = (type, row) => {
     const entries = Array.isArray(row?.verifications)
@@ -518,7 +580,9 @@ export default function DetailPage() {
     const titleBase =
       type === "education"
         ? row?.degreeTitle || row?.institute || "Education verification"
-        : row?.jobTitle || row?.company || "Experience verification";
+        : type === "experience"
+        ? row?.jobTitle || row?.company || "Experience verification"
+        : row?.projectTitle || row?.company || "Project verification";
 
     setReviewListModal({
       open: true,
@@ -714,6 +778,92 @@ export default function DetailPage() {
     }
   };
 
+  const onVerifyProject = async (projectId, review) => {
+    if (!projectId) return false;
+
+    const rating = Number(review?.rating);
+    if (!Number.isInteger(rating) || rating < 1 || rating > 5) {
+      enqueueSnackbar("Please select a star rating before Veridating.", {
+        variant: "warning",
+      });
+      return false;
+    }
+    const comment =
+      typeof review?.comment === "string"
+        ? review.comment.trim().slice(0, 1000)
+        : "";
+
+    const payload = { rating, comment };
+
+    setBusyProject(projectId);
+    try {
+      const { success, data, error } = await verifyProjectRow(
+        userId,
+        projectId,
+        payload
+      );
+      if (!success) {
+        enqueueSnackbar(error, { variant: "error" });
+        return false;
+      }
+
+      const updatedRow = data?.projects?.find(
+        (r) => String(r._id) === String(projectId)
+      );
+
+      setProfile((p) => {
+        if (!p) return p;
+        const fallbackEntry =
+          authUser?._id && rating
+            ? {
+                user: {
+                  _id: authUser._id,
+                  name: authUser.name,
+                  email: authUser.email,
+                },
+                rating,
+                comment,
+                createdAt: new Date().toISOString(),
+              }
+            : null;
+        return {
+          ...p,
+          projects: (p.projects || []).map((row) =>
+            String(row._id) === String(projectId)
+              ? {
+                  ...row,
+                  verifyCount:
+                    updatedRow?.verifyCount ?? (row.verifyCount || 0) + 1,
+                  verifiedBy:
+                    updatedRow?.verifiedBy ??
+                    [...(row.verifiedBy || []), authUser?._id].filter(Boolean),
+                  verifications:
+                    updatedRow?.verifications ??
+                    [
+                      ...(row.verifications || []),
+                      ...(fallbackEntry ? [fallbackEntry] : []),
+                    ],
+                }
+              : row
+          ),
+        };
+      });
+
+      enqueueSnackbar("Project verified successfully!", {
+        variant: "success",
+      });
+      return true;
+    } catch (e) {
+      enqueueSnackbar(
+        e?.message || "An unexpected error occurred during verification.",
+        { variant: "error" }
+      );
+      return false;
+    } finally {
+      setBusyProject("");
+    }
+  };
+
   const handleReviewSubmit = async () => {
     const { type, rowId } = reviewModal;
     if (!type || !rowId) return;
@@ -725,10 +875,12 @@ export default function DetailPage() {
 
     setSubmittingReview(true);
     try {
-      const ok =
-        type === "education"
-          ? await onVerifyEdu(rowId, reviewPayload)
-          : await onVerifyExp(rowId, reviewPayload);
+    const ok =
+      type === "education"
+        ? await onVerifyEdu(rowId, reviewPayload)
+        : type === "experience"
+        ? await onVerifyExp(rowId, reviewPayload)
+        : await onVerifyProject(rowId, reviewPayload);
 
       if (ok) {
         resetReviewState();
@@ -770,6 +922,8 @@ export default function DetailPage() {
                 ? "Veridate education entry"
                 : reviewModal.type === "experience"
                 ? "Veridate experience entry"
+                : reviewModal.type === "project"
+                ? "Veridate project entry"
                 : "Veridate profile entry"}
             </DialogTitle>
             <DialogDescription>
@@ -1199,6 +1353,64 @@ export default function DetailPage() {
             ) : (
               <div className="text-sm text-muted-foreground">
                 No experience added.
+              </div>
+            )}
+          </SectionWrapper>
+        </AccordionSection>
+
+        {/* Projects */}
+        <AccordionSection
+          title="Projects"
+          icon={ClipboardList}
+          value="projects"
+          openValue={openValue}
+          setOpenValue={setOpenValue}
+          locked={!!profile?.projectLocked}
+          contentClassName="text-left"
+        >
+          <SectionWrapper>
+            {Array.isArray(profile?.projects) && profile.projects.length ? (
+              <div className="space-y-4">
+                {profile.projects.map((project) => {
+                  const cnt = project.verifyCount || 0;
+                  const status = projectStatus({
+                    row: project,
+                    meId,
+                    meProfile,
+                    projectCreditMap,
+                  });
+                  const verifications = Array.isArray(project.verifications)
+                    ? project.verifications
+                    : [];
+
+                  return (
+                    <SubSection key={String(project._id)}>
+                      <div className="flex items-center justify-between mb-3">
+                        <div className="flex items-center gap-2">
+                          <VerifyBadge count={cnt} type="project" />
+                        </div>
+                        <VerifyButton
+                          type="project"
+                          status={status}
+                          isBusy={busyProject === String(project._id)}
+                          id={project._id}
+                          onVerify={beginProjectReview}
+                        />
+                      </div>
+                      <VerificationPreview
+                        verifications={verifications}
+                        onOpen={() =>
+                          openReviewListModal("project", project)
+                        }
+                      />
+                      <ProjectDetails project={project} />
+                    </SubSection>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="text-sm text-muted-foreground">
+                No projects added.
               </div>
             )}
           </SectionWrapper>

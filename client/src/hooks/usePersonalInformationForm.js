@@ -32,7 +32,6 @@ const getEmptyForm = () => ({
       instituteWebsite: "",
       degreeFile: null,
       hiddenFields: [],
-      projects: [], 
     },
   ],
 
@@ -48,7 +47,21 @@ const getEmptyForm = () => ({
       jobFunctions: [],
       industry: "",
       hiddenFields: [],
-      projects: [],
+    },
+  ],
+
+  // --- projects ---
+  projects: [
+    {
+      projectTitle: "",
+      company: "",
+      projectUrl: "",
+      startDate: "",
+      endDate: "",
+      department: "",
+      projectMember: [],
+      role: "",
+      description: "",
     },
   ],
 });
@@ -59,6 +72,7 @@ export default function usePersonalInformationForm() {
   const [saving, setSaving] = useState(false);
   const [savingRows, setSavingRows] = useState(new Set());
   const [savingExpRows, setSavingExpRows] = useState(new Set());
+  const [savingProjectRows, setSavingProjectRows] = useState(new Set());
   const setRowSaving = (index, on) =>
     setSavingRows((prev) => {
       const next = new Set(prev);
@@ -76,6 +90,15 @@ export default function usePersonalInformationForm() {
       return next;
     });
   const isExpRowSaving = (i) => savingExpRows.has(i);
+
+  const setProjectRowSaving = (index, on) =>
+    setSavingProjectRows((prev) => {
+      const next = new Set(prev);
+      if (on) next.add(index);
+      else next.delete(index);
+      return next;
+    });
+  const isProjectRowSaving = (i) => savingProjectRows.has(i);
   const { checkAuth } = useAuth();
 
   const handleChange = (e) => {
@@ -161,6 +184,43 @@ export default function usePersonalInformationForm() {
       const updated = [...prev.experience];
       updated.splice(index, 1);
       return { ...prev, experience: updated };
+    });
+  };
+
+  // ===== PROJECTS =====
+  const addProject = () => {
+    setFormData((prev) => ({
+      ...prev,
+      projects: [
+        ...(prev.projects || []),
+        {
+          projectTitle: "",
+          company: "",
+          projectUrl: "",
+          startDate: "",
+          endDate: "",
+          department: "",
+          projectMember: [],
+          role: "",
+          description: "",
+        },
+      ],
+    }));
+  };
+
+  const updateProject = (index, field, value) => {
+    setFormData((prev) => {
+      const updated = [...(prev.projects || [])];
+      updated[index][field] = value;
+      return { ...prev, projects: updated };
+    });
+  };
+
+  const removeProject = (index) => {
+    setFormData((prev) => {
+      const updated = [...(prev.projects || [])];
+      updated.splice(index, 1);
+      return { ...prev, projects: updated };
     });
   };
 
@@ -455,6 +515,76 @@ export default function usePersonalInformationForm() {
     }
   };
 
+  const saveProjects = async () => {
+    setSaving(true);
+    const data = new FormData();
+    data.append("projects", JSON.stringify(formData.projects || []));
+
+    try {
+      const res = await axiosInstance.post("/profile/save-projects", data, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+      return { ok: true, data: res.data };
+    } catch (err) {
+      return {
+        ok: false,
+        error:
+          err?.response?.data?.error ||
+          err?.message ||
+          "Failed to save projects",
+      };
+    } finally {
+      setSaving(false);
+      checkAuth();
+    }
+  };
+
+  const saveProjectRow = async (index, row) => {
+    setProjectRowSaving(index, true);
+    const data = new FormData();
+
+    data.append("projects", JSON.stringify([row]));
+    data.append("rowIndex", String(index));
+
+    try {
+      const res = await axiosInstance.post("/profile/save-projects", data, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+
+      if (res?.data?.row) {
+        setFormData((prev) => {
+          const projects = [...(prev.projects || [])];
+          projects[index] = {
+            ...projects[index],
+            ...res.data.row,
+            _id: res?.data?.row?._id ?? projects[index]?._id,
+            rowLocked: true,
+          };
+          return { ...prev, projects };
+        });
+      } else {
+        setFormData((prev) => {
+          const projects = [...(prev.projects || [])];
+          projects[index] = { ...projects[index], rowLocked: true };
+          return { ...prev, projects };
+        });
+      }
+
+      return { ok: true, data: res.data };
+    } catch (err) {
+      return {
+        ok: false,
+        error:
+          err?.response?.data?.error ||
+          err?.message ||
+          "Failed to save project row",
+      };
+    } finally {
+      setProjectRowSaving(index, false);
+      checkAuth();
+    }
+  };
+
   const submit = async () => {
     setSubmitting(true);
     const data = new FormData();
@@ -516,6 +646,12 @@ export default function usePersonalInformationForm() {
     saveExperience,
     saveExperienceRow,
     isExpRowSaving,
+    addProject,
+    updateProject,
+    removeProject,
+    saveProjects,
+    saveProjectRow,
+    isProjectRowSaving,
     clearExperienceFiles,
     savePersonalInfo,
     saveProfilePhoto,

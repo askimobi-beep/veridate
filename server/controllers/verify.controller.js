@@ -542,3 +542,241 @@ exports.verifyExperience = async (req, res) => {
   }
 };
 
+exports.verifyProject = async (req, res) => {
+  try {
+    const verifierId = req.user?.id;
+    let { targetUserId, projectId } = req.params;
+    const { rating: rawRating, comment: rawComment } = req.body || {};
+
+    targetUserId = extractHex24(targetUserId);
+    projectId = extractHex24(projectId);
+
+    if (!verifierId) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+    if (!targetUserId || !projectId) {
+      return res.status(400).json({
+        message: "targetUserId and projectId are required (24-hex ids)",
+      });
+    }
+    if (
+      !mongoose.Types.ObjectId.isValid(targetUserId) ||
+      !mongoose.Types.ObjectId.isValid(projectId)
+    ) {
+      return res.status(400).json({ message: "Invalid ids" });
+    }
+    if (toStr(verifierId) === toStr(targetUserId)) {
+      return res
+        .status(400)
+        .json({ message: "You can't verify your own project" });
+    }
+
+    const parsedRating = Number(rawRating);
+    if (!Number.isInteger(parsedRating) || parsedRating < 1 || parsedRating > 5) {
+      return res
+        .status(400)
+        .json({ message: "A star rating between 1 and 5 is required" });
+    }
+
+    const commentText =
+      typeof rawComment === "string"
+        ? rawComment.trim().slice(0, 1000)
+        : "";
+
+    const targetProfile = await Profile.findOne({ user: targetUserId }).lean();
+    if (!targetProfile)
+      return res.status(404).json({ message: "Target profile not found" });
+
+    const project = (targetProfile.projects || []).find(
+      (p) => String(p._id) === projectId
+    );
+    if (!project)
+      return res.status(404).json({ message: "Project row not found" });
+
+    const company = project.company || "";
+    const companyKey = project.companyKey || normalizeCompany(company);
+    if (!companyKey) {
+      return res
+        .status(400)
+        .json({ message: "Target project has no company" });
+    }
+
+    const verifierProfile = await Profile.findOne({ user: verifierId }).lean();
+    const eligible =
+      Array.isArray(verifierProfile?.experience) &&
+      verifierProfile.experience.some(
+        (e) => (e.companyKey || normalizeCompany(e.company)) === companyKey
+      );
+    if (!eligible) {
+      return res
+        .status(403)
+        .json({ message: "Not eligible (company mismatch)" });
+    }
+
+    const spent = await User.findOneAndUpdate(
+      {
+        _id: verifierId,
+        "verifyCredits.projects": {
+          $elemMatch: { companyKey, available: { $gt: 0 } },
+        },
+      },
+      {
+        $inc: {
+          "verifyCredits.projects.$.available": -1,
+          "verifyCredits.projects.$.used": 1,
+        },
+      },
+      { new: false }
+    ).lean();
+
+    if (!spent) {
+      return res
+        .status(403)
+        .json({ message: "No credits left for this company" });
+    }
+
+    const oid = new mongoose.Types.ObjectId(verifierId);
+    const projOid = new mongoose.Types.ObjectId(projectId);
+
+    const upd = await Profile.updateOne(
+      {
+        user: targetUserId,
+        projects: { $elemMatch: { _id: projOid, verifiedBy: { $nin: [oid] } } },
+      },
+      {
+        $addToSet: { "projects.$.verifiedBy": oid },
+        $inc: { "projects.$.verifyCount": 1 },
+        $push: {
+          "projects.$.verifications": {
+            user: oid,
+            rating: parsedRating,
+            comment: commentText,
+            createdAt: new Date(),
+          },
+        },
+      }
+    );
+
+    if (upd.modifiedCount === 0) {
+      await User.updateOne(
+        {
+          _id: verifierId,
+          "verifyCredits.projects": { $elemMatch: { companyKey } },
+        },
+        {
+          $inc: {
+            "verifyCredits.projects.$.available": 1,
+            "verifyCredits.projects.$.used": -1,
+          },
+        }
+      );
+
+      const fresh = await Profile.findOne(
+        { user: targetUserId, "projects._id": projOid },
+        { "projects.$": 1 }
+      ).lean();
+
+      if (!fresh) {
+        return res
+          .status(404)
+          .json({ message: "Project row not found (race)" });
+      }
+
+      const row = fresh.projects?.[0];
+      const already =
+        Array.isArray(row?.verifiedBy) &&
+        row.verifiedBy.some((x) => String(x) === String(oid));
+
+      return res.status(409).json({
+        message: already
+          ? "Already verified this user's project"
+          : "Row changed or invalid projectId for the selected user",
+      });
+    }
+
+    const rewardInc = await User.updateOne(
+      {
+        _id: targetUserId,
+        "verifyCredits.projects.companyKey": companyKey,
+      },
+      {
+        $inc: {
+          "verifyCredits.projects.$.available": 1,
+          "verifyCredits.projects.$.total": 1,
+        },
+      }
+    );
+
+    if (rewardInc.modifiedCount === 0) {
+      await User.updateOne(
+        { _id: targetUserId },
+        {
+          $push: {
+            "verifyCredits.projects": {
+              company,
+              companyKey,
+              available: 1,
+              used: 0,
+              total: 1,
+            },
+          },
+        }
+      );
+    }
+
+    const [verifierUser, targetUser, refreshedTargetProfile] = await Promise.all([
+      User.findById(verifierId).select("verifyCredits.projects").lean(),
+      User.findById(targetUserId).select("verifyCredits.projects").lean(),
+      Profile.findOne({ user: targetUserId })
+        .select("projects")
+        .populate({
+          path: "projects.verifications.user",
+          select: "name email profilePic",
+        })
+        .lean(),
+    ]);
+
+    const withComputedTotals = (u) => {
+      const buckets = (u?.verifyCredits?.projects || []).map((b) => ({
+        company: b.company,
+        companyKey: b.companyKey,
+        available: b.available || 0,
+        used: b.used || 0,
+        total:
+          typeof b.total === "number" ? b.total : (b.available || 0) + (b.used || 0),
+      }));
+      const totals = buckets.reduce(
+        (acc, b) => {
+          acc.available += b.available;
+          acc.used += b.used;
+          acc.total += b.total;
+          return acc;
+        },
+        { available: 0, used: 0, total: 0 }
+      );
+      return { buckets, totals };
+    };
+
+    return res.status(200).json({
+      message: "Project verified",
+      verifier: withComputedTotals(verifierUser),
+      target: withComputedTotals(targetUser),
+      projects: (refreshedTargetProfile?.projects || []).map((r) => ({
+        _id: r._id,
+        company: r.company,
+        verifyCount: r.verifyCount || 0,
+        verifiedBy: r.verifiedBy || [],
+        verifications: (r.verifications || []).map((entry) => ({
+          user: entry.user,
+          rating: entry.rating,
+          comment: entry.comment,
+          createdAt: entry.createdAt,
+        })),
+      })),
+    });
+  } catch (err) {
+    console.error("verifyProject error:", err);
+    return res.status(500).json({ message: "Failed to verify project" });
+  }
+};
+

@@ -54,7 +54,6 @@ const EXPERIENCE_UNLOCKED = new Set([
   "experienceLetterFile",
   "jobFunctions",
   "hiddenFields",
-  "projects",
 ]);
 
 const isExpDisabled = (rowLocked, field) =>
@@ -317,81 +316,6 @@ export default function ExperienceForm({
                   />
                 </div>
 
-                {/* Projects (Experience) */}
-                <div className="md:col-span-2 space-y-3">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm font-medium text-gray-700">
-                      Projects
-                    </span>
-                    <button
-                      type="button"
-                      className="text-sm text-orange-700 hover:underline"
-                      onClick={() => {
-                        const list = Array.isArray(exp.projects)
-                          ? exp.projects
-                          : [];
-                        updateExperience(index, "projects", [
-                          ...list,
-                          { projectTitle: "", projectDescription: "" },
-                        ]);
-                      }}
-                      disabled={isExpDisabled(rowLocked, "projects")}
-                    >
-                      + Add Project
-                    </button>
-                  </div>
-
-                  {(exp.projects || []).map((p, pi) => (
-                    <div
-                      key={pi}
-                      className="grid grid-cols-1 md:grid-cols-2 gap-6 border rounded-xl p-3 bg-gray-50"
-                    >
-                      <AppInput
-                        label="Project Title"
-                        value={p.projectTitle || ""}
-                        onChange={(e) => {
-                          const list = [...(exp.projects || [])];
-                          list[pi] = {
-                            ...list[pi],
-                            projectTitle: e.target.value,
-                          };
-                          updateExperience(index, "projects", list);
-                        }}
-                        placeholder="e.g. Internal CRM Revamp"
-                        disabled={isExpDisabled(rowLocked, "projects")}
-                      />
-                      <AppInput
-                        label="Project Description"
-                        value={p.projectDescription || ""}
-                        onChange={(e) => {
-                          const list = [...(exp.projects || [])];
-                          list[pi] = {
-                            ...list[pi],
-                            projectDescription: e.target.value,
-                          };
-                          updateExperience(index, "projects", list);
-                        }}
-                        placeholder="Outcomes, stack, role…"
-                        disabled={isExpDisabled(rowLocked, "projects")}
-                      />
-                      <div className="md:col-span-2 flex justify-end">
-                        <button
-                          type="button"
-                          className="text-xs text-red-600 hover:underline"
-                          onClick={() => {
-                            const list = [...(exp.projects || [])];
-                            list.splice(pi, 1);
-                            updateExperience(index, "projects", list);
-                          }}
-                          disabled={isExpDisabled(rowLocked, "projects")}
-                        >
-                          Remove
-                        </button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-
                 {/* Full-width experience letter uploader with switch header */}
                 <div className="md:col-span-2">
                   <div className="flex items-center justify-between mb-2">
@@ -533,3 +457,4 @@ export default function ExperienceForm({
     </>
   );
 }
+

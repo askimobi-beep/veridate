@@ -19,11 +19,16 @@ export default function CreditText({
   // Compute total if not explicitly passed (using computed value from mongoose lean call)
   const _total = typeof total === "number" ? total : _available + _used;
   const isExperience = context === "experience";
+  const isProject = context === "project";
   const usedText = isExperience
     ? "Credits that you have already used to veridate other users similar work experience."
+    : isProject
+    ? "Credits that you have already used to veridate other users similar projects."
     : "Credits that you have already used to veridate other users similar education.";
   const availableText = isExperience
     ? "Credits that are available to veridate other users similar work experience."
+    : isProject
+    ? "Credits that are available to veridate other users similar projects."
     : "Credits that are available to veridate other users similar education.";
 
   return (

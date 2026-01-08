@@ -4,6 +4,7 @@ const { protect } = require("../middlewares/authMiddleware");
 const {
   verifyEducation,
   verifyExperience,
+  verifyProject,
 } = require("../controllers/verify.controller");
 
 const router = express.Router();
@@ -15,5 +16,13 @@ router.post("/profiles/:targetUserId/verify/education/:eduId", protect, verifyEd
 // verify experience row
 // POST /profiles/:targetUserId/verify/experience/:expId
 router.post("/profiles/:targetUserId/verify/experience/:expId", protect, verifyExperience);
+
+// verify project row
+// POST /profiles/:targetUserId/verify/projects/:projectId
+router.post(
+  "/profiles/:targetUserId/verify/projects/:projectId",
+  protect,
+  verifyProject
+);
 
 module.exports = router;

@@ -30,7 +30,12 @@ async function toDataUrl(url) {
   }
 }
 
-export default function ProfilePdfDownload({ userId: userIdProp }) {
+export default function ProfilePdfDownload({
+  userId: userIdProp,
+  inline = false,
+  label = "Download",
+  className = "",
+}) {
   const [loading, setLoading] = useState(true);
   const [downloading, setDownloading] = useState(false);
   const [err, setErr] = useState("");
@@ -79,8 +84,6 @@ export default function ProfilePdfDownload({ userId: userIdProp }) {
     };
   }, [userId]);
 
-  
-
   const handleDownload = async () => {
     if (!data) return;
     try {
@@ -91,12 +94,6 @@ export default function ProfilePdfDownload({ userId: userIdProp }) {
         photoDataUrl: photoSrc,
         profileUrl,
       });
-      const toYMD = (d) =>
-        [
-          d.getFullYear(),
-          String(d.getMonth() + 1).padStart(2, "0"),
-          String(d.getDate()).padStart(2, "0"),
-        ].join("-");
       pdf.save(`Profile_${data?.name || userId}_${toYMD(new Date())}.pdf`);
     } catch (e) {
       console.error(e);
@@ -106,14 +103,35 @@ export default function ProfilePdfDownload({ userId: userIdProp }) {
     }
   };
 
-  if (loading) {
+  const isDisabled = downloading || !data || loading || !!err;
+  const buttonLabel = downloading ? "Building..." : label;
+  const buttonClassName = [
+    "inline-flex items-center gap-2 rounded-xl text-white bg-orange-600 hover:bg-orange-700 active:scale-[0.98] shadow-sm transition",
+    inline ? "px-4 py-2 text-sm font-semibold" : "px-6 py-3",
+    className,
+  ]
+    .filter(Boolean)
+    .join(" ");
+  const button = (
+    <button
+      type="button"
+      onClick={handleDownload}
+      disabled={isDisabled}
+      className={buttonClassName}
+      title={err || undefined}
+    >
+      {buttonLabel}
+    </button>
+  );
+
+  if (!inline && loading) {
     return (
       <div className="w-full min-h-screen flex items-center justify-center">
-        <span>loading…</span>
+        <span>Loading...</span>
       </div>
     );
   }
-  if (err) {
+  if (!inline && err) {
     return (
       <div className="w-full min-h-screen flex items-center justify-center">
         <div style={{ color: "crimson" }}>{err}</div>
@@ -121,17 +139,8 @@ export default function ProfilePdfDownload({ userId: userIdProp }) {
     );
   }
 
+  if (inline) return button;
+
   // Minimal UI: single button; PDF contains all styling
-  return (
-    <div className="flex items-end justify-end p-3 ">
-      <button
-        type="button"
-        onClick={handleDownload}
-        disabled={!data || downloading}
-        className="inline-flex items-center gap-2 rounded-xl px-6 py-3 text-white bg-orange-600 hover:bg-orange-700 active:scale-[0.98] shadow-sm transition"
-      >
-        {downloading ? "Building…" : "Download Profile PDF"}
-      </button>
-    </div>
-  );
+  return <div className="flex items-end justify-end p-3">{button}</div>;
 }

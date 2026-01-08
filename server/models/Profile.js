@@ -35,6 +35,22 @@ const ProjectSchema = new mongoose.Schema(
   { _id: false }
 );
 
+const ProfileProjectSchema = new mongoose.Schema({
+  projectTitle: String,
+  company: String,
+  projectUrl: String,
+  startDate: Date,
+  endDate: Date,
+  department: String,
+  projectMember: { type: [String], default: [] },
+  role: String,
+  description: String,
+  verifyCount: { type: Number, default: 0 },
+  verifiedBy: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
+  verifications: { type: [VerificationReviewSchema], default: [] },
+  companyKey: { type: String, index: true },
+});
+
 const EducationSchema = new mongoose.Schema({
   degreeTitle: String,
   startDate: Date,
@@ -104,6 +120,10 @@ const ProfileSchema = new mongoose.Schema(
     // --- experience ---
     experienceLocked: { type: Boolean, default: false },
     experience: { type: [ExperienceSchema], default: [] },
+
+    // --- projects ---
+    projectLocked: { type: Boolean, default: false },
+    projects: { type: [ProfileProjectSchema], default: [] },
   },
   { timestamps: true }
 );
