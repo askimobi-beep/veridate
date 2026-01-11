@@ -223,8 +223,7 @@ export default function EducationForm({
                   pattern={websiteRegex}
                 />
 
-                {/* Full-width uploader with a switch row above it */}
-                <div className="md:col-span-2">
+                <div>
                   <div className="flex items-center justify-between mb-2">
                     <label className="text-sm font-medium text-gray-700 flex items-center gap-2">
                       <FileText className="h-4 w-4 text-orange-600" />
@@ -232,9 +231,6 @@ export default function EducationForm({
                     </label>
 
                     <div className="flex items-center gap-2">
-                      {/* <span className="text-xs text-gray-500 select-none">
-                        {hasHidden(edu, "degreeFile") ? "Hidden" : "Visible"}
-                      </span> */}
                       <BlockSwitch
                         checked={hasHidden(edu, "degreeFile")}
                         onChange={() =>
@@ -290,15 +286,6 @@ export default function EducationForm({
               {/* Row actions */}
               <div className="flex flex-col gap-3 pt-1 sm:flex-row sm:justify-end">
                 <div className="flex items-center gap-3 self-end sm:self-auto">
-                  <Button
-                    variant="link"
-                    type="button"
-                    className="px-0 text-orange-700"
-                    onClick={() => setCreditInfoOpen(true)}
-                  >
-                    See how these credits work
-                  </Button>
-
                   {!rowLocked && (
                     <Button
                       variant="destructive"

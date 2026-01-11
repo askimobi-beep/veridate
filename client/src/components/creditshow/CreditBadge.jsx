@@ -1,5 +1,5 @@
 import React from "react";
-import { Gauge, CheckCircle, Clock } from "lucide-react";
+import { Gauge, CheckCircle, Clock, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 /**
@@ -21,15 +21,15 @@ export default function CreditText({
   const isExperience = context === "experience";
   const isProject = context === "project";
   const usedText = isExperience
-    ? "Credits that you have already used to veridate other users similar work experience."
+    ? "Credits that you have already used to veridate other users with similar work experience."
     : isProject
-    ? "Credits that you have already used to veridate other users similar projects."
-    : "Credits that you have already used to veridate other users similar education.";
+    ? "Credits that you have already used to veridate other users with similar projects."
+    : "Credits that you have already used to veridate other users with similar education.";
   const availableText = isExperience
-    ? "Credits that are available to veridate other users similar work experience."
+    ? "Credits that are available to veridate other users with similar work experience."
     : isProject
-    ? "Credits that are available to veridate other users similar projects."
-    : "Credits that are available to veridate other users similar education.";
+    ? "Credits that are available to veridate other users with similar projects."
+    : "Credits that are available to veridate other users with similar education.";
 
   return (
     <div
@@ -76,6 +76,13 @@ export default function CreditText({
  * Helper component for consistent pill styling
  */
 const BadgePill = ({ icon: Icon, label, value, className }) => {
+  const showArrow = String(label || "")
+    .toLowerCase()
+    .includes("score") || String(label || "")
+    .toLowerCase()
+    .includes("used") || String(label || "")
+    .toLowerCase()
+    .includes("available");
   return (
     <div
       className={cn(
@@ -85,7 +92,12 @@ const BadgePill = ({ icon: Icon, label, value, className }) => {
     >
       <Icon className="h-3.5 w-3.5 shrink-0" />
       <span className="opacity-80">{label}:</span>
-      <span>{value}</span>
+      <span className="inline-flex items-center gap-1.5">
+        {value}
+        {showArrow ? (
+          <ChevronRight className="h-3.5 w-3.5 opacity-80" strokeWidth={3} />
+        ) : null}
+      </span>
     </div>
   );
 };

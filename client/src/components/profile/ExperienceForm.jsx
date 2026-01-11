@@ -45,6 +45,7 @@ const jobFunctionOptions = [
   "Human Resources",
   "Finance",
   "Operations",
+  "Other",
 ];
 
 // fields editable even when row is locked
@@ -313,11 +314,29 @@ export default function ExperienceForm({
                     }
                     disabled={isExpDisabled(rowLocked, "jobFunctions")}
                     gridClassName="gap-6"
+                    extraAfter="Other"
+                    extraItem={
+                      (exp.jobFunctions || []).includes("Other") ? (
+                        <AppInput
+                          name={`jobFunctionsOther-${index}`}
+                          label="Other Job Function"
+                          value={exp.jobFunctionsOther || ""}
+                          onChange={(e) =>
+                            updateExperience(
+                              index,
+                              "jobFunctionsOther",
+                              e.target.value
+                            )
+                          }
+                          placeholder="Enter job function"
+                          disabled={isExpDisabled(rowLocked, "jobFunctions")}
+                        />
+                      ) : null
+                    }
                   />
                 </div>
 
-                {/* Full-width experience letter uploader with switch header */}
-                <div className="md:col-span-2">
+                <div>
                   <div className="flex items-center justify-between mb-2">
                     <label className="text-sm font-medium text-gray-700 flex items-center gap-2">
                       <FileText className="h-4 w-4 text-orange-600" />
@@ -325,11 +344,6 @@ export default function ExperienceForm({
                     </label>
 
                     <div className="flex items-center gap-2">
-                      {/* <span className="text-xs text-gray-500 select-none">
-                        {hasHidden(exp, "experienceLetterFile")
-                          ? "Hidden"
-                          : "Visible"}
-                      </span> */}
                       <BlockSwitch
                         checked={hasHidden(exp, "experienceLetterFile")}
                         onChange={() =>
@@ -362,6 +376,7 @@ export default function ExperienceForm({
                     className="w-full"
                   />
                 </div>
+
               </div>
 
               <div className="rounded-xl border border-gray-200 bg-gray-50 p-4">
@@ -385,15 +400,6 @@ export default function ExperienceForm({
               {/* Row actions */}
               <div className="flex flex-col gap-3 pt-1 sm:flex-row sm:justify-end">
                 <div className="flex items-center gap-3 self-end sm:self-auto">
-                  <Button
-                    variant="link"
-                    type="button"
-                    className="px-0 text-orange-700"
-                    onClick={() => setCreditInfoOpen(true)}
-                  >
-                    See how these credits work
-                  </Button>
-
                   {!rowLocked && (
                     <Button
                       variant="destructive"

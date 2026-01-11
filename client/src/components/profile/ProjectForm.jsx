@@ -267,15 +267,6 @@ export default function ProjectForm({
 
               <div className="flex flex-col gap-3 pt-1 sm:flex-row sm:justify-end">
                 <div className="flex items-center gap-3 self-end sm:self-auto">
-                  <Button
-                    variant="link"
-                    type="button"
-                    className="px-0 text-orange-700"
-                    onClick={() => setCreditInfoOpen(true)}
-                  >
-                    See how these credits work
-                  </Button>
-
                   {!rowLocked && (
                     <Button
                       variant="destructive"

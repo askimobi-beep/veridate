@@ -1,0 +1,39 @@
+{
+  "expo": {
+    "cli": {
+      "appVersionSource": "remote"
+    },
+    "name": "veri-mobile",
+    "slug": "veri-mobile",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "newArchEnabled": true,
+    "splash": {
+      "image": "./assets/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#ffffff"
+    },
+    "ios": {
+      "supportsTablet": true
+    },
+    "android": {
+      "package": "com.askmobisoft.verimobile",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#ffffff"
+      },
+      "edgeToEdgeEnabled": true
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "extra": {
+      "eas": {
+        "projectId": "9f46bf17-d224-48c3-9cc1-eacd7939388f"
+      }
+    },
+    "owner": "askmobisoft55"
+  }
+}

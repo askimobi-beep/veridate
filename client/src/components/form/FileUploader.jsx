@@ -126,11 +126,11 @@ export default forwardRef(function FileUploader(
           className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
         />
 
-        <div className="flex items-center justify-center text-center pointer-events-none min-h-[120px]">
+        <div className="flex items-center justify-center text-center pointer-events-none min-h-[70px]">
           {!file && !previewUrl && (
             <div className="flex flex-col items-center gap-1">
               <Icon className="w-6 h-6 text-orange-500" />
-              <p className="text-sm text-gray-500 group-hover:text-orange-600 transition">
+              <p className="text-xs text-gray-500 group-hover:text-orange-600 transition">
                 {disabled
                   ? "Upload disabled"
                   : isDragging

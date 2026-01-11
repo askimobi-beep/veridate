@@ -28,7 +28,7 @@ export default function FacebookSignIn({ onError }) {
           appId: import.meta.env.VITE_FB_APP_ID,
           cookie: true,
           xfbml: false,
-          version: "v23.0", // 👈 valid version
+          version: import.meta.env.VITE_FB_API_VERSION || "v20.0", // 👈 valid version
         });
         window.__FB_SDK_LOADED__ = true;
       }
