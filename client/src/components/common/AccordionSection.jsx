@@ -37,12 +37,14 @@ export default function AccordionSection({
   contentClassName = "",
   headerClassName = "",
   className = "",
+  staticShadow = "",
 }) {
   const isOpen = openValue === value;
   const prefersReducedMotion = useReducedMotion();
-  const sectionAnimation = prefersReducedMotion
-    ? {}
-    : { animate: isOpen ? "open" : "collapsed", variants: SECTION_VARIANTS };
+  const sectionAnimation =
+    prefersReducedMotion || staticShadow
+      ? {}
+      : { animate: isOpen ? "open" : "collapsed", variants: SECTION_VARIANTS };
   const bodyMotionVariants = React.useMemo(
     () =>
       prefersReducedMotion
@@ -92,6 +94,7 @@ export default function AccordionSection({
           ? "border-orange-200/60 bg-gradient-to-br from-white/80 via-white/70 to-orange-100/60 text-gray-800"
           : "border-white/15 bg-gradient-to-br from-orange-200/50 via-orange-100/40 to-white/35 text-gray-900/90"
       } ${locked ? "opacity-90" : ""} ${className}`}
+      style={staticShadow ? { boxShadow: staticShadow } : undefined}
       whileHover={
         !isOpen && !prefersReducedMotion
           ? { y: -2, scale: 1.004 }

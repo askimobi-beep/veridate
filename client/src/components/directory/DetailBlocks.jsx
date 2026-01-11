@@ -28,9 +28,11 @@ export function DLRow({ label, children }) {
 }
 
 /* Subsection for items (education / experience) */
-export function SubSection({ children }) {
+export function SubSection({ children, className = "" }) {
   return (
-    <div className="rounded-lg border bg-card text-card-foreground shadow-sm">
+    <div
+      className={`rounded-lg border border-orange-400/70 bg-transparent text-card-foreground shadow-none ${className}`}
+    >
       <div className="p-4 md:p-5">{children}</div>
     </div>
   );

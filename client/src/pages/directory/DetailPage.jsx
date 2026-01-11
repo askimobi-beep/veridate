@@ -293,6 +293,43 @@ function VerificationPreview({ verifications = [], onOpen }) {
   );
 }
 
+function VerificationSummaryBox({ count = 0, type, verifications = [], onOpen }) {
+  const numericRatings = Array.isArray(verifications)
+    ? verifications
+        .map((entry) => Number(entry?.rating || 0))
+        .filter((r) => Number.isFinite(r) && r > 0)
+    : [];
+  const reviewsCount = numericRatings.length;
+  const average =
+    reviewsCount > 0
+      ? numericRatings.reduce((acc, curr) => acc + curr, 0) / reviewsCount
+      : 0;
+  const canOpen = typeof onOpen === "function" && reviewsCount > 0;
+
+  const BoxTag = canOpen ? "button" : "div";
+
+  return (
+    <BoxTag
+      type={canOpen ? "button" : undefined}
+      onClick={canOpen ? onOpen : undefined}
+      className="w-full max-w-[360px] rounded-xl border border-orange-300 bg-gradient-to-r from-orange-500 via-orange-400 to-amber-300 px-4 py-3 text-left text-white shadow transition hover:brightness-110 hover:shadow-lg"
+    >
+      <div className="text-sm font-semibold text-white drop-shadow-sm">
+        {count} {verifyCountText(count, type)}.
+      </div>
+      <div className="mt-2 flex flex-wrap items-center gap-2 text-sm text-white">
+        <ReviewStars value={average} readOnly size="sm" className="drop-shadow-sm" />
+        <span className="text-xs font-semibold text-white drop-shadow-sm">
+          {average ? `${average.toFixed(1)} / 5` : "0 / 5"}
+        </span>
+      </div>
+      <div className="mt-1 text-xs font-semibold text-white drop-shadow-sm">
+        {reviewsCount} review{reviewsCount === 1 ? "" : "s"}
+      </div>
+    </BoxTag>
+  );
+}
+
 function reviewerLabel(entry) {
   const user = entry?.user;
   if (user && typeof user === "object") {
@@ -1254,7 +1291,10 @@ export default function DetailPage() {
           openValue={openValue}
           setOpenValue={setOpenValue}
           locked={!!profile?.educationLocked}
-          contentClassName="text-left"
+          contentClassName="text-left rounded-none bg-[#f5f5f5] shadow-[0_6px_24px_rgba(15,23,42,0.12)]"
+          className="!bg-[#f5f5f5] !from-[#f5f5f5] !via-[#f5f5f5] !to-[#f5f5f5] border-slate-200/70 shadow-[0_8px_26px_rgba(15,23,42,0.16)]"
+          headerClassName="bg-[#fcfcfc] shadow-[0_4px_14px_rgba(15,23,42,0.12)] !from-[#fcfcfc] !via-[#fcfcfc] !to-[#fcfcfc]"
+          staticShadow="0 10px 28px rgba(15,23,42,0.14)"
         >
           <SectionWrapper>
             {Array.isArray(profile?.education) && profile.education.length ? (
@@ -1272,10 +1312,18 @@ export default function DetailPage() {
                     : [];
 
                   return (
-                    <SubSection key={String(edu._id)}>
+                    <SubSection
+                      key={String(edu._id)}
+                      className="border-orange-200/70 bg-slate-50 shadow-[0_18px_50px_-30px_rgba(15,23,42,0.35)]"
+                    >
                       <div className="flex items-center justify-between mb-3">
-                        <div className="flex items-center gap-2">
-                          <VerifyBadge count={cnt} type="education" />
+                        <div className="flex-1 pr-3">
+                          <VerificationSummaryBox
+                            count={cnt}
+                            type="education"
+                            verifications={verifications}
+                            onOpen={() => openReviewListModal("education", edu)}
+                          />
                         </div>
                         <VerifyButton
                           type="education"
@@ -1285,10 +1333,6 @@ export default function DetailPage() {
                           onVerify={beginEducationReview}
                         />
                       </div>
-                      <VerificationPreview
-                        verifications={verifications}
-                        onOpen={() => openReviewListModal("education", edu)}
-                      />
                       <EducationDetails edu={edu} fileUrl={fileUrl} />
                     </SubSection>
                   );
@@ -1310,7 +1354,10 @@ export default function DetailPage() {
           openValue={openValue}
           setOpenValue={setOpenValue}
           locked={!!profile?.experienceLocked}
-          contentClassName="text-left"
+          contentClassName="text-left rounded-none bg-[#f5f5f5] shadow-[0_6px_24px_rgba(15,23,42,0.12)]"
+          className="!bg-[#f5f5f5] !from-[#f5f5f5] !via-[#f5f5f5] !to-[#f5f5f5] border-slate-200/70 shadow-[0_8px_26px_rgba(15,23,42,0.16)]"
+          headerClassName="bg-[#fcfcfc] shadow-[0_4px_14px_rgba(15,23,42,0.12)] !from-[#fcfcfc] !via-[#fcfcfc] !to-[#fcfcfc]"
+          staticShadow="0 10px 28px rgba(15,23,42,0.14)"
         >
           <SectionWrapper>
             {Array.isArray(profile?.experience) && profile.experience.length ? (
@@ -1328,10 +1375,18 @@ export default function DetailPage() {
                     : [];
 
                   return (
-                    <SubSection key={String(exp._id)}>
+                    <SubSection
+                      key={String(exp._id)}
+                      className="border-orange-200/70 bg-slate-50 shadow-[0_18px_50px_-30px_rgba(15,23,42,0.35)]"
+                    >
                       <div className="flex items-center justify-between mb-3">
-                        <div className="flex items-center gap-2">
-                          <VerifyBadge count={cnt} type="experience" />
+                        <div className="flex-1 pr-3">
+                          <VerificationSummaryBox
+                            count={cnt}
+                            type="experience"
+                            verifications={verifications}
+                            onOpen={() => openReviewListModal("experience", exp)}
+                          />
                         </div>
                         <VerifyButton
                           type="experience"
@@ -1341,10 +1396,6 @@ export default function DetailPage() {
                           onVerify={beginExperienceReview}
                         />
                       </div>
-                      <VerificationPreview
-                        verifications={verifications}
-                        onOpen={() => openReviewListModal("experience", exp)}
-                      />
                       <ExperienceDetails exp={exp} fileUrl={fileUrl} />
                     </SubSection>
                   );
@@ -1366,7 +1417,10 @@ export default function DetailPage() {
           openValue={openValue}
           setOpenValue={setOpenValue}
           locked={!!profile?.projectLocked}
-          contentClassName="text-left"
+          contentClassName="text-left rounded-none bg-[#f5f5f5] shadow-[0_6px_24px_rgba(15,23,42,0.12)]"
+          className="!bg-[#f5f5f5] !from-[#f5f5f5] !via-[#f5f5f5] !to-[#f5f5f5] border-slate-200/70 shadow-[0_8px_26px_rgba(15,23,42,0.16)]"
+          headerClassName="bg-[#fcfcfc] shadow-[0_4px_14px_rgba(15,23,42,0.12)] !from-[#fcfcfc] !via-[#fcfcfc] !to-[#fcfcfc]"
+          staticShadow="0 10px 28px rgba(15,23,42,0.14)"
         >
           <SectionWrapper>
             {Array.isArray(profile?.projects) && profile.projects.length ? (
@@ -1384,10 +1438,20 @@ export default function DetailPage() {
                     : [];
 
                   return (
-                    <SubSection key={String(project._id)}>
+                    <SubSection
+                      key={String(project._id)}
+                      className="border-orange-200/70 bg-slate-50 shadow-[0_18px_50px_-30px_rgba(15,23,42,0.35)]"
+                    >
                       <div className="flex items-center justify-between mb-3">
-                        <div className="flex items-center gap-2">
-                          <VerifyBadge count={cnt} type="project" />
+                        <div className="flex-1 pr-3">
+                          <VerificationSummaryBox
+                            count={cnt}
+                            type="project"
+                            verifications={verifications}
+                            onOpen={() =>
+                              openReviewListModal("project", project)
+                            }
+                          />
                         </div>
                         <VerifyButton
                           type="project"
@@ -1397,12 +1461,6 @@ export default function DetailPage() {
                           onVerify={beginProjectReview}
                         />
                       </div>
-                      <VerificationPreview
-                        verifications={verifications}
-                        onOpen={() =>
-                          openReviewListModal("project", project)
-                        }
-                      />
                       <ProjectDetails project={project} />
                     </SubSection>
                   );
