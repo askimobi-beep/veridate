@@ -42,14 +42,16 @@ export default function DirectoryDetailScreen({ route }) {
   }
 
   const name = data?.name || `${data?.firstName || ""} ${data?.lastName || ""}`.trim();
+  const headline = data?.experience?.[0]?.jobTitle || data?.experience?.[0]?.title || data?.title || data?.headline || "Verified member";
+  const location = data?.city || data?.location || "Pakistan";
 
   return (
     <ScreenContainer>
       <ScrollView contentContainerStyle={styles.container}>
         <View style={styles.hero}>
           <Text style={styles.name}>{name || "Verified profile"}</Text>
-          <Text style={styles.title}>{data?.title || data?.headline || "Verified member"}</Text>
-          <Text style={styles.meta}>{data?.location || "Pakistan"}</Text>
+          <Text style={styles.title}>{headline}</Text>
+          <Text style={styles.meta}>{location}</Text>
         </View>
 
         <SectionCard title="About" subtitle="Summary and highlights">
@@ -57,10 +59,10 @@ export default function DirectoryDetailScreen({ route }) {
         </SectionCard>
 
         <SectionCard title="Experience" subtitle="Roles and tenure">
-          {(data?.experience || []).length ? (
+          {Array.isArray(data?.experience) && data.experience.length ? (
             data.experience.map((exp, idx) => (
-              <View key={`${exp?.title}-${idx}`} style={styles.row}>
-                <Text style={styles.rowTitle}>{exp?.title || "Role"}</Text>
+              <View key={`${exp?.jobTitle || exp?.title || "role"}-${idx}`} style={styles.row}>
+                <Text style={styles.rowTitle}>{exp?.jobTitle || exp?.title || "Role"}</Text>
                 <Text style={styles.rowMeta}>{exp?.company || "Company"}</Text>
               </View>
             ))
@@ -70,15 +72,28 @@ export default function DirectoryDetailScreen({ route }) {
         </SectionCard>
 
         <SectionCard title="Education" subtitle="Degrees and institutions">
-          {(data?.education || []).length ? (
+          {Array.isArray(data?.education) && data.education.length ? (
             data.education.map((edu, idx) => (
-              <View key={`${edu?.degree}-${idx}`} style={styles.row}>
-                <Text style={styles.rowTitle}>{edu?.degree || "Degree"}</Text>
+              <View key={`${edu?.degreeTitle || edu?.degree || "degree"}-${idx}`} style={styles.row}>
+                <Text style={styles.rowTitle}>{edu?.degreeTitle || edu?.degree || "Degree"}</Text>
                 <Text style={styles.rowMeta}>{edu?.institute || "Institution"}</Text>
               </View>
             ))
           ) : (
             <Text style={styles.body}>No education listed yet.</Text>
+          )}
+        </SectionCard>
+
+        <SectionCard title="Projects" subtitle="Recent work">
+          {Array.isArray(data?.projects) && data.projects.length ? (
+            data.projects.map((project, idx) => (
+              <View key={`${project?.projectTitle || project?.title || "project"}-${idx}`} style={styles.row}>
+                <Text style={styles.rowTitle}>{project?.projectTitle || project?.title || "Project"}</Text>
+                <Text style={styles.rowMeta}>{project?.company || project?.projectUrl || "Project details"}</Text>
+              </View>
+            ))
+          ) : (
+            <Text style={styles.body}>No projects listed yet.</Text>
           )}
         </SectionCard>
       </ScrollView>

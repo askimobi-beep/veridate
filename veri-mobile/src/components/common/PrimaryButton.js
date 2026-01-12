@@ -3,7 +3,7 @@ import { colors } from "../../theme/colors";
 import { spacing } from "../../theme/spacing";
 import { typography } from "../../theme/typography";
 
-export default function PrimaryButton({ title, onPress, variant = "primary", ...props }) {
+export default function PrimaryButton({ title, onPress, variant = "primary", style, ...props }) {
   const isGhost = variant === "ghost";
   return (
     <Pressable
@@ -12,6 +12,7 @@ export default function PrimaryButton({ title, onPress, variant = "primary", ...
         styles.base,
         isGhost ? styles.ghost : styles.primary,
         pressed && styles.pressed,
+        style,
       ]}
       {...props}
     >
@@ -30,6 +31,11 @@ const styles = StyleSheet.create({
   },
   primary: {
     backgroundColor: colors.primary,
+    shadowColor: colors.shadow,
+    shadowOpacity: 0.2,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 6 },
+    elevation: 3,
   },
   ghost: {
     backgroundColor: "transparent",

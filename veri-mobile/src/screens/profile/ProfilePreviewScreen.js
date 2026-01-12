@@ -1,7 +1,9 @@
 import { useEffect, useState } from "react";
 import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from "react-native";
 import ScreenContainer from "../../components/common/ScreenContainer";
+import PageHeader from "../../components/common/PageHeader";
 import SectionCard from "../../components/common/SectionCard";
+import DrawerToggleButton from "../../components/common/DrawerToggleButton";
 import { colors } from "../../theme/colors";
 import { spacing } from "../../theme/spacing";
 import { typography } from "../../theme/typography";
@@ -43,6 +45,12 @@ export default function ProfilePreviewScreen() {
 
   return (
     <ScreenContainer>
+      <PageHeader
+        eyebrow="Profile"
+        title="Public preview"
+        subtitle="How your profile appears in the directory."
+        left={<DrawerToggleButton />}
+      />
       <ScrollView contentContainerStyle={styles.container}>
         <View style={styles.hero}>
           <Text style={styles.name}>{name || "Your profile"}</Text>

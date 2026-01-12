@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { Alert, ScrollView, StyleSheet, Text, View } from "react-native";
 import ScreenContainer from "../../components/common/ScreenContainer";
+import PageHeader from "../../components/common/PageHeader";
+import DrawerToggleButton from "../../components/common/DrawerToggleButton";
 import PrimaryButton from "../../components/common/PrimaryButton";
 import SectionCard from "../../components/common/SectionCard";
 import { colors } from "../../theme/colors";
@@ -17,6 +19,12 @@ export default function DocumentsScreen() {
 
   return (
     <ScreenContainer gradient={false}>
+      <PageHeader
+        eyebrow="Profile"
+        title="Documents"
+        subtitle="Upload supporting files for verification."
+        left={<DrawerToggleButton />}
+      />
       <ScrollView contentContainerStyle={{ padding: spacing.lg, paddingBottom: spacing.xxl }}>
         <SectionCard title="Documents" subtitle="Upload proof for verification">
           <View style={styles.block}>

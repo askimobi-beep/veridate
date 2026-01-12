@@ -3,6 +3,7 @@ import ScreenContainer from "../../components/common/ScreenContainer";
 import PageHeader from "../../components/common/PageHeader";
 import PrimaryButton from "../../components/common/PrimaryButton";
 import SectionCard from "../../components/common/SectionCard";
+import DrawerToggleButton from "../../components/common/DrawerToggleButton";
 import { useAuth } from "../../context/AuthContext";
 import { colors } from "../../theme/colors";
 import { spacing } from "../../theme/spacing";
@@ -13,7 +14,12 @@ export default function SettingsScreen() {
 
   return (
     <ScreenContainer>
-      <PageHeader eyebrow="Account" title="Settings" subtitle="Manage your profile and session." />
+      <PageHeader
+        eyebrow="Account"
+        title="Settings"
+        subtitle="Manage your profile and session."
+        left={<DrawerToggleButton />}
+      />
       <ScrollView contentContainerStyle={styles.container}>
         <SectionCard title="Profile" subtitle="Signed in as">
           <Text style={styles.name}>{user?.firstName || ""} {user?.lastName || ""}</Text>

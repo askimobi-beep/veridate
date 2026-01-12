@@ -1,7 +1,9 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import api from "../services/api";
 
 const AuthContext = createContext(null);
+const TOKEN_KEY = "veridate.token";
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
@@ -16,9 +18,9 @@ export function AuthProvider({ children }) {
     }
   }, []);
 
-  const checkAuth = useCallback(async () => {
-    if (!token) {
-      setLoading(false);
+  const checkAuth = useCallback(async (activeToken) => {
+    if (!activeToken) {
+      setUser(null);
       return;
     }
     try {
@@ -26,20 +28,33 @@ export function AuthProvider({ children }) {
       setUser(res?.data?.user || null);
     } catch (error) {
       setUser(null);
-    } finally {
-      setLoading(false);
     }
-  }, [token]);
+  }, []);
 
   useEffect(() => {
-    checkAuth();
-  }, [checkAuth]);
+    const bootstrap = async () => {
+      try {
+        const stored = await AsyncStorage.getItem(TOKEN_KEY);
+        if (stored) {
+          setToken(stored);
+          applyToken(stored);
+          await checkAuth(stored);
+        }
+      } finally {
+        setLoading(false);
+      }
+    };
+    bootstrap();
+  }, [applyToken, checkAuth]);
 
   const login = async ({ email, password }) => {
     const res = await api.post("/auth/login-user", { email, password });
     const nextToken = res?.data?.token;
     setToken(nextToken || null);
     applyToken(nextToken);
+    if (nextToken) {
+      await AsyncStorage.setItem(TOKEN_KEY, nextToken);
+    }
     setUser(res?.data?.user || null);
     return res;
   };
@@ -66,6 +81,7 @@ export function AuthProvider({ children }) {
       setUser(null);
       setToken(null);
       applyToken(null);
+      await AsyncStorage.removeItem(TOKEN_KEY);
     }
   };
 

@@ -1,6 +1,8 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Alert, KeyboardAvoidingView, Platform, ScrollView, View } from "react-native";
 import ScreenContainer from "../../components/common/ScreenContainer";
+import PageHeader from "../../components/common/PageHeader";
+import DrawerToggleButton from "../../components/common/DrawerToggleButton";
 import AppTextInput from "../../components/common/AppTextInput";
 import PrimaryButton from "../../components/common/PrimaryButton";
 import SectionCard from "../../components/common/SectionCard";
@@ -14,16 +16,49 @@ export default function PersonalInfoScreen() {
   const [contact, setContact] = useState("");
   const [address, setAddress] = useState("");
   const [busy, setBusy] = useState(false);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let alive = true;
+    const loadProfile = async () => {
+      try {
+        const res = await api.get("/profile/me");
+        const profile = res?.data || {};
+        const name = String(profile?.name || "").trim();
+        const parts = name.split(" ").filter(Boolean);
+        if (alive) {
+          setFirstName(profile?.firstName || parts[0] || "");
+          setLastName(profile?.lastName || parts.slice(1).join(" ") || "");
+          setEmail(profile?.email || "");
+          setContact(profile?.mobile || "");
+          setAddress(profile?.address || profile?.city || "");
+        }
+      } catch {
+        if (alive) {
+          setFirstName("");
+          setLastName("");
+          setEmail("");
+          setContact("");
+          setAddress("");
+        }
+      } finally {
+        if (alive) setLoading(false);
+      }
+    };
+    loadProfile();
+    return () => {
+      alive = false;
+    };
+  }, []);
 
   const handleSave = async () => {
     try {
       setBusy(true);
       const form = new FormData();
-      form.append("firstName", firstName);
-      form.append("lastName", lastName);
+      form.append("name", `${firstName} ${lastName}`.trim());
       form.append("email", email);
-      form.append("contact", contact);
-      form.append("address", address);
+      form.append("mobile", contact);
+      form.append("city", address);
 
       await api.post("/profile/save-personal-info", form, {
         headers: { "Content-Type": "multipart/form-data" },
@@ -38,6 +73,12 @@ export default function PersonalInfoScreen() {
 
   return (
     <ScreenContainer gradient={false}>
+      <PageHeader
+        eyebrow="Profile"
+        title="Personal information"
+        subtitle="Keep your contact details updated."
+        left={<DrawerToggleButton />}
+      />
       <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} style={{ flex: 1 }}>
         <ScrollView contentContainerStyle={{ padding: spacing.lg, paddingBottom: spacing.xxl }}>
           <SectionCard title="Personal details" subtitle="Public profile basics">
@@ -45,8 +86,8 @@ export default function PersonalInfoScreen() {
             <AppTextInput label="Last name" value={lastName} onChangeText={setLastName} />
             <AppTextInput label="Email" value={email} onChangeText={setEmail} autoCapitalize="none" />
             <AppTextInput label="Contact number" value={contact} onChangeText={setContact} keyboardType="phone-pad" />
-            <AppTextInput label="Address" value={address} onChangeText={setAddress} />
-            <PrimaryButton title={busy ? "Saving..." : "Save changes"} onPress={handleSave} disabled={busy} />
+            <AppTextInput label="City" value={address} onChangeText={setAddress} />
+            <PrimaryButton title={busy ? "Saving..." : "Save changes"} onPress={handleSave} disabled={busy || loading} />
           </SectionCard>
         </ScrollView>
       </KeyboardAvoidingView>

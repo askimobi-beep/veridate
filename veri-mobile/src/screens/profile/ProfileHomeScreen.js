@@ -2,6 +2,7 @@ import { Pressable, StyleSheet, Text, View } from "react-native";
 import ScreenContainer from "../../components/common/ScreenContainer";
 import PageHeader from "../../components/common/PageHeader";
 import SectionCard from "../../components/common/SectionCard";
+import DrawerToggleButton from "../../components/common/DrawerToggleButton";
 import { colors } from "../../theme/colors";
 import { spacing } from "../../theme/spacing";
 import { typography } from "../../theme/typography";
@@ -22,6 +23,7 @@ export default function ProfileHomeScreen({ navigation }) {
         eyebrow="Profile builder"
         title="Craft your verified profile"
         subtitle="Complete each section to unlock verification and visibility."
+        left={<DrawerToggleButton />}
       />
       <View style={styles.container}>
         {sections.map((section) => (

@@ -3,7 +3,7 @@ import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { View, ActivityIndicator } from "react-native";
 import { useAuth } from "../context/AuthContext";
 import AuthStack from "./stacks/AuthStack";
-import AppTabs from "./tabs/AppTabs";
+import AppDrawer from "./drawer/AppDrawer";
 import { colors } from "../theme/colors";
 
 const Stack = createNativeStackNavigator();
@@ -23,7 +23,7 @@ export default function RootNavigator() {
     <NavigationContainer>
       <Stack.Navigator screenOptions={{ headerShown: false }}>
         {user ? (
-          <Stack.Screen name="App" component={AppTabs} />
+          <Stack.Screen name="App" component={AppDrawer} />
         ) : (
           <Stack.Screen name="Auth" component={AuthStack} />
         )}

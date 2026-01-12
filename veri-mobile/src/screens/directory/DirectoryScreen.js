@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { ActivityIndicator, FlatList, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 import ScreenContainer from "../../components/common/ScreenContainer";
 import PageHeader from "../../components/common/PageHeader";
+import DrawerToggleButton from "../../components/common/DrawerToggleButton";
 import { colors } from "../../theme/colors";
 import { spacing } from "../../theme/spacing";
 import { typography } from "../../theme/typography";
@@ -16,6 +17,7 @@ const SAMPLE = [
 export default function DirectoryScreen({ navigation }) {
   const [query, setQuery] = useState("");
   const [profiles, setProfiles] = useState([]);
+  const [errorText, setErrorText] = useState("");
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -23,9 +25,16 @@ export default function DirectoryScreen({ navigation }) {
     const fetchProfiles = async () => {
       try {
         const res = await api.get("/profile/directory");
-        if (alive) setProfiles(res?.data?.profiles || res?.data || SAMPLE);
+        const next = res?.data?.profiles ?? res?.data?.data ?? res?.data ?? [];
+        if (alive) {
+          setErrorText("");
+          setProfiles(Array.isArray(next) ? next : []);
+        }
       } catch (error) {
-        if (alive) setProfiles(SAMPLE);
+        if (alive) {
+          setProfiles([]);
+          setErrorText(error?.response?.data?.message || "Unable to load profiles.");
+        }
       } finally {
         if (alive) setLoading(false);
       }
@@ -36,9 +45,11 @@ export default function DirectoryScreen({ navigation }) {
     };
   }, []);
 
-  const filtered = profiles.filter((item) => {
+  const source = Array.isArray(profiles) ? profiles : [];
+  const filtered = source.filter((item) => {
     const name = item?.name || `${item?.firstName || ""} ${item?.lastName || ""}`.trim();
-    return name.toLowerCase().includes(query.toLowerCase()) || (item?.title || "").toLowerCase().includes(query.toLowerCase());
+    const expTitle = item?.experience?.[0]?.jobTitle || item?.experience?.[0]?.title || item?.title || item?.headline || "";
+    return name.toLowerCase().includes(query.toLowerCase()) || expTitle.toLowerCase().includes(query.toLowerCase());
   });
 
   return (
@@ -47,6 +58,7 @@ export default function DirectoryScreen({ navigation }) {
         eyebrow="Directory"
         title="Verified profiles"
         subtitle="Search trusted profiles and explore verified talent."
+        left={<DrawerToggleButton />}
       />
 
       <View style={styles.searchWrap}>
@@ -64,29 +76,37 @@ export default function DirectoryScreen({ navigation }) {
           <ActivityIndicator size="large" color={colors.primary} />
         </View>
       ) : (
-        <FlatList
-          data={filtered}
-          keyExtractor={(item) => item._id || item.id}
-          contentContainerStyle={styles.list}
-          renderItem={({ item }) => {
-            const name = item?.name || `${item?.firstName || ""} ${item?.lastName || ""}`.trim();
-            return (
-              <Pressable
-                style={styles.card}
-                onPress={() => navigation.navigate("DirectoryDetail", { userId: item?.user || item?._id, profile: item })}
-              >
-                <View style={styles.avatar}>
-                  <Text style={styles.avatarText}>{name?.slice(0, 1) || "V"}</Text>
-                </View>
-                <View style={styles.info}>
-                  <Text style={styles.name}>{name || "Verified Profile"}</Text>
-                  <Text style={styles.title}>{item?.title || item?.headline || "Verified member"}</Text>
-                  <Text style={styles.location}>{item?.location || "Pakistan"}</Text>
-                </View>
-              </Pressable>
-            );
-          }}
-        />
+        <>
+          {errorText ? <Text style={styles.error}>{errorText}</Text> : null}
+          <FlatList
+            data={filtered}
+            keyExtractor={(item, index) => item?._id || item?.id || `${index}`}
+            contentContainerStyle={styles.list}
+            ListEmptyComponent={
+              <Text style={styles.empty}>No profiles found.</Text>
+            }
+            renderItem={({ item }) => {
+              const name = item?.name || `${item?.firstName || ""} ${item?.lastName || ""}`.trim();
+              const title = item?.experience?.[0]?.jobTitle || item?.experience?.[0]?.title || item?.title || item?.headline || "Verified member";
+              const location = item?.city || item?.location || "Pakistan";
+              return (
+                <Pressable
+                  style={styles.card}
+                  onPress={() => navigation.navigate("DirectoryDetail", { userId: item?.user || item?._id, profile: item })}
+                >
+                  <View style={styles.avatar}>
+                    <Text style={styles.avatarText}>{name?.slice(0, 1) || "V"}</Text>
+                  </View>
+                  <View style={styles.info}>
+                    <Text style={styles.name}>{name || "Verified Profile"}</Text>
+                    <Text style={styles.title}>{title}</Text>
+                    <Text style={styles.location}>{location}</Text>
+                  </View>
+                </Pressable>
+              );
+            }}
+          />
+        </>
       )}
     </ScreenContainer>
   );
@@ -165,5 +185,17 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: "center",
     justifyContent: "center",
+  },
+  error: {
+    paddingHorizontal: spacing.lg,
+    color: colors.danger,
+    fontFamily: typography.fontMedium,
+    marginBottom: spacing.sm,
+  },
+  empty: {
+    textAlign: "center",
+    color: colors.muted,
+    fontFamily: typography.fontRegular,
+    paddingVertical: spacing.lg,
   },
 });

@@ -5,6 +5,7 @@ import { useFonts, SpaceGrotesk_400Regular, SpaceGrotesk_600SemiBold, SpaceGrote
 import RootNavigator from "./src/navigation/RootNavigator";
 import { AuthProvider } from "./src/context/AuthContext";
 import { colors } from "./src/theme/colors";
+import ErrorBoundary from "./src/components/common/ErrorBoundary";
 
 export default function App() {
   const [fontsLoaded] = useFonts({
@@ -25,9 +26,11 @@ export default function App() {
   if (!fontsLoaded) return loader;
 
   return (
-    <AuthProvider>
-      <StatusBar style="dark" />
-      <RootNavigator />
-    </AuthProvider>
+    <ErrorBoundary>
+      <AuthProvider>
+        <StatusBar style="dark" />
+        <RootNavigator />
+      </AuthProvider>
+    </ErrorBoundary>
   );
 }

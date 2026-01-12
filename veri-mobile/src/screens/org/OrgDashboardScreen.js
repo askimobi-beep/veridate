@@ -3,6 +3,7 @@ import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from "react-nat
 import ScreenContainer from "../../components/common/ScreenContainer";
 import PageHeader from "../../components/common/PageHeader";
 import SectionCard from "../../components/common/SectionCard";
+import DrawerToggleButton from "../../components/common/DrawerToggleButton";
 import { colors } from "../../theme/colors";
 import { spacing } from "../../theme/spacing";
 import { typography } from "../../theme/typography";
@@ -36,6 +37,7 @@ export default function OrgDashboardScreen({ navigation }) {
         eyebrow="Organization"
         title="Organization dashboard"
         subtitle="Monitor verified members and pending requests."
+        left={<DrawerToggleButton />}
       />
 
       {loading ? (
