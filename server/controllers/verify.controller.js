@@ -613,26 +613,59 @@ exports.verifyProject = async (req, res) => {
         .json({ message: "Not eligible (company mismatch)" });
     }
 
-    const spent = await User.findOneAndUpdate(
+    const availableBucket = await User.findOne(
       {
         _id: verifierId,
         "verifyCredits.projects": {
           $elemMatch: { companyKey, available: { $gt: 0 } },
         },
       },
-      {
-        $inc: {
-          "verifyCredits.projects.$.available": -1,
-          "verifyCredits.projects.$.used": 1,
-        },
-      },
-      { new: false }
+      { "verifyCredits.projects.$": 1 }
     ).lean();
 
-    if (!spent) {
+    const spentBucket = availableBucket?.verifyCredits?.projects?.[0];
+    const spentProjectId =
+      spentBucket?.projectId && mongoose.Types.ObjectId.isValid(spentBucket.projectId)
+        ? new mongoose.Types.ObjectId(spentBucket.projectId)
+        : null;
+
+    if (!spentBucket) {
       return res
         .status(403)
-        .json({ message: "No credits left for this company" });
+        .json({ message: "No project credits available for this company" });
+    }
+
+    const spendFilter = spentProjectId
+      ? {
+          _id: verifierId,
+          "verifyCredits.projects": {
+            $elemMatch: { projectId: spentProjectId, available: { $gt: 0 } },
+          },
+        }
+      : {
+          _id: verifierId,
+          "verifyCredits.projects": {
+            $elemMatch: {
+              companyKey,
+              available: { $gt: 0 },
+              projectId: { $exists: false },
+            },
+          },
+        };
+
+    const spendUpdate = {
+      $inc: {
+        "verifyCredits.projects.$.available": -1,
+        "verifyCredits.projects.$.used": 1,
+      },
+    };
+
+    const spent = await User.updateOne(spendFilter, spendUpdate);
+
+    if (spent.modifiedCount === 0) {
+      return res
+        .status(403)
+        .json({ message: "No project credits available for this company" });
     }
 
     const oid = new mongoose.Types.ObjectId(verifierId);
@@ -658,18 +691,23 @@ exports.verifyProject = async (req, res) => {
     );
 
     if (upd.modifiedCount === 0) {
-      await User.updateOne(
-        {
-          _id: verifierId,
-          "verifyCredits.projects": { $elemMatch: { companyKey } },
+      const refundFilter = spentProjectId
+        ? {
+            _id: verifierId,
+            "verifyCredits.projects.projectId": spentProjectId,
+          }
+        : {
+            _id: verifierId,
+            "verifyCredits.projects.companyKey": companyKey,
+            "verifyCredits.projects.projectId": { $exists: false },
+          };
+
+      await User.updateOne(refundFilter, {
+        $inc: {
+          "verifyCredits.projects.$.available": 1,
+          "verifyCredits.projects.$.used": -1,
         },
-        {
-          $inc: {
-            "verifyCredits.projects.$.available": 1,
-            "verifyCredits.projects.$.used": -1,
-          },
-        }
-      );
+      });
 
       const fresh = await Profile.findOne(
         { user: targetUserId, "projects._id": projOid },
@@ -697,7 +735,7 @@ exports.verifyProject = async (req, res) => {
     const rewardInc = await User.updateOne(
       {
         _id: targetUserId,
-        "verifyCredits.projects.companyKey": companyKey,
+        "verifyCredits.projects.projectId": projOid,
       },
       {
         $inc: {
@@ -713,6 +751,8 @@ exports.verifyProject = async (req, res) => {
         {
           $push: {
             "verifyCredits.projects": {
+              projectId: projOid,
+              projectTitle: project.projectTitle || "",
               company,
               companyKey,
               available: 1,
@@ -738,12 +778,16 @@ exports.verifyProject = async (req, res) => {
 
     const withComputedTotals = (u) => {
       const buckets = (u?.verifyCredits?.projects || []).map((b) => ({
+        projectId: b.projectId,
+        projectTitle: b.projectTitle || "",
         company: b.company,
         companyKey: b.companyKey,
         available: b.available || 0,
         used: b.used || 0,
         total:
-          typeof b.total === "number" ? b.total : (b.available || 0) + (b.used || 0),
+          typeof b.total === "number"
+            ? b.total
+            : (b.available || 0) + (b.used || 0),
       }));
       const totals = buckets.reduce(
         (acc, b) => {

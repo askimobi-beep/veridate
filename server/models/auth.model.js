@@ -48,6 +48,12 @@ const ExpCreditSchema = new mongoose.Schema(
 
 const ProjectCreditSchema = new mongoose.Schema(
   {
+    projectId: {
+      type: mongoose.Schema.Types.ObjectId,
+      required: true,
+      index: true,
+    },
+    projectTitle: { type: String, default: "" },
     company: { type: String, required: true },
     companyKey: { type: String, required: true, index: true },
     available: { type: Number, default: 1, min: 0 },

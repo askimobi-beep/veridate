@@ -59,12 +59,19 @@ const normalizeCompany = normalize;
 const creditsToMap = (arr, keyField) => {
   const out = new Map();
   (arr || []).forEach((b) => {
-    const k = b?.[keyField];
-    if (k)
-      out.set(k, {
-        available: Number(b.available || 0),
-        used: Number(b.used || 0),
-      });
+    const rawKey = b?.[keyField];
+    const k =
+      typeof rawKey === "string"
+        ? rawKey
+        : rawKey?.toString
+        ? rawKey.toString()
+        : "";
+    if (!k) return;
+    const prev = out.get(k) || { available: 0, used: 0 };
+    out.set(k, {
+      available: prev.available + Number(b.available || 0),
+      used: prev.used + Number(b.used || 0),
+    });
   });
   return out;
 };

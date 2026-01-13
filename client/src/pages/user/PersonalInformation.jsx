@@ -118,7 +118,7 @@ export default function PersonalInformation() {
     const m = new Map();
     for (const b of projectBuckets) {
       if (!b) continue;
-      const key = b.companyKey || norm(b.company);
+      const key = b.projectId ? String(b.projectId) : "";
       if (key) m.set(key, b);
     }
     return m;

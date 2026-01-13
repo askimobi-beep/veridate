@@ -5,12 +5,11 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useCallback } from "react";
 import logo from "@/assets/logo/logo.png";
 import UserMenu from "@/components/navbar/UserMenu";
-import SearchBar from "./SearchBar";
 
 export default function Navbar() {
   const { user, logout, authLoading } = useAuth();
   const role = String(user?.role || "").toLowerCase().trim();
-  const canSearch = !user || role === "user";
+  const canAccessDirectory = !user || role === "user";
 
   const navigate = useNavigate();
   const { pathname } = useLocation(); // keeping in case you style active states later
@@ -24,13 +23,9 @@ export default function Navbar() {
     }
   }, [logout, navigate]);
 
-  const goDirectory = (q) => {
+  const goDirectory = () => {
     if (role && role !== "user") return;
-    if (q && q.length > 0) {
-      navigate(`/dashboard/directory?q=${encodeURIComponent(q)}`);
-    } else {
-      navigate("/dashboard/directory");
-    }
+    navigate("/dashboard/directory");
   };
 
   return (
@@ -45,9 +40,18 @@ export default function Navbar() {
             </Link>
           </div>
 
-          {/* Center: Directory Search */}
+          {/* Center: Directory */}
           <div className="flex items-center justify-center">
-            {canSearch ? <SearchBar onSearch={goDirectory} /> : null}
+            {canAccessDirectory ? (
+              <Button
+                type="button"
+                variant="outline"
+                onClick={goDirectory}
+                className="rounded-full border-orange-200 text-orange-700 hover:bg-orange-50"
+              >
+                Directory
+              </Button>
+            ) : null}
           </div>
 
           {/* Right: User menu / Login */}

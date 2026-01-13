@@ -2,19 +2,45 @@ import React from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import {
-  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
 } from "@/components/ui/select";
 
 export default function SearchFilters({
-  q, setQ, gender, setGender, country, setCountry, onSearch, onReset,
+  q,
+  setQ,
+  experience,
+  setExperience,
+  university,
+  setUniversity,
+  gender,
+  setGender,
+  country,
+  setCountry,
+  onSearch,
+  onReset,
 }) {
   return (
-    <form onSubmit={onSearch} className="grid grid-cols-1 md:grid-cols-4 gap-3">
+    <form onSubmit={onSearch} className="space-y-3">
       <Input
-        placeholder="Search name, email, city..."
+        placeholder="Search candidate name"
         value={q}
         onChange={(e) => setQ(e.target.value)}
-        className="md:col-span-2"
+      />
+
+      <Input
+        placeholder="Experience (company or job title)"
+        value={experience}
+        onChange={(e) => setExperience(e.target.value)}
+      />
+
+      <Input
+        placeholder="University"
+        value={university}
+        onChange={(e) => setUniversity(e.target.value)}
       />
 
       <Select value={gender} onValueChange={setGender}>
@@ -33,9 +59,11 @@ export default function SearchFilters({
         onChange={(e) => setCountry(e.target.value)}
       />
 
-      <div className="flex gap-2 md:col-span-4">
-        <Button type="submit">Search</Button>
-        <Button type="button" variant="outline" onClick={onReset}>Reset</Button>
+      <div className="flex gap-2 pt-1">
+        <Button type="submit" className="flex-1">Search</Button>
+        <Button type="button" variant="outline" onClick={onReset} className="flex-1">
+          Reset
+        </Button>
       </div>
     </form>
   );

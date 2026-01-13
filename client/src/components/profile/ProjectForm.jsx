@@ -36,7 +36,6 @@ export default function ProjectForm({
   onAskConfirm,
 }) {
   const [creditInfoOpen, setCreditInfoOpen] = useState(false);
-  const norm = (s) => (s || "").trim().toLowerCase().replace(/\s+/g, " ");
 
   return (
     <>
@@ -66,7 +65,7 @@ export default function ProjectForm({
               ? [...baseCompanies, project.company]
               : baseCompanies;
 
-          const key = project.companyKey || norm(project.company);
+          const key = project?._id ? String(project._id) : "";
           const bucket =
             key && projectCreditByKey?.get ? projectCreditByKey.get(key) : null;
           const available = bucket?.available ?? 0;

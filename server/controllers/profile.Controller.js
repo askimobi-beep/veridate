@@ -547,33 +547,40 @@ async function ensureUserExpCredits(userId, expRows) {
 }
 
 async function ensureUserProjectCredits(userId, projectRows) {
-  const companies = (projectRows || [])
+  const projects = (projectRows || [])
     .map((r) => ({
+      projectId: r?._id,
+      projectTitle: r?.projectTitle || "",
       company: r.company || "",
       companyKey: r.companyKey || normalizeCompany(r.company || ""),
     }))
-    .filter((r) => r.companyKey);
+    .filter((r) => r.projectId && r.companyKey);
 
-  if (!companies.length) return;
+  if (!projects.length) return;
 
   const user = await User.findById(userId).lean();
   if (!user) return;
 
   const existing = new Set(
-    (user.verifyCredits?.projects || []).map((b) => b.companyKey)
+    (user.verifyCredits?.projects || [])
+      .map((b) => (b?.projectId ? String(b.projectId) : ""))
+      .filter(Boolean)
   );
 
   const toAdd = [];
-  for (const r of companies) {
-    if (!existing.has(r.companyKey)) {
+  for (const r of projects) {
+    const key = String(r.projectId);
+    if (!existing.has(key)) {
       toAdd.push({
+        projectId: r.projectId,
+        projectTitle: r.projectTitle || "",
         company: r.company,
         companyKey: r.companyKey,
         available: 1,
         used: 0,
         total: 1,
       });
-      existing.add(r.companyKey);
+      existing.add(key);
     }
   }
 
@@ -878,6 +885,8 @@ exports.listProfilesPublic = async (req, res) => {
       page = 1,
       limit = 12,
       q = "",
+      experience,
+      university,
       gender,
       country,
       jobTitle,
@@ -888,42 +897,54 @@ exports.listProfilesPublic = async (req, res) => {
     page = parseInt(page, 10);
     limit = Math.min(50, parseInt(limit, 10) || 12);
 
-    const filter = {};
+    const andClauses = [];
 
-    if (q) {
-      const rx = new RegExp(q.trim(), "i");
-      filter.$or = [
-        { name: rx },
-        { email: rx },
-        { mobile: rx },
-        { city: rx },
-        { country: rx },
-      ];
+    const qValue = String(q || "").trim();
+    if (qValue) {
+      const rx = new RegExp(qValue, "i");
+      andClauses.push({
+        $or: [
+          { name: rx },
+          { email: rx },
+          { mobile: rx },
+          { city: rx },
+          { country: rx },
+        ],
+      });
     }
-    if (gender) filter.gender = gender;
-    if (country) filter.country = country;
-    if (jobTitle) filter["experience.jobTitle"] = jobTitle;
-    if (industry) filter["experience.industry"] = industry;
+    const expValue = String(experience || "").trim();
+    if (expValue) {
+      const rx = new RegExp(expValue, "i");
+      andClauses.push({
+        $or: [{ "experience.company": rx }, { "experience.jobTitle": rx }],
+      });
+    }
+
+    const uniValue = String(university || "").trim();
+    if (uniValue) {
+      const rx = new RegExp(uniValue, "i");
+      andClauses.push({ "education.institute": rx });
+    }
+    if (gender) andClauses.push({ gender });
+    if (country) andClauses.push({ country });
+    if (jobTitle) andClauses.push({ "experience.jobTitle": jobTitle });
+    if (industry) andClauses.push({ "experience.industry": industry });
 
     // 🔒 hide my own profile if logged in
     const loggedUserId = req.user?.id || req.user?._id; // depends on your JWT payload
     if (loggedUserId && ObjectId.isValid(loggedUserId)) {
-      filter.user = { $ne: new ObjectId(loggedUserId) };
+      andClauses.push({ user: { $ne: new ObjectId(loggedUserId) } });
     }
 
     // optional: also honor ?excludeId=<profileId or userId>
     if (excludeId) {
-      // try both: exclude profile _id or user field
-      if (!filter.$and) filter.$and = [];
-      const or = [];
       if (ObjectId.isValid(excludeId)) {
-        or.push({ _id: { $ne: new ObjectId(excludeId) } });
-        or.push({ user: { $ne: new ObjectId(excludeId) } });
-      } else {
-        // non-ObjectId (just in case) -> leave it alone
+        andClauses.push({ _id: { $ne: new ObjectId(excludeId) } });
+        andClauses.push({ user: { $ne: new ObjectId(excludeId) } });
       }
-      if (or.length) filter.$and.push(...or);
     }
+
+    const filter = andClauses.length ? { $and: andClauses } : {};
 
     const [rows, total] = await Promise.all([
       Profile.find(filter)
