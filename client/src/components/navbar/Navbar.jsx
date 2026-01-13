@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { useAuth } from "@/context/AuthContext";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useCallback } from "react";
+import { Search } from "lucide-react";
 import logo from "@/assets/logo/logo.png";
 import UserMenu from "@/components/navbar/UserMenu";
 
@@ -47,9 +48,10 @@ export default function Navbar() {
                 type="button"
                 variant="outline"
                 onClick={goDirectory}
-                className="rounded-full border-orange-200 text-orange-700 hover:bg-orange-50"
+                className="rounded-full border-orange-200 text-orange-700 hover:bg-orange-50 gap-2"
               >
-                Directory
+                <Search className="h-4 w-4" />
+                <span>Search Candidates</span>
               </Button>
             ) : null}
           </div>

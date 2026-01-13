@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import DirectoryCard from "@/components/directory/DirectoryCard";
@@ -8,57 +8,73 @@ import { fetchProfiles } from "@/services/profileService";
 export default function Directory() {
   const [items, setItems] = useState([]);
   const [q, setQ] = useState("");
-  const [experience, setExperience] = useState("");
-  const [university, setUniversity] = useState("");
-  const [gender, setGender] = useState("");
-  const [country, setCountry] = useState("");
+  const [email, setEmail] = useState("");
+  const [mobile, setMobile] = useState("");
+  const [userId, setUserId] = useState("");
+  const [jobTitle, setJobTitle] = useState("");
+  const [degreeTitle, setDegreeTitle] = useState("");
+  const [company, setCompany] = useState("");
+  const [industry, setIndustry] = useState("");
+  const [institute, setInstitute] = useState("");
+  const [jobFunctions, setJobFunctions] = useState("");
+  const [skillset, setSkillset] = useState("");
+  const [location, setLocation] = useState("");
+  const [experienceDuration, setExperienceDuration] = useState("");
   const [page, setPage] = useState(1);
   const [limit] = useState(9);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(false);
   const [hasSearched, setHasSearched] = useState(false);
-  const prevFiltersRef = useRef({
-    q: "",
-    experience: "",
-    university: "",
-    gender: "",
-    country: "",
-  });
+  const [activeFilters, setActiveFilters] = useState(null);
+
+  const currentFilters = useMemo(
+    () => ({
+      q,
+      email,
+      mobile,
+      userId,
+      jobTitle,
+      degreeTitle,
+      company,
+      industry,
+      institute,
+      jobFunctions,
+      skillset,
+      location,
+      experienceDuration,
+    }),
+    [
+      q,
+      email,
+      mobile,
+      userId,
+      jobTitle,
+      degreeTitle,
+      company,
+      industry,
+      institute,
+      jobFunctions,
+      skillset,
+      location,
+      experienceDuration,
+    ]
+  );
 
   const hasFilters = useMemo(
     () =>
-      [q, experience, university, gender, country].some((val) =>
-        String(val || "").trim()
-      ),
-    [q, experience, university, gender, country]
+      Object.values(currentFilters).some((val) => String(val || "").trim()),
+    [currentFilters]
   );
   const hasMore = useMemo(() => page * limit < total, [page, limit, total]);
 
-  useEffect(() => {
-    if (hasFilters) {
-      if (!hasSearched) setHasSearched(true);
-      return;
-    }
-    if (hasSearched) {
-      setItems([]);
-      setTotal(0);
-      setHasSearched(false);
-      setLoading(false);
-    }
-  }, [hasFilters, hasSearched]);
-
-  const loadProfiles = async (opts = {}) => {
+  const loadProfiles = async (filters) => {
+    if (!filters) return;
     setLoading(true);
     try {
       const { data, total } = await fetchProfiles({
         page,
         limit,
-        q,
-        experience,
-        university,
-        gender,
-        country,
-        ...opts,
+        ...filters,
       });
       setItems(data);
       setTotal(total);
@@ -70,62 +86,50 @@ export default function Directory() {
   };
 
   useEffect(() => {
-    if (!hasSearched) {
-      prevFiltersRef.current = {
-        q,
-        experience,
-        university,
-        gender,
-        country,
-      };
-      return;
-    }
-
-    const prev = prevFiltersRef.current;
-    const current = { q, experience, university, gender, country };
-    const filtersChanged = Object.keys(current).some(
-      (key) => prev[key] !== current[key]
-    );
-
-    if (filtersChanged && page !== 1) {
-      prevFiltersRef.current = current;
-      setPage(1);
-      return;
-    }
-
-    loadProfiles();
-    prevFiltersRef.current = current;
+    if (!hasSearched || !activeFilters) return;
+    loadProfiles(activeFilters);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [page, q, experience, university, gender, country, hasSearched]);
+  }, [page, activeFilters, hasSearched]);
 
-  const onSearch = async (e) => {
+  const onSearch = (e) => {
     e.preventDefault();
     if (!hasFilters) {
       setItems([]);
       setTotal(0);
       setHasSearched(false);
+      setActiveFilters(null);
       setLoading(false);
       return;
     }
     setHasSearched(true);
     setPage(1);
+    setActiveFilters({ ...currentFilters });
   };
 
   const onReset = () => {
     setQ("");
-    setExperience("");
-    setUniversity("");
-    setGender("");
-    setCountry("");
+    setEmail("");
+    setMobile("");
+    setUserId("");
+    setJobTitle("");
+    setDegreeTitle("");
+    setCompany("");
+    setIndustry("");
+    setInstitute("");
+    setJobFunctions("");
+    setSkillset("");
+    setLocation("");
+    setExperienceDuration("");
     setPage(1);
     setItems([]);
     setTotal(0);
     setHasSearched(false);
+    setActiveFilters(null);
     setLoading(false);
   };
 
   return (
-    <div className=" mx-auto px-4 py-8">
+    <div className="max-w-6xl mx-auto px-4 py-8">
       <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-6">
         <aside className="lg:sticky lg:top-6 h-fit">
           <Card className="rounded-xl border border-gray-200">
@@ -136,14 +140,30 @@ export default function Directory() {
               <SearchFilters
                 q={q}
                 setQ={setQ}
-                experience={experience}
-                setExperience={setExperience}
-                university={university}
-                setUniversity={setUniversity}
-                gender={gender}
-                setGender={setGender}
-                country={country}
-                setCountry={setCountry}
+                email={email}
+                setEmail={setEmail}
+                mobile={mobile}
+                setMobile={setMobile}
+                userId={userId}
+                setUserId={setUserId}
+                jobTitle={jobTitle}
+                setJobTitle={setJobTitle}
+                degreeTitle={degreeTitle}
+                setDegreeTitle={setDegreeTitle}
+                company={company}
+                setCompany={setCompany}
+                industry={industry}
+                setIndustry={setIndustry}
+                institute={institute}
+                setInstitute={setInstitute}
+                jobFunctions={jobFunctions}
+                setJobFunctions={setJobFunctions}
+                skillset={skillset}
+                setSkillset={setSkillset}
+                location={location}
+                setLocation={setLocation}
+                experienceDuration={experienceDuration}
+                setExperienceDuration={setExperienceDuration}
                 onSearch={onSearch}
                 onReset={onReset}
               />
@@ -161,7 +181,9 @@ export default function Directory() {
           ) : items.length ? (
             <>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-                {items.map((p) => <DirectoryCard key={p._id} profile={p} />)}
+                {items.map((p) => (
+                  <DirectoryCard key={p._id} profile={p} />
+                ))}
               </div>
 
               <div className="flex items-center justify-between pt-4">

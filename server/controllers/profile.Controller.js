@@ -885,12 +885,22 @@ exports.listProfilesPublic = async (req, res) => {
       page = 1,
       limit = 12,
       q = "",
+      email,
+      mobile,
+      userId,
+      jobTitle,
+      degreeTitle,
+      company,
+      industry,
+      institute,
+      jobFunctions,
+      skillset,
+      location,
+      experienceDuration,
       experience,
       university,
       gender,
       country,
-      jobTitle,
-      industry,
       excludeId,
     } = req.query;
 
@@ -902,14 +912,101 @@ exports.listProfilesPublic = async (req, res) => {
     const qValue = String(q || "").trim();
     if (qValue) {
       const rx = new RegExp(qValue, "i");
+      andClauses.push({ name: rx });
+    }
+
+    const emailValue = String(email || "").trim();
+    if (emailValue) {
+      const rx = new RegExp(emailValue, "i");
+      andClauses.push({ email: rx });
+    }
+
+    const mobileValue = String(mobile || "").trim();
+    if (mobileValue) {
+      const rx = new RegExp(mobileValue, "i");
+      andClauses.push({ mobile: rx });
+    }
+
+    const userIdValue = String(userId || "").trim();
+    if (userIdValue) {
+      if (ObjectId.isValid(userIdValue)) {
+        const oid = new ObjectId(userIdValue);
+        andClauses.push({ $or: [{ user: oid }, { _id: oid }] });
+      } else {
+        andClauses.push({ _id: { $in: [] } });
+      }
+    }
+
+    const jobTitleValue = String(jobTitle || "").trim();
+    if (jobTitleValue) {
+      const rx = new RegExp(jobTitleValue, "i");
+      andClauses.push({ "experience.jobTitle": rx });
+    }
+
+    const degreeTitleValue = String(degreeTitle || "").trim();
+    if (degreeTitleValue) {
+      const rx = new RegExp(degreeTitleValue, "i");
+      andClauses.push({ "education.degreeTitle": rx });
+    }
+
+    const companyValue = String(company || "").trim();
+    if (companyValue) {
+      const rx = new RegExp(companyValue, "i");
+      andClauses.push({ "experience.company": rx });
+    }
+
+    const industryValue = String(industry || "").trim();
+    if (industryValue) {
+      const rx = new RegExp(industryValue, "i");
+      andClauses.push({ "experience.industry": rx });
+    }
+
+    const instituteValue = String(institute || "").trim();
+    if (instituteValue) {
+      const rx = new RegExp(instituteValue, "i");
+      andClauses.push({ "education.institute": rx });
+    }
+
+    const jobFunctionsValue = String(jobFunctions || "").trim();
+    if (jobFunctionsValue) {
+      const rx = new RegExp(jobFunctionsValue, "i");
+      andClauses.push({ "experience.jobFunctions": rx });
+    }
+
+    const skillsetValue = String(skillset || "").trim();
+    if (skillsetValue) {
+      const rx = new RegExp(skillsetValue, "i");
+      andClauses.push({ "experience.jobFunctions": rx });
+    }
+
+    const locationValue = String(location || "").trim();
+    if (locationValue) {
+      const rx = new RegExp(locationValue, "i");
+      andClauses.push({ $or: [{ city: rx }, { country: rx }] });
+    }
+
+    const durationValue = Number(experienceDuration);
+    if (Number.isFinite(durationValue) && durationValue > 0) {
+      const durationMs = Math.round(
+        durationValue * 365 * 24 * 60 * 60 * 1000
+      );
       andClauses.push({
-        $or: [
-          { name: rx },
-          { email: rx },
-          { mobile: rx },
-          { city: rx },
-          { country: rx },
-        ],
+        experience: {
+          $elemMatch: {
+            startDate: { $ne: null },
+            $expr: {
+              $gte: [
+                {
+                  $subtract: [
+                    { $ifNull: ["$endDate", "$$NOW"] },
+                    "$startDate",
+                  ],
+                },
+                durationMs,
+              ],
+            },
+          },
+        },
       });
     }
     const expValue = String(experience || "").trim();
@@ -927,8 +1024,6 @@ exports.listProfilesPublic = async (req, res) => {
     }
     if (gender) andClauses.push({ gender });
     if (country) andClauses.push({ country });
-    if (jobTitle) andClauses.push({ "experience.jobTitle": jobTitle });
-    if (industry) andClauses.push({ "experience.industry": industry });
 
     // 🔒 hide my own profile if logged in
     const loggedUserId = req.user?.id || req.user?._id; // depends on your JWT payload
