@@ -8,7 +8,6 @@ import {
   ClipboardList,
 } from "lucide-react";
 
-import AccordionSection from "@/components/common/AccordionSection";
 import ProfileHeader from "@/components/profile/ProfileHeader";
 import PersonalDetailsForm from "@/components/profile/PersonalDetailsForm";
 import EducationForm from "@/components/profile/EducationForm";
@@ -509,8 +508,77 @@ export default function PersonalInformation() {
     }
   };
 
+  const hasPersonal = Boolean(
+    String(formData?.name || "").trim() && String(formData?.email || "").trim()
+  );
+  const firstEdu = Array.isArray(formData?.education)
+    ? formData.education[0]
+    : null;
+  const hasEducation = Boolean(
+    firstEdu && (firstEdu?.degreeTitle || firstEdu?.institute)
+  );
+  const firstExp = Array.isArray(formData?.experience)
+    ? formData.experience[0]
+    : null;
+  const hasExperience = Boolean(
+    firstExp && (firstExp?.jobTitle || firstExp?.company)
+  );
+  const firstProject = Array.isArray(formData?.projects)
+    ? formData.projects[0]
+    : null;
+  const hasProjects = Boolean(
+    firstProject && (firstProject?.projectTitle || firstProject?.company)
+  );
+
+  const sectionOrder = ["pi", "education", "experience", "projects"];
+  const sectionItems = [
+    {
+      key: "pi",
+      label: "Personal Details",
+      icon: UserRound,
+      done: hasPersonal,
+      hint: hasPersonal ? "Completed" : "Needs info",
+    },
+    {
+      key: "education",
+      label: "Education",
+      icon: FileText,
+      done: hasEducation,
+      hint: hasEducation ? "Completed" : "Add degree",
+    },
+    {
+      key: "experience",
+      label: "Experience",
+      icon: Briefcase,
+      done: hasExperience,
+      hint: hasExperience ? "Completed" : "Add role",
+    },
+    {
+      key: "projects",
+      label: "Projects",
+      icon: ClipboardList,
+      done: hasProjects,
+      hint: hasProjects ? "Completed" : "Add project",
+    },
+  ];
+
+  const scrollToSection = (key) => {
+    setOpen(key);
+  };
+
+  const activeIndex = sectionOrder.indexOf(open);
+  const safeIndex = activeIndex === -1 ? 0 : activeIndex;
+  const goPrev = () => {
+    if (safeIndex <= 0) return;
+    setOpen(sectionOrder[safeIndex - 1]);
+  };
+  const goNext = () => {
+    if (safeIndex >= sectionOrder.length - 1) return;
+    setOpen(sectionOrder[safeIndex + 1]);
+  };
+
   return (
-    <div className="min-h-screen w-full flex items-start justify-center px-4 py-10 relative overflow-hidden">
+    <div className="min-h-screen w-full flex items-start justify-center px-4 py-10 relative">
       <div className="relative z-10 w-full max-w-5xl">
         <ProfileHeader
           user={formData}
@@ -537,114 +605,175 @@ export default function PersonalInformation() {
           extraActions={<ProfilePdfDownload userId={user?._id} inline />}
         />
 
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <AccordionSection
-            title="Personal Details"
-            icon={UserRound}
-            value="pi"
-            openValue={open}
-            setOpenValue={setOpen}
-            onSave={async () => await savePersonalInfo()}
-            saving={saving}
-            onAskConfirm={onAskConfirm}
-            locked={!!locked.pi}
-          >
-            <PersonalDetailsForm
-              formData={formData}
-              handleChange={handleChange}
-              handleCustomChange={handleCustomChange}
-              locked={!!locked.pi}
-              resumeRef={resumeRef}
-              profilePicRef={profilePicRef}
-              userId={user?._id}
-              onAskConfirm={onAskConfirm}
-              savePersonalInfo={savePersonalInfo}
-              saving={saving}
-            />
-          </AccordionSection>
+        <div className="grid gap-6 lg:grid-cols-[240px_1fr]">
+          <aside className="hidden lg:block">
+            <div className="sticky top-24 space-y-3 rounded-2xl border border-white/60 bg-white/60 p-4 shadow-[0_20px_50px_-24px_rgba(15,23,42,0.35)] backdrop-blur-md">
+              <div className="text-xs font-semibold uppercase tracking-[0.2em] text-orange-600/80">
+                Profile Sections
+              </div>
+              <div className="space-y-2">
+                {sectionItems.map((item) => {
+                  const Icon = item.icon;
+                  const isActive = open === item.key;
+                  return (
+                    <button
+                      key={item.key}
+                      type="button"
+                      onClick={() => scrollToSection(item.key)}
+                      className={`flex w-full items-center gap-3 rounded-xl px-3 py-2 text-left text-sm font-semibold transition ${
+                        isActive
+                          ? "bg-orange-100/80 text-orange-600 shadow-[0_6px_16px_-10px_rgba(234,88,12,0.7)]"
+                          : "text-slate-500 hover:bg-white/70 hover:text-slate-700"
+                      }`}
+                    >
+                      <Icon className="h-4 w-4" />
+                      <span>{item.label}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          </aside>
 
-          <AccordionSection
-            title="Education"
-            icon={FileText}
-            value="education"
-            openValue={open}
-            setOpenValue={setOpen}
-            onSave={async () => await saveEducation()}
-            saving={saving}
-            onAskConfirm={onAskConfirm}
-            locked={!!locked.education}
-            verifyCredits={eduTotalAvailable}
-            hideSave
-          >
-            <EducationForm
-              educationList={formData.education}
-              addEducation={addEducation}
-              removeEducation={removeEducation}
-              updateEducation={updateEducation}
-              locked={!!locked.education}
-              degreeRefs={degreeRefs}
-              eduCreditByKey={eduCreditByKey}
-              instituteOptions={orgOptions.universities}
-              saveEducation={saveEducationRow}
-              isRowSaving={isRowSaving}
-              onAskConfirm={onAskConfirm}
-            />
-          </AccordionSection>
+          <div className="space-y-6">
+            <div className="rounded-2xl border border-white/60 bg-white/60 p-4 shadow-[0_18px_40px_-28px_rgba(15,23,42,0.35)] backdrop-blur-md">
+              <div className="flex flex-wrap items-center gap-2 text-sm font-semibold text-slate-600">
+                {sectionItems.map((item, index) => {
+                  const isActive = open === item.key;
+                  const Icon = item.icon;
+                  return (
+                    <React.Fragment key={item.key}>
+                      <button
+                        type="button"
+                        onClick={() => scrollToSection(item.key)}
+                        className={`flex items-center gap-2 rounded-full border px-3 py-2 transition ${
+                          isActive
+                            ? "border-orange-200 bg-orange-50/80 text-orange-600"
+                            : "border-slate-200 bg-white/70 text-slate-500 hover:text-slate-700"
+                        }`}
+                      >
+                        <span
+                          className={`flex h-6 w-6 items-center justify-center rounded-full text-xs ${
+                            isActive
+                              ? "bg-orange-500 text-white"
+                              : "bg-slate-200 text-slate-600"
+                          }`}
+                        >
+                          {index + 1}
+                        </span>
+                        <Icon className="h-4 w-4" />
+                        <span>{item.label}</span>
+                      </button>
+                      {index < sectionItems.length - 1 ? (
+                        <span className="text-slate-300">»</span>
+                      ) : null}
+                    </React.Fragment>
+                  );
+                })}
+              </div>
+            </div>
 
-          <AccordionSection
-            title="Experience"
-            icon={Briefcase}
-            value="experience"
-            openValue={open}
-            setOpenValue={setOpen}
-            onSave={async () => await saveExperience()}
-            saving={saving}
-            onAskConfirm={onAskConfirm}
-            locked={!!locked.experience}
-            verifyCredits={expTotalAvailable}
-          >
-            <ExperienceForm
-              experienceList={formData.experience}
-              addExperience={addExperience}
-              removeExperience={removeExperience}
-              updateExperience={updateExperience}
-              locked={!!locked.experience}
-              letterRefs={letterRefs}
-              expCreditByKey={expCreditByKey}
-              companyOptions={orgOptions.companies}
-              // saveExperience={saveExperience}
-              onAskConfirm={onAskConfirm}
-              // saving={saving}
-              saveExperience={saveExperienceRow} // ✅ row-wise
-              isRowSaving={isExpRowSaving} // ✅ per-row spinner/disable
-            />
-          </AccordionSection>
-          <AccordionSection
-            title="Projects"
-            icon={ClipboardList}
-            value="projects"
-            openValue={open}
-            setOpenValue={setOpen}
-            onSave={async () => await saveProjects()}
-            saving={saving}
-            onAskConfirm={onAskConfirm}
-            locked={!!locked.projects}
-            verifyCredits={projectTotalAvailable}
-          >
-            <ProjectForm
-              projectList={formData.projects}
-              addProject={addProject}
-              removeProject={removeProject}
-              updateProject={updateProject}
-              locked={!!locked.projects}
-              projectCreditByKey={projectCreditByKey}
-              companyOptions={projectCompanyOptions}
-              saveProject={saveProjectRow}
-              isRowSaving={isProjectRowSaving}
-              onAskConfirm={onAskConfirm}
-            />
-          </AccordionSection>
-        </form>
+
+            <form onSubmit={handleSubmit} className="space-y-6">
+              <div className="rounded-3xl border border-white/60 bg-white/60 p-6 shadow-[0_22px_50px_-28px_rgba(15,23,42,0.4)] backdrop-blur-md">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    {open === "pi" ? <UserRound className="h-5 w-5 text-orange-600" /> : null}
+                    {open === "education" ? <FileText className="h-5 w-5 text-orange-600" /> : null}
+                    {open === "experience" ? <Briefcase className="h-5 w-5 text-orange-600" /> : null}
+                    {open === "projects" ? <ClipboardList className="h-5 w-5 text-orange-600" /> : null}
+                    <h2 className="text-lg font-semibold text-slate-800">
+                      {sectionItems[safeIndex]?.label}
+                    </h2>
+                  </div>
+                </div>
+
+                <div className="mt-6">
+                  {open === "pi" ? (
+                    <PersonalDetailsForm
+                      formData={formData}
+                      handleChange={handleChange}
+                      handleCustomChange={handleCustomChange}
+                      locked={!!locked.pi}
+                      resumeRef={resumeRef}
+                      profilePicRef={profilePicRef}
+                      userId={user?._id}
+                      onAskConfirm={onAskConfirm}
+                      savePersonalInfo={savePersonalInfo}
+                      saving={saving}
+                    />
+                  ) : null}
+
+                  {open === "education" ? (
+                    <EducationForm
+                      educationList={formData.education}
+                      addEducation={addEducation}
+                      removeEducation={removeEducation}
+                      updateEducation={updateEducation}
+                      locked={!!locked.education}
+                      degreeRefs={degreeRefs}
+                      eduCreditByKey={eduCreditByKey}
+                      instituteOptions={orgOptions.universities}
+                      saveEducation={saveEducationRow}
+                      isRowSaving={isRowSaving}
+                      onAskConfirm={onAskConfirm}
+                    />
+                  ) : null}
+
+                  {open === "experience" ? (
+                    <ExperienceForm
+                      experienceList={formData.experience}
+                      addExperience={addExperience}
+                      removeExperience={removeExperience}
+                      updateExperience={updateExperience}
+                      locked={!!locked.experience}
+                      letterRefs={letterRefs}
+                      expCreditByKey={expCreditByKey}
+                      companyOptions={orgOptions.companies}
+                      onAskConfirm={onAskConfirm}
+                      saveExperience={saveExperienceRow}
+                      isRowSaving={isExpRowSaving}
+                    />
+                  ) : null}
+
+                  {open === "projects" ? (
+                    <ProjectForm
+                      projectList={formData.projects}
+                      addProject={addProject}
+                      removeProject={removeProject}
+                      updateProject={updateProject}
+                      locked={!!locked.projects}
+                      projectCreditByKey={projectCreditByKey}
+                      companyOptions={projectCompanyOptions}
+                      saveProject={saveProjectRow}
+                      isRowSaving={isProjectRowSaving}
+                      onAskConfirm={onAskConfirm}
+                    />
+                  ) : null}
+                </div>
+
+                <div className="mt-6 flex items-center justify-between">
+                  <button
+                    type="button"
+                    onClick={goPrev}
+                    disabled={safeIndex === 0}
+                    className="rounded-full border border-slate-200 bg-white/70 px-4 py-2 text-sm font-semibold text-slate-600 transition hover:text-slate-800 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    Previous
+                  </button>
+                  <button
+                    type="button"
+                    onClick={goNext}
+                    disabled={safeIndex === sectionOrder.length - 1}
+                    className="rounded-full border border-orange-200 bg-orange-50/80 px-4 py-2 text-sm font-semibold text-orange-600 transition hover:text-orange-700 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    Next
+                  </button>
+                </div>
+              </div>
+            </form>
+          </div>
+        </div>
       </div>
 
       <ConfirmDialog

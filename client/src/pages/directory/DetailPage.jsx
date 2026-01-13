@@ -8,6 +8,7 @@ import {
   FileText,
   Briefcase,
   ClipboardList,
+  UserRound,
   CheckCircle2,
   BadgeCheck,
   AlertTriangle,
@@ -1313,6 +1314,33 @@ export default function DetailPage() {
 
         {/* === SUMMARY BOX (top) === */}
         <ProfileSummaryCard profile={profile} userId={userId} />
+
+        {/* Personal Details */}
+        <AccordionSection
+          title="Personal Details"
+          icon={UserRound}
+          value="personal"
+          openValue={openValue}
+          setOpenValue={setOpenValue}
+          locked={false}
+          contentClassName="text-left rounded-none bg-[#f5f5f5] shadow-[0_6px_24px_rgba(15,23,42,0.12)]"
+          className="!bg-[#f5f5f5] !from-[#f5f5f5] !via-[#f5f5f5] !to-[#f5f5f5] border-slate-200/70 shadow-[0_8px_26px_rgba(15,23,42,0.16)]"
+          headerClassName="bg-[#fcfcfc] shadow-[0_4px_14px_rgba(15,23,42,0.12)] !from-[#fcfcfc] !via-[#fcfcfc] !to-[#fcfcfc]"
+          staticShadow="0 10px 28px rgba(15,23,42,0.14)"
+        >
+          <SectionWrapper>
+            <SubSection className="border-orange-200/70 bg-slate-50 shadow-[0_18px_50px_-30px_rgba(15,23,42,0.35)]">
+              <DefinitionList>
+                <DLRow label="Full Name">{fullName}</DLRow>
+                <DLRow label="Email">{profile?.email || "—"}</DLRow>
+                <DLRow label="Mobile">{profile?.mobile || "—"}</DLRow>
+                <DLRow label="Gender">{profile?.gender || "—"}</DLRow>
+                <DLRow label="City">{profile?.city || "—"}</DLRow>
+                <DLRow label="Country">{profile?.country || "—"}</DLRow>
+              </DefinitionList>
+            </SubSection>
+          </SectionWrapper>
+        </AccordionSection>
 
         {/* Education */}
         <AccordionSection

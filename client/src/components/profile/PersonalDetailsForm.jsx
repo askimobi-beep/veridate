@@ -189,25 +189,6 @@ export default function PersonalDetailsForm({
 
   return (
     <>
-      <div className="mt-4 flex justify-end">
-        <button
-          type="button"
-          onClick={() => {
-            if (
-              !formData.email ||
-              !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)
-            ) {
-              return;
-            }
-            onAskConfirm?.("pi", "Personal Details", () => savePersonalInfo());
-          }}
-          disabled={!!saving}
-          className="inline-flex items-center gap-2 rounded-xl border border-orange-600 px-4 py-2 text-sm font-medium text-white bg-orange-600 hover:bg-orange-700 active:scale-[0.98] transition"
-        >
-          <Save className="h-4 w-4" />
-          {saving ? "Saving..." : "Save"}
-        </button>
-      </div>
 
       {/* Form */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-5">
