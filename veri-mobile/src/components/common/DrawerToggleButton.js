@@ -1,15 +1,14 @@
-import { useNavigation } from "@react-navigation/native";
+import { DrawerActions, useNavigation } from "@react-navigation/native";
 import IconButton from "./IconButton";
 
 export default function DrawerToggleButton() {
   const navigation = useNavigation();
   const handlePress = () => {
-    const parent = navigation.getParent();
-    if (parent?.openDrawer) {
-      parent.openDrawer();
+    if (navigation?.openDrawer) {
+      navigation.openDrawer();
       return;
     }
-    navigation.getParent()?.getParent?.()?.openDrawer?.();
+    navigation.dispatch(DrawerActions.openDrawer());
   };
   return <IconButton name="menu-outline" onPress={handlePress} />;
 }

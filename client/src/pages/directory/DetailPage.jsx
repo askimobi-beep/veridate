@@ -8,7 +8,11 @@ import {
   FileText,
   Briefcase,
   ClipboardList,
+  UserRound,
   CheckCircle2,
+  BadgeCheck,
+  AlertTriangle,
+  XCircle,
   Heart,
   Share2,
   MoreVertical,
@@ -143,17 +147,31 @@ function projectStatus({ row, meId, meProfile, projectCreditMap }) {
   return "eligible";
 }
 
-const btnStyleByStatus = (status) => {
+const statusIconByStatus = (status) => {
   switch (status) {
     case "already-verified":
-      return "bg-green-600 hover:bg-green-600 text-white disabled:opacity-100 cursor-default";
+      return CheckCircle2;
     case "eligible":
-      return "bg-blue-600 hover:bg-blue-600 text-white disabled:opacity-100";
+      return BadgeCheck;
     case "no-credits":
-      return "bg-gray-400 hover:bg-gray-400 text-white disabled:opacity-100 cursor-not-allowed";
+      return AlertTriangle;
     case "ineligible":
     default:
-      return "bg-red-600 hover:bg-red-600 text-white disabled:opacity-100 cursor-not-allowed";
+      return XCircle;
+  }
+};
+
+const statusIconColor = (status) => {
+  switch (status) {
+    case "already-verified":
+      return "text-green-600";
+    case "eligible":
+      return "text-blue-600";
+    case "no-credits":
+      return "text-gray-400";
+    case "ineligible":
+    default:
+      return "text-red-600";
   }
 };
 
@@ -245,15 +263,17 @@ function VerifyBadge({ count, type }) {
 }
 
 function VerifyButton({ type, status, isBusy, id, onVerify }) {
+  const Icon = statusIconByStatus(status);
   return (
-    <Button
-      size="sm"
-      className={`${btnStyleByStatus(status)} rounded-xl`}
+    <button
+      type="button"
+      className="inline-flex items-center gap-2 rounded-md bg-transparent text-sm font-semibold text-slate-700 transition hover:text-slate-900 disabled:cursor-not-allowed disabled:opacity-70"
       onClick={() => status === "eligible" && onVerify(String(id))}
       disabled={status !== "eligible" || isBusy}
     >
-      {getVerifyLabel(type, status, isBusy)}
-    </Button>
+      <Icon className={`h-4 w-4 ${statusIconColor(status)}`} />
+      <span>{getVerifyLabel(type, status, isBusy)}</span>
+    </button>
   );
 }
 
@@ -954,6 +974,9 @@ export default function DetailPage() {
   const experienceCount = Array.isArray(profile?.experience)
     ? profile.experience.length
     : 0;
+  const projectsCount = Array.isArray(profile?.projects)
+    ? profile.projects.length
+    : 0;
   const lastUpdated = profile?.updatedAt ? fmtDate(profile.updatedAt) : null;
 
   return (
@@ -1276,6 +1299,15 @@ export default function DetailPage() {
                       Experience
                     </span>
                   </div>
+                  <div className="hidden h-10 w-px bg-orange-200 md:block" />
+                  <div className="flex flex-col items-center">
+                    <span className="text-xl font-semibold text-orange-700">
+                      {projectsCount}
+                    </span>
+                    <span className="text-xs uppercase tracking-[0.25em] text-orange-600/70">
+                      Projects
+                    </span>
+                  </div>
                 </div>
                 {lastUpdated ? (
                   <span className="text-[11px] uppercase tracking-[0.3em] text-orange-500/60">
@@ -1289,6 +1321,33 @@ export default function DetailPage() {
 
         {/* === SUMMARY BOX (top) === */}
         <ProfileSummaryCard profile={profile} userId={userId} />
+
+        {/* Personal Details */}
+        <AccordionSection
+          title="Personal Details"
+          icon={UserRound}
+          value="personal"
+          openValue={openValue}
+          setOpenValue={setOpenValue}
+          locked={false}
+          contentClassName="text-left rounded-none bg-[#f5f5f5] shadow-[0_6px_24px_rgba(15,23,42,0.12)]"
+          className="!bg-[#f5f5f5] !from-[#f5f5f5] !via-[#f5f5f5] !to-[#f5f5f5] border-slate-200/70 shadow-[0_8px_26px_rgba(15,23,42,0.16)]"
+          headerClassName="bg-[#fcfcfc] shadow-[0_4px_14px_rgba(15,23,42,0.12)] !from-[#fcfcfc] !via-[#fcfcfc] !to-[#fcfcfc]"
+          staticShadow="0 10px 28px rgba(15,23,42,0.14)"
+        >
+          <SectionWrapper>
+            <SubSection className="border-orange-200/70 bg-slate-50 shadow-[0_18px_50px_-30px_rgba(15,23,42,0.35)]">
+              <DefinitionList>
+                <DLRow label="Full Name">{fullName}</DLRow>
+                <DLRow label="Email">{profile?.email || "—"}</DLRow>
+                <DLRow label="Mobile">{profile?.mobile || "—"}</DLRow>
+                <DLRow label="Gender">{profile?.gender || "—"}</DLRow>
+                <DLRow label="City">{profile?.city || "—"}</DLRow>
+                <DLRow label="Country">{profile?.country || "—"}</DLRow>
+              </DefinitionList>
+            </SubSection>
+          </SectionWrapper>
+        </AccordionSection>
 
         {/* Education */}
         <AccordionSection
