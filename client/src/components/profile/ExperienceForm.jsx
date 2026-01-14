@@ -337,11 +337,11 @@ export default function ExperienceForm({
                 </div>
 
                 <div>
-                  <div className="flex flex-wrap items-center gap-4 mb-2">
+                  <div className="mb-2">
                     <label className="text-sm font-medium text-gray-700">
                       Upload Experience Letter (PDF)
                     </label>
-                    <div className="flex items-center gap-2">
+                    <div className="mt-2 flex items-center gap-2">
                       <BlockSwitch
                         checked={hasHidden(exp, "experienceLetterFile")}
                         onChange={() =>
@@ -377,7 +377,7 @@ export default function ExperienceForm({
 
               </div>
 
-              <div className="rounded-xl border border-gray-200 p-4">
+              <div className="rounded-xl p-4">
                 <div className="flex flex-wrap items-center gap-3">
                   {bucket ? (
                     <CreditText

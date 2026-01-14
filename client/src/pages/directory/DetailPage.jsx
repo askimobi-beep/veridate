@@ -168,7 +168,7 @@ const statusIconColor = (status) => {
     case "eligible":
       return "text-blue-600";
     case "no-credits":
-      return "text-gray-400";
+      return "text-red-600";
     case "ineligible":
     default:
       return "text-red-600";
