@@ -636,43 +636,6 @@ export default function PersonalInformation() {
           </aside>
 
           <div className="space-y-6">
-            <div className="rounded-2xl border border-white/60 bg-white/60 p-4 shadow-[0_18px_40px_-28px_rgba(15,23,42,0.35)] backdrop-blur-md">
-              <div className="flex flex-wrap items-center gap-2 text-sm font-semibold text-slate-600">
-                {sectionItems.map((item, index) => {
-                  const isActive = open === item.key;
-                  const Icon = item.icon;
-                  return (
-                    <React.Fragment key={item.key}>
-                      <button
-                        type="button"
-                        onClick={() => scrollToSection(item.key)}
-                        className={`flex items-center gap-2 rounded-full border px-3 py-2 transition ${
-                          isActive
-                            ? "border-orange-200 bg-orange-50/80 text-orange-600"
-                            : "border-slate-200 bg-white/70 text-slate-500 hover:text-slate-700"
-                        }`}
-                      >
-                        <span
-                          className={`flex h-6 w-6 items-center justify-center rounded-full text-xs ${
-                            isActive
-                              ? "bg-orange-500 text-white"
-                              : "bg-slate-200 text-slate-600"
-                          }`}
-                        >
-                          {index + 1}
-                        </span>
-                        <Icon className="h-4 w-4" />
-                        <span>{item.label}</span>
-                      </button>
-                      {index < sectionItems.length - 1 ? (
-                        <span className="text-slate-300">»</span>
-                      ) : null}
-                    </React.Fragment>
-                  );
-                })}
-              </div>
-            </div>
-
 
             <form onSubmit={handleSubmit} className="space-y-6">
               <div className="rounded-3xl border border-white/60 bg-white/60 p-6 shadow-[0_22px_50px_-28px_rgba(15,23,42,0.4)] backdrop-blur-md">

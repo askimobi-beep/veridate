@@ -49,7 +49,7 @@ export default function CreditText({
           icon={Clock}
           label="Used"
           value={_used}
-          className="bg-red-600/10 text-red-700"
+          className="text-red-700"
         />
         <span className="text-xs font-semibold tracking-wide text-gray-500">
           {usedText}
@@ -62,7 +62,7 @@ export default function CreditText({
           icon={CheckCircle}
           label="Available"
           value={_available}
-          className="bg-green-600/10 text-green-700"
+          className="text-green-700"
         />
         <span className="text-xs font-semibold tracking-wide text-gray-500">
           {availableText}
@@ -86,7 +86,7 @@ const BadgePill = ({ icon: Icon, label, value, className }) => {
   return (
     <div
       className={cn(
-        "inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold backdrop-blur",
+        "inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold",
         className
       )}
     >

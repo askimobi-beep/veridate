@@ -190,18 +190,18 @@ function verifyCountText(count, type) {
 
 function getVerifyLabel(type, status, isBusy) {
   if (status === "already-verified")
-    return "You have already Veridate this section";
+    return "You have already veridated this section";
   if (status === "eligible") return isBusy ? "Verifying..." : "Veridate Now";
   if (status === "no-credits")
-    return "Unable to Veridate: No credits available";
+    return "Unable to veridate: No credits available";
   // ineligible message depends on type
   if (type === "education") {
-    return "Unable to Veridate: Education don't match";
+    return "Unable to veridate: Education doesn't match";
   }
   if (type === "project") {
-    return "Unable to Veridate: Company don't match";
+    return "Unable to veridate: Company don't match";
   }
-  return "Unable to Veridate: Company don't match";
+  return "Unable to veridate: Company don't match";
 }
 
 // === small presentational helpers ===
@@ -271,7 +271,7 @@ function VerifyButton({ type, status, isBusy, id, onVerify }) {
       onClick={() => status === "eligible" && onVerify(String(id))}
       disabled={status !== "eligible" || isBusy}
     >
-      <Icon className={`h-4 w-4 ${statusIconColor(status)}`} />
+      <Icon className={`h-5 w-5 stroke-[2.5] ${statusIconColor(status)}`} />
       <span>{getVerifyLabel(type, status, isBusy)}</span>
     </button>
   );
