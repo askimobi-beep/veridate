@@ -247,8 +247,8 @@ export default function ProjectForm({
                 </div>
               </div>
 
-              <div className="rounded-xl border border-gray-200 bg-gray-50 p-4">
-                <div className="flex flex-wrap items-center gap-3">
+              <div className="rounded-xl p-4">
+                <div className="flex w-full flex-wrap items-start justify-start gap-3">
                   {bucket ? (
                     <CreditBadge
                       context="project"

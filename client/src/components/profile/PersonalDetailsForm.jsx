@@ -553,6 +553,7 @@ export default function PersonalDetailsForm({
         />
       </div>
 
+<<<<<<< HEAD
       <div className="mt-6 grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="rounded-2xl border border-slate-200 bg-white/80 p-4 shadow-sm">
           <div className="flex items-center justify-between">
@@ -644,6 +645,9 @@ export default function PersonalDetailsForm({
       </div>
 
       <div className="mt-4 flex justify-end">
+=======
+      <div className="mt-6 flex justify-center">
+>>>>>>> b4efd7352fd14d8ae5251c55293d1e4ccad21f9f
         <button
           type="button"
           onClick={() => {

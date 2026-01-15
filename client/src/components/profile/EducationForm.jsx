@@ -4,7 +4,7 @@ import AppInput from "@/components/form/AppInput";
 import AppSelect from "@/components/form/AppSelect";
 import FileUploader from "@/components/form/FileUploader";
 import { Button } from "@/components/ui/button";
-import { FileText, Save } from "lucide-react";
+import { Save } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import BlockSwitch from "@/components/form/Switch";
 import CreditBadge from "../creditshow/CreditBadge";
@@ -225,8 +225,7 @@ export default function EducationForm({
 
                 <div>
                   <div className="flex items-center justify-between mb-2">
-                    <label className="text-sm font-medium text-gray-700 flex items-center gap-2">
-                      <FileText className="h-4 w-4 text-orange-600" />
+                    <label className="text-sm font-medium text-gray-700">
                       Upload Degree (PDF)
                     </label>
 
@@ -255,7 +254,7 @@ export default function EducationForm({
                     }
                     name={`degreeFile-${index}`}
                     accept="Application/Pdf"
-                    icon={FileText}
+                    icon={null}
                     onChange={(file) =>
                       updateEducation(index, "degreeFile", file)
                     }
@@ -265,8 +264,8 @@ export default function EducationForm({
                 </div>
               </div>
 
-              <div className="rounded-xl border border-gray-200 bg-gray-50 p-4">
-                <div className="flex flex-wrap items-center gap-3">
+              <div className="rounded-xl p-4">
+                <div className="flex w-full flex-wrap items-start justify-start gap-3">
                   {bucket ? (
                     <CreditBadge
                       label={bucket?.institute || edu.institute || ""}

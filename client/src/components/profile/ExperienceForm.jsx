@@ -5,7 +5,7 @@ import AppSelect from "@/components/form/AppSelect";
 import FileUploader from "@/components/form/FileUploader";
 import CheckboxGroup from "@/components/form/CheckboxGroup";
 import { Button } from "@/components/ui/button";
-import { FileText, Save } from "lucide-react";
+import { Save } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import BlockSwitch from "@/components/form/Switch";
 import CreditText from "../creditshow/CreditBadge";
@@ -337,12 +337,10 @@ export default function ExperienceForm({
                 </div>
 
                 <div>
-                  <div className="flex items-center justify-between mb-2">
-                    <label className="text-sm font-medium text-gray-700 flex items-center gap-2">
-                      <FileText className="h-4 w-4 text-orange-600" />
+                  <div className="mb-2 flex flex-wrap items-center justify-between gap-3">
+                    <label className="text-sm font-medium text-gray-700">
                       Upload Experience Letter (PDF)
                     </label>
-
                     <div className="flex items-center gap-2">
                       <BlockSwitch
                         checked={hasHidden(exp, "experienceLetterFile")}
@@ -368,7 +366,7 @@ export default function ExperienceForm({
                     }}
                     name={`experienceLetterFile-${index}`}
                     accept="Application/Pdf"
-                    icon={FileText}
+                    icon={null}
                     onChange={(file) =>
                       updateExperience(index, "experienceLetterFile", file)
                     }
@@ -379,8 +377,8 @@ export default function ExperienceForm({
 
               </div>
 
-              <div className="rounded-xl border border-gray-200 bg-gray-50 p-4">
-                <div className="flex flex-wrap items-center gap-3">
+              <div className="rounded-xl p-4">
+                <div className="flex w-full flex-wrap items-start justify-start gap-3">
                   {bucket ? (
                     <CreditText
                       label={creditLabel}

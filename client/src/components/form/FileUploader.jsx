@@ -23,7 +23,7 @@ export default forwardRef(function FileUploader(
   {
     label,
     name,
-    icon: Icon = UploadCloud,
+    icon,
     accept,
     onChange, // (file|null) => void
     className,
@@ -37,6 +37,7 @@ export default forwardRef(function FileUploader(
   const [file, setFile] = useState(null);
   const [previewUrl, setPreviewUrl] = useState(defaultPreviewUrl || "");
   const [isDragging, setIsDragging] = useState(false);
+  const Icon = icon === null ? null : icon || UploadCloud;
 
   const isImage = (f) => !!f && /^image\//.test(f.type || "");
 
@@ -95,7 +96,7 @@ export default forwardRef(function FileUploader(
     <div className={cn("space-y-2", className)}>
       {label && (
         <Label className="inline-flex items-center gap-2 text-gray-700 text-sm font-medium">
-          <Icon className="h-4 w-4 text-orange-600" />
+          {Icon ? <Icon className="h-4 w-4 text-orange-600" /> : null}
           {label}
         </Label>
       )}
@@ -129,7 +130,7 @@ export default forwardRef(function FileUploader(
         <div className="flex items-center justify-center text-center pointer-events-none min-h-[70px]">
           {!file && !previewUrl && (
             <div className="flex flex-col items-center gap-1">
-              <Icon className="w-6 h-6 text-orange-500" />
+              {Icon ? <Icon className="w-6 h-6 text-orange-500" /> : null}
               <p className="text-xs text-gray-500 group-hover:text-orange-600 transition">
                 {disabled
                   ? "Upload disabled"
