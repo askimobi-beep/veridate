@@ -553,6 +553,97 @@ export default function PersonalDetailsForm({
         />
       </div>
 
+      <div className="mt-6 grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="rounded-2xl border border-slate-200 bg-white/80 p-4 shadow-sm">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2 text-sm font-semibold text-slate-800">
+              <Mic className="h-4 w-4 text-orange-600" />
+              Audio Profile
+            </div>
+            <span className="text-xs text-slate-500">Max 50 MB</span>
+          </div>
+          <div className="mt-3 space-y-3">
+            <Input
+              ref={audioInputRef}
+              type="file"
+              accept="audio/*"
+              onChange={handleAudioFileChange}
+              disabled={audioDisabled}
+            />
+            <div className="flex flex-wrap items-center gap-2">
+              <button
+                type="button"
+                onClick={clearAudioProfile}
+                disabled={audioDisabled || !hasAudioSelection}
+                className="inline-flex items-center gap-2 rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-60"
+              >
+                Delete
+              </button>
+            </div>
+            {audioFileLabel ? (
+              <p className="text-xs text-slate-600">{audioFileLabel}</p>
+            ) : null}
+            {audioPreviewUrl ? (
+              <audio controls src={audioPreviewUrl} className="w-full" />
+            ) : (
+              <p className="text-xs text-muted-foreground">
+                No audio uploaded.
+              </p>
+            )}
+            {audioError ? (
+              <p className="text-xs text-red-600">{audioError}</p>
+            ) : null}
+          </div>
+        </div>
+
+        <div className="rounded-2xl border border-slate-200 bg-white/80 p-4 shadow-sm">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2 text-sm font-semibold text-slate-800">
+              <Video className="h-4 w-4 text-orange-600" />
+              Video Profile
+            </div>
+            <span className="text-xs text-slate-500">Max 50 MB</span>
+          </div>
+          <div className="mt-3 space-y-3">
+            <Input
+              ref={videoInputRef}
+              type="file"
+              accept="video/*"
+              onChange={handleVideoFileChange}
+              disabled={videoDisabled}
+            />
+            <div className="flex flex-wrap items-center gap-2">
+              <button
+                type="button"
+                onClick={clearVideoProfile}
+                disabled={videoDisabled || !hasVideoSelection}
+                className="inline-flex items-center gap-2 rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-60"
+              >
+                Delete
+              </button>
+            </div>
+            {videoFileLabel ? (
+              <p className="text-xs text-slate-600">{videoFileLabel}</p>
+            ) : null}
+            {videoPreviewUrl ? (
+              <video
+                controls
+                src={videoPreviewUrl}
+                className="w-full rounded-lg"
+              />
+            ) : (
+              <p className="text-xs text-muted-foreground">
+                No video uploaded.
+              </p>
+            )}
+            {videoError ? (
+              <p className="text-xs text-red-600">{videoError}</p>
+            ) : null}
+          </div>
+        </div>
+      </div>
+
+      <div className="mt-4 flex justify-end">
       <div className="mt-6 flex justify-center">
         <button
           type="button"
