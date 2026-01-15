@@ -34,7 +34,7 @@ export default function CreditText({
   return (
     <div
       className={cn(
-        "flex flex-col gap-2 text-sm text-gray-700",
+        "flex w-full flex-col items-start gap-2 text-left text-sm text-gray-700",
         className
       )}
     >
@@ -43,7 +43,7 @@ export default function CreditText({
         <span className="font-medium text-gray-900">{label}</span>
       ) : null} */}
 
-      <div className="flex flex-wrap items-center gap-2">
+      <div className="flex w-full flex-wrap items-center justify-start gap-2">
         {/* Used Credits (Red) */}
         <BadgePill
           icon={Clock}
@@ -56,7 +56,7 @@ export default function CreditText({
         </span>
       </div>
 
-      <div className="flex flex-wrap items-center gap-2">
+      <div className="flex w-full flex-wrap items-center justify-start gap-2">
         {/* Available Credits (Green) */}
         <BadgePill
           icon={CheckCircle}
