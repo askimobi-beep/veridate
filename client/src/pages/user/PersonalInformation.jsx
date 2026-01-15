@@ -164,6 +164,8 @@ export default function PersonalInformation() {
       personalHiddenFields: Array.isArray(data.personalHiddenFields)
         ? data.personalHiddenFields
         : [],
+      audioProfile: data.audioProfile || null,
+      videoProfile: data.videoProfile || null,
       dob: toYMD(data.dob),
       education: Array.isArray(data.education)
         ? data.education.map((e, i) => ({
@@ -373,6 +375,8 @@ export default function PersonalInformation() {
             user?.lastName ?? data.lastName ?? ""
           }`.trim(),
           email: user?.email ?? data.email ?? prev.email ?? "",
+          audioProfile: data.audioProfile || null,
+          videoProfile: data.videoProfile || null,
           dob: toYMD(data.dob),
           education: Array.isArray(data.education)
             ? data.education.map((e, i) => ({

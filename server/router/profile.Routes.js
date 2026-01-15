@@ -35,6 +35,8 @@ router.post(
   upload.fields([
     { name: "resume", maxCount: 1 },
     { name: "profilePic", maxCount: 1 },
+    { name: "audioProfile", maxCount: 1 },
+    { name: "videoProfile", maxCount: 1 },
   ]),
   savePersonalInfo
 );

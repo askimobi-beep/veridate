@@ -108,6 +108,8 @@ const ProfileSchema = new mongoose.Schema(
     dob: Date,
     resume: String,
     profilePic: String,
+    audioProfile: String,
+    videoProfile: String,
     shiftPreferences: [String],
     workAuthorization: [String],
     personalInfoLocked: { type: Boolean, default: false },

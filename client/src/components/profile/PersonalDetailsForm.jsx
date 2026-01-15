@@ -1,8 +1,9 @@
-import React, { useMemo, useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import AppInput from "@/components/form/AppInput";
 import AppSelect from "@/components/form/AppSelect";
 import CheckboxGroup from "@/components/form/CheckboxGroup";
-import { Loader2, CircleCheck, CircleHelp, Save } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Loader2, CircleCheck, CircleHelp, Mic, Save, Video } from "lucide-react";
 import {
   Tooltip,
   TooltipContent,
@@ -24,6 +25,8 @@ const PERSONAL_UNLOCKED = new Set([
   "maritalStatus",
   "resume",
   "profilePic",
+  "audioProfile",
+  "videoProfile",
   "city",
   "country",
   "residentStatus",
@@ -64,6 +67,16 @@ const callingCodes = [
   "+972",
 ];
 
+const MAX_MEDIA_BYTES = 50 * 1024 * 1024;
+
+const formatBytes = (bytes = 0) => {
+  if (!bytes) return "0 B";
+  const k = 1024;
+  const sizes = ["B", "KB", "MB", "GB", "TB"];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return `${(bytes / Math.pow(k, i)).toFixed(i === 0 ? 0 : 1)} ${sizes[i]}`;
+};
+
 export default function PersonalDetailsForm({
   formData,
   handleChange,
@@ -78,6 +91,17 @@ export default function PersonalDetailsForm({
   const [countriesList, setCountriesList] = useState([]);
   const [cityOptions, setCityOptions] = useState([]);
   const [cityLoading, setCityLoading] = useState(false);
+  const baseUploads = import.meta.env.VITE_API_PIC_URL
+    ? `${import.meta.env.VITE_API_PIC_URL}/uploads`
+    : "/uploads";
+  const [audioError, setAudioError] = useState("");
+  const [videoError, setVideoError] = useState("");
+  const [audioPreviewUrl, setAudioPreviewUrl] = useState("");
+  const [videoPreviewUrl, setVideoPreviewUrl] = useState("");
+  const audioInputRef = useRef(null);
+  const videoInputRef = useRef(null);
+  const audioPreviewRef = useRef("");
+  const videoPreviewRef = useRef("");
 
   const emailValid =
     !!formData.email && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email);
@@ -115,6 +139,49 @@ export default function PersonalDetailsForm({
     </div>
   );
   // ----------------------------
+
+  useEffect(() => {
+    if (audioPreviewRef.current) {
+      URL.revokeObjectURL(audioPreviewRef.current);
+      audioPreviewRef.current = "";
+    }
+    if (formData.audioProfile instanceof File) {
+      const url = URL.createObjectURL(formData.audioProfile);
+      audioPreviewRef.current = url;
+      setAudioPreviewUrl(url);
+      return;
+    }
+    if (typeof formData.audioProfile === "string" && formData.audioProfile) {
+      setAudioPreviewUrl(`${baseUploads}/audio/${formData.audioProfile}`);
+      return;
+    }
+    setAudioPreviewUrl("");
+  }, [formData.audioProfile, baseUploads]);
+
+  useEffect(() => {
+    if (videoPreviewRef.current) {
+      URL.revokeObjectURL(videoPreviewRef.current);
+      videoPreviewRef.current = "";
+    }
+    if (formData.videoProfile instanceof File) {
+      const url = URL.createObjectURL(formData.videoProfile);
+      videoPreviewRef.current = url;
+      setVideoPreviewUrl(url);
+      return;
+    }
+    if (typeof formData.videoProfile === "string" && formData.videoProfile) {
+      setVideoPreviewUrl(`${baseUploads}/video/${formData.videoProfile}`);
+      return;
+    }
+    setVideoPreviewUrl("");
+  }, [formData.videoProfile, baseUploads]);
+
+  useEffect(() => {
+    return () => {
+      if (audioPreviewRef.current) URL.revokeObjectURL(audioPreviewRef.current);
+      if (videoPreviewRef.current) URL.revokeObjectURL(videoPreviewRef.current);
+    };
+  }, []);
 
   // fetch country list (names only)
   useEffect(() => {
@@ -184,6 +251,58 @@ export default function PersonalDetailsForm({
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [formData.country]);
+
+  const audioDisabled = isDisabled(locked, "audioProfile");
+  const videoDisabled = isDisabled(locked, "videoProfile");
+
+  const handleAudioFileChange = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > MAX_MEDIA_BYTES) {
+      setAudioError("Audio must be 50 MB or less.");
+      return;
+    }
+    setAudioError("");
+    handleCustomChange("audioProfile", file);
+  };
+
+  const handleVideoFileChange = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > MAX_MEDIA_BYTES) {
+      setVideoError("Video must be 50 MB or less.");
+      return;
+    }
+    setVideoError("");
+    handleCustomChange("videoProfile", file);
+  };
+
+  const clearAudioProfile = () => {
+    setAudioError("");
+    handleCustomChange("audioProfile", null);
+    if (audioInputRef.current) audioInputRef.current.value = "";
+  };
+
+  const clearVideoProfile = () => {
+    setVideoError("");
+    handleCustomChange("videoProfile", null);
+    if (videoInputRef.current) videoInputRef.current.value = "";
+  };
+
+  const audioFileLabel =
+    formData.audioProfile instanceof File
+      ? `${formData.audioProfile.name} (${formatBytes(formData.audioProfile.size)})`
+      : typeof formData.audioProfile === "string" && formData.audioProfile
+      ? formData.audioProfile
+      : "";
+  const videoFileLabel =
+    formData.videoProfile instanceof File
+      ? `${formData.videoProfile.name} (${formatBytes(formData.videoProfile.size)})`
+      : typeof formData.videoProfile === "string" && formData.videoProfile
+      ? formData.videoProfile
+      : "";
+  const hasAudioSelection = !!audioFileLabel || !!audioPreviewUrl;
+  const hasVideoSelection = !!videoFileLabel || !!videoPreviewUrl;
 
 
 
@@ -432,6 +551,96 @@ export default function PersonalDetailsForm({
           disabled={isDisabled(locked, "workAuthorization")}
           gridClassName="gap-6"
         />
+      </div>
+
+      <div className="mt-6 grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="rounded-2xl border border-slate-200 bg-white/80 p-4 shadow-sm">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2 text-sm font-semibold text-slate-800">
+              <Mic className="h-4 w-4 text-orange-600" />
+              Audio Profile
+            </div>
+            <span className="text-xs text-slate-500">Max 50 MB</span>
+          </div>
+          <div className="mt-3 space-y-3">
+            <Input
+              ref={audioInputRef}
+              type="file"
+              accept="audio/*"
+              onChange={handleAudioFileChange}
+              disabled={audioDisabled}
+            />
+            <div className="flex flex-wrap items-center gap-2">
+              <button
+                type="button"
+                onClick={clearAudioProfile}
+                disabled={audioDisabled || !hasAudioSelection}
+                className="inline-flex items-center gap-2 rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-60"
+              >
+                Delete
+              </button>
+            </div>
+            {audioFileLabel ? (
+              <p className="text-xs text-slate-600">{audioFileLabel}</p>
+            ) : null}
+            {audioPreviewUrl ? (
+              <audio controls src={audioPreviewUrl} className="w-full" />
+            ) : (
+              <p className="text-xs text-muted-foreground">
+                No audio uploaded.
+              </p>
+            )}
+            {audioError ? (
+              <p className="text-xs text-red-600">{audioError}</p>
+            ) : null}
+          </div>
+        </div>
+
+        <div className="rounded-2xl border border-slate-200 bg-white/80 p-4 shadow-sm">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2 text-sm font-semibold text-slate-800">
+              <Video className="h-4 w-4 text-orange-600" />
+              Video Profile
+            </div>
+            <span className="text-xs text-slate-500">Max 50 MB</span>
+          </div>
+          <div className="mt-3 space-y-3">
+            <Input
+              ref={videoInputRef}
+              type="file"
+              accept="video/*"
+              onChange={handleVideoFileChange}
+              disabled={videoDisabled}
+            />
+            <div className="flex flex-wrap items-center gap-2">
+              <button
+                type="button"
+                onClick={clearVideoProfile}
+                disabled={videoDisabled || !hasVideoSelection}
+                className="inline-flex items-center gap-2 rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-60"
+              >
+                Delete
+              </button>
+            </div>
+            {videoFileLabel ? (
+              <p className="text-xs text-slate-600">{videoFileLabel}</p>
+            ) : null}
+            {videoPreviewUrl ? (
+              <video
+                controls
+                src={videoPreviewUrl}
+                className="w-full rounded-lg"
+              />
+            ) : (
+              <p className="text-xs text-muted-foreground">
+                No video uploaded.
+              </p>
+            )}
+            {videoError ? (
+              <p className="text-xs text-red-600">{videoError}</p>
+            ) : null}
+          </div>
+        </div>
       </div>
 
       <div className="mt-4 flex justify-end">

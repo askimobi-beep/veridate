@@ -16,6 +16,10 @@ const storage = multer.diskStorage({
       folder = "uploads/resumes";
     } else if (file.fieldname === "profilePic") {
       folder = "uploads/profile";
+    } else if (file.fieldname === "audioProfile") {
+      folder = "uploads/audio";
+    } else if (file.fieldname === "videoProfile") {
+      folder = "uploads/video";
     // CHANGED: support bracketed names like educationFiles[0]
     } else if (file.fieldname === "educationFiles" || file.fieldname.startsWith("educationFiles[")) {
       folder = "uploads/education";
@@ -45,20 +49,33 @@ const fileFilter = (req, file, cb) => {
     "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
     "image/jpeg",
     "image/png",
+    "audio/mpeg",
+    "audio/mp4",
+    "audio/webm",
+    "audio/wav",
+    "audio/ogg",
+    "video/mp4",
+    "video/webm",
+    "video/ogg",
+    "video/quicktime",
   ];
 
-  if (allowedTypes.includes(file.mimetype)) {
+  if (
+    allowedTypes.includes(file.mimetype) ||
+    file.mimetype.startsWith("audio/") ||
+    file.mimetype.startsWith("video/")
+  ) {
     cb(null, true);
   } else {
     cb(new Error("Unsupported file type"), false);
   }
 };
 
-// Final upload middleware (5MB limit)
+// Final upload middleware (50MB limit)
 const upload = multer({
   storage,
   fileFilter,
-  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB max
+  limits: { fileSize: 50 * 1024 * 1024 }, // 50MB max
 });
 
 module.exports = upload;

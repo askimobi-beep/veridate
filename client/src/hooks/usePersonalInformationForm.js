@@ -20,6 +20,8 @@ const getEmptyForm = () => ({
   workAuthorization: [],
   resume: null,
   profilePic: null,
+  audioProfile: null,
+  videoProfile: null,
   personalHiddenFields: [],
 
   // --- education ---
@@ -228,7 +230,13 @@ export default function usePersonalInformationForm() {
   const resetForm = () => setFormData(getEmptyForm());
 
   const clearPersonalFiles = () =>
-    setFormData((prev) => ({ ...prev, resume: null, profilePic: null }));
+    setFormData((prev) => ({
+      ...prev,
+      resume: null,
+      profilePic: null,
+      audioProfile: null,
+      videoProfile: null,
+    }));
 
   const clearEducationFiles = () =>
     setFormData((prev) => ({
@@ -283,6 +291,12 @@ export default function usePersonalInformationForm() {
         fd.append("profilePic", formData.profilePic);
       } else if (formData.profilePic === "") {
         fd.append("profilePic", "");
+      }
+      if (formData.audioProfile instanceof File) {
+        fd.append("audioProfile", formData.audioProfile);
+      }
+      if (formData.videoProfile instanceof File) {
+        fd.append("videoProfile", formData.videoProfile);
       }
 
       const res = await axiosInstance.post("/profile/save-personal-info", fd, {

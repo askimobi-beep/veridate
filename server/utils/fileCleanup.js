@@ -5,6 +5,8 @@ const path = require("path");
 const FOLDERS = {
   resume: path.join("uploads", "resumes"),
   profilePic: path.join("uploads", "profile"),
+  audioProfile: path.join("uploads", "audio"),
+  videoProfile: path.join("uploads", "video"),
   educationFiles: path.join("uploads", "education"),
   experienceFiles: path.join("uploads", "experience"),
 };
@@ -23,6 +25,8 @@ function removeOldPersonalFile(kind, filename) {
   const base =
     kind === "resume" ? FOLDERS.resume :
     kind === "profilePic" ? FOLDERS.profilePic :
+    kind === "audioProfile" ? FOLDERS.audioProfile :
+    kind === "videoProfile" ? FOLDERS.videoProfile :
     null;
   if (!base) return;
   deleteIfExists(path.join(base, filename));

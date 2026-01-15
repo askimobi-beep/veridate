@@ -145,6 +145,10 @@ exports.savePersonalInfo = async (req, res) => {
       filesUpdate.resume = req.files.resume[0].filename;
     if (req.files?.profilePic?.[0])
       filesUpdate.profilePic = req.files.profilePic[0].filename;
+    if (req.files?.audioProfile?.[0])
+      filesUpdate.audioProfile = req.files.audioProfile[0].filename;
+    if (req.files?.videoProfile?.[0])
+      filesUpdate.videoProfile = req.files.videoProfile[0].filename;
 
     // read body fields (now includes mobileCountryCode)
     const fields = [
@@ -209,6 +213,10 @@ exports.savePersonalInfo = async (req, res) => {
         removeOldPersonalFile?.("resume", profile.resume);
       if (filesUpdate.profilePic && profile.profilePic)
         removeOldPersonalFile?.("profilePic", profile.profilePic);
+      if (filesUpdate.audioProfile && profile.audioProfile)
+        removeOldPersonalFile?.("audioProfile", profile.audioProfile);
+      if (filesUpdate.videoProfile && profile.videoProfile)
+        removeOldPersonalFile?.("videoProfile", profile.videoProfile);
     }
 
     // if section not locked yet → set + lock
