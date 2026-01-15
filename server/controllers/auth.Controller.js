@@ -82,7 +82,17 @@ exports.Loginuser = async (req, res) => {
         .json({ message: "Please verify your email first" });
     }
 
-    const isMatch = await bcrypt.compare(password, user.password);
+    const passwordHash =
+      typeof user.password === "string" && user.password.startsWith("$2y$")
+        ? user.password.replace("$2y$", "$2b$")
+        : user.password;
+    let isMatch = false;
+    try {
+      isMatch = await bcrypt.compare(password, passwordHash);
+    } catch (err) {
+      console.error("Password compare error:", err);
+      return res.status(401).json({ message: "Invalid email or password" });
+    }
     if (!isMatch) {
       return res.status(401).json({ message: "Incorrect password" });
     }

@@ -265,7 +265,7 @@ export default function EducationForm({
               </div>
 
               <div className="rounded-xl p-4">
-                <div className="flex flex-wrap items-center gap-3">
+                <div className="flex w-full flex-wrap items-start justify-start gap-3">
                   {bucket ? (
                     <CreditBadge
                       label={bucket?.institute || edu.institute || ""}

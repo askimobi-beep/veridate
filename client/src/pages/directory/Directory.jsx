@@ -132,9 +132,11 @@ export default function Directory() {
     <div className="max-w-6xl mx-auto px-4 py-8">
       <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-6">
         <aside className="lg:sticky lg:top-6 h-fit">
-          <Card className="rounded-xl border border-gray-200">
-            <div className="border-b border-gray-200 px-4 py-3">
-              <h2 className="text-sm font-semibold text-gray-800">Filters</h2>
+          <Card className="rounded-2xl border border-white/60 bg-white/60 shadow-[0_22px_50px_-26px_rgba(15,23,42,0.4)] backdrop-blur-md">
+            <div className="border-b border-white/60 px-4 py-3">
+              <h2 className="text-xs font-semibold uppercase tracking-[0.2em] text-orange-600/80">
+                Filters
+              </h2>
             </div>
             <div className="p-4">
               <SearchFilters
