@@ -67,9 +67,10 @@ function redactEduExpArrays(p) {
   return p;
 }
 
-const client = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
+const getOpenAIClient = () => {
+  if (!process.env.OPENAI_API_KEY) return null;
+  return new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+};
 const normalizeDigits = (s) => (s || "").replace(/\D+/g, ""); // keep only 0-9
 const normalizeCode = (s) => {
   const t = (s || "").trim();
@@ -1231,6 +1232,13 @@ exports.profileSummary = async (req, res) => {
     const systemInstructions =
       "You write tight, neutral, recruiter-friendly summaries of a candidate. 2–4 sentences. Avoid fluff, avoid unverifiable claims. Prefer most recent role, total experience (~years), key industries/functions, and top degrees. If data is missing, don’t invent it.";
 
+    const client = getOpenAIClient();
+    if (!client) {
+      return res
+        .status(503)
+        .json({ error: "AI summary unavailable: missing OPENAI_API_KEY" });
+    }
+
     // Responses API — simple, reliable (OpenAI’s recommended path)
     // Docs: responses.create + output_text field.
     const r = await client.responses.create({
@@ -1298,6 +1306,13 @@ exports.profileChat = async (req, res) => {
       "Return plain text only. Keep it direct.",
       "If a specific year is requested, extract from relevant endDate. If not available, say it's not listed.",
     ].join("\n");
+
+    const client = getOpenAIClient();
+    if (!client) {
+      return res
+        .status(503)
+        .json({ error: "AI chat unavailable: missing OPENAI_API_KEY" });
+    }
 
     const r = await client.responses.create({
       model: "gpt-4o-mini",

@@ -86,7 +86,7 @@ const BadgePill = ({ icon: Icon, label, value, className }) => {
   return (
     <div
       className={cn(
-        "inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold border-0",
+        "inline-flex items-center gap-1.5 rounded-full px-0 py-0 text-xs font-semibold border-0",
         className
       )}
     >

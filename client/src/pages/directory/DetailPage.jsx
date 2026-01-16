@@ -17,11 +17,12 @@ import {
   Share2,
   MoreVertical,
   Star,
+  Mic,
+  Video,
   Mail,
   MapPin,
   Phone,
 } from "lucide-react";
-import AccordionSection from "@/components/common/AccordionSection";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -43,6 +44,7 @@ import {
 } from "@/services/verifyService";
 import ProfileChatBox from "./ProfileChatBox";
 import ProfileSummaryCard from "@/components/directory/ProfileSummaryCard";
+import ProfilePdfDownload from "@/components/profile/ProfilePdf";
 import {
   Dialog,
   DialogContent,
@@ -267,12 +269,12 @@ function VerifyButton({ type, status, isBusy, id, onVerify }) {
   return (
     <button
       type="button"
-      className="inline-flex items-center gap-2 rounded-md bg-transparent text-sm font-semibold text-slate-700 transition hover:text-slate-900 disabled:cursor-not-allowed disabled:opacity-70"
+      className="inline-flex items-center gap-2 rounded-md bg-transparent text-xs font-semibold text-slate-700 transition hover:text-slate-900 disabled:cursor-not-allowed disabled:opacity-70"
       onClick={() => status === "eligible" && onVerify(String(id))}
       disabled={status !== "eligible" || isBusy}
     >
       <Icon className={`h-5 w-5 stroke-[2.5] ${statusIconColor(status)}`} />
-      <span>{getVerifyLabel(type, status, isBusy)}</span>
+      <span className="whitespace-nowrap">{getVerifyLabel(type, status, isBusy)}</span>
     </button>
   );
 }
@@ -339,18 +341,18 @@ function VerificationSummaryBox({ count = 0, type, verifications = [], onOpen })
     <BoxTag
       type={canOpen ? "button" : undefined}
       onClick={canOpen ? onOpen : undefined}
-      className="w-full max-w-[360px] rounded-xl border border-orange-300 bg-gradient-to-r from-orange-500 via-orange-400 to-amber-300 px-4 py-3 text-left text-white shadow transition hover:brightness-110 hover:shadow-lg"
+      className="w-full max-w-[520px] mr-auto rounded-xl border-0 bg-transparent px-0 py-0 text-left text-slate-700 shadow-none"
     >
-      <div className="text-sm font-semibold text-white drop-shadow-sm">
+      <div className="text-sm font-semibold text-slate-800">
         {count} {verifyCountText(count, type)}.
       </div>
-      <div className="mt-2 flex flex-wrap items-center gap-2 text-sm text-white">
+      <div className="mt-2 flex flex-wrap items-center gap-2 text-sm text-slate-700">
         <ReviewStars value={average} readOnly size="sm" className="drop-shadow-sm" />
-        <span className="text-xs font-semibold text-white drop-shadow-sm">
+        <span className="text-xs font-semibold text-slate-700">
           {average ? `${average.toFixed(1)} / 5` : "0 / 5"}
         </span>
       </div>
-      <div className="mt-1 text-xs font-semibold text-white drop-shadow-sm">
+      <div className="mt-1 text-xs font-semibold text-slate-600">
         {reviewsCount} review{reviewsCount === 1 ? "" : "s"}
       </div>
     </BoxTag>
@@ -472,6 +474,21 @@ function ProjectDetails({ project }) {
   );
 }
 
+function SectionCard({ id, title, icon: Icon, children }) {
+  return (
+    <div
+      id={`section-${id}`}
+      className="rounded-2xl border border-white/60 bg-white/60 shadow-[0_18px_40px_-28px_rgba(15,23,42,0.35)] backdrop-blur-md"
+    >
+      <div className="flex items-center gap-2 border-b border-white/60 px-4 py-3">
+        {Icon ? <Icon className="h-4 w-4 text-orange-600" /> : null}
+        <h3 className="text-sm font-semibold text-slate-800">{title}</h3>
+      </div>
+      <div className="p-4">{children}</div>
+    </div>
+  );
+}
+
 export default function DetailPage() {
   const { userId } = useParams();
   const { enqueueSnackbar } = useSnackbar();
@@ -479,7 +496,7 @@ export default function DetailPage() {
 
   const [profile, setProfile] = useState(null);
   const [meProfile, setMeProfile] = useState(null);
-  const [openValue, setOpenValue] = useState("personal");
+  const [activeSection, setActiveSection] = useState("summary");
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState("");
 
@@ -501,6 +518,17 @@ export default function DetailPage() {
   });
   const [reviewSort, setReviewSort] = useState("newest");
   const [expandedReviews, setExpandedReviews] = useState({});
+  const [copied, setCopied] = useState(false);
+
+  const sectionItems = [
+    { key: "summary", label: "AI Profile Summary", icon: Star },
+    { key: "personal", label: "Personal Details", icon: UserRound },
+    { key: "education", label: "Education", icon: FileText },
+    { key: "experience", label: "Experience", icon: Briefcase },
+    { key: "projects", label: "Projects", icon: ClipboardList },
+    { key: "audio", label: "Audio Profile", icon: Mic },
+    { key: "video", label: "Video Profile", icon: Video },
+  ];
   const reviewEntries = Array.isArray(reviewListModal.entries)
     ? reviewListModal.entries
     : [];
@@ -968,16 +996,48 @@ export default function DetailPage() {
   const avatarUrl =
     profile?.profilePicUrl ||
     (profile?.profilePic ? fileUrl("profile", profile.profilePic) : undefined);
-  const educationCount = Array.isArray(profile?.education)
-    ? profile.education.length
-    : 0;
-  const experienceCount = Array.isArray(profile?.experience)
-    ? profile.experience.length
-    : 0;
-  const projectsCount = Array.isArray(profile?.projects)
-    ? profile.projects.length
-    : 0;
-  const lastUpdated = profile?.updatedAt ? fmtDate(profile.updatedAt) : null;
+  const profileUrl =
+    typeof window !== "undefined"
+      ? `${window.location.origin}/dashboard/profiles/${userId}`
+      : "";
+  const audioUrl = profile?.audioProfile
+    ? fileUrl("audio", profile.audioProfile)
+    : "";
+  const videoUrl = profile?.videoProfile
+    ? fileUrl("video", profile.videoProfile)
+    : "";
+
+  const scrollToSection = (key) => {
+    setActiveSection(key);
+    const el = document.getElementById(`section-${key}`);
+    if (el) {
+      el.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  };
+  const sectionOrder = sectionItems.map((item) => item.key);
+  const activeIndex = sectionOrder.indexOf(activeSection);
+  const safeIndex = activeIndex === -1 ? 0 : activeIndex;
+  const goPrev = () => {
+    if (safeIndex <= 0) return;
+    scrollToSection(sectionOrder[safeIndex - 1]);
+  };
+  const goNext = () => {
+    if (safeIndex >= sectionOrder.length - 1) return;
+    scrollToSection(sectionOrder[safeIndex + 1]);
+  };
+  const handleShare = async () => {
+    if (!profileUrl) return;
+    try {
+      if (navigator.share) {
+        await navigator.share({ title: "Profile", url: profileUrl });
+        return;
+      }
+      await navigator.clipboard.writeText(profileUrl);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1200);
+    } catch {}
+  };
+  const isActiveSection = (key) => activeSection === key;
 
   return (
     <>
@@ -1280,266 +1340,310 @@ export default function DetailPage() {
                   </div>
                 </div>
               </div>
-              <div className="flex w-full flex-col gap-3 text-orange-700/80 md:w-auto md:items-end">
-                <div className="flex flex-wrap items-center gap-6">
-                  <div className="flex flex-col items-center">
-                    <span className="text-xl font-semibold text-orange-700">
-                      {educationCount}
-                    </span>
-                    <span className="text-xs uppercase tracking-[0.25em] text-orange-600/70">
-                      Education
-                    </span>
-                  </div>
-                  <div className="hidden h-10 w-px bg-orange-200 md:block" />
-                  <div className="flex flex-col items-center">
-                    <span className="text-xl font-semibold text-orange-700">
-                      {experienceCount}
-                    </span>
-                    <span className="text-xs uppercase tracking-[0.25em] text-orange-600/70">
-                      Experience
-                    </span>
-                  </div>
-                  <div className="hidden h-10 w-px bg-orange-200 md:block" />
-                  <div className="flex flex-col items-center">
-                    <span className="text-xl font-semibold text-orange-700">
-                      {projectsCount}
-                    </span>
-                    <span className="text-xs uppercase tracking-[0.25em] text-orange-600/70">
-                      Projects
-                    </span>
-                  </div>
+              <div className="flex w-full flex-col gap-3 md:w-auto md:items-end">
+                <div className="flex flex-wrap items-center gap-3">
+                  <ProfilePdfDownload userId={userId} inline />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="rounded-full border-orange-200 bg-white/80 text-orange-700 hover:bg-white"
+                    onClick={handleShare}
+                  >
+                    {copied ? "Copied" : "Share"}
+                  </Button>
                 </div>
-                {lastUpdated ? (
-                  <span className="text-[11px] uppercase tracking-[0.3em] text-orange-500/60">
-                    Updated {lastUpdated}
-                  </span>
-                ) : null}
               </div>
             </CardContent>
           </div>
         </Card>
 
-        {/* === SUMMARY BOX (top) === */}
-        <ProfileSummaryCard profile={profile} userId={userId} />
+        <div className="grid gap-6 lg:grid-cols-[240px_1fr]">
+          <aside className="hidden lg:block">
+            <div className="sticky top-24 space-y-3 rounded-2xl border border-white/60 bg-white/60 p-4 shadow-[0_20px_50px_-24px_rgba(15,23,42,0.35)] backdrop-blur-md">
+              <div className="text-xs font-semibold uppercase tracking-[0.2em] text-orange-600/80">
+                Profile Sections
+              </div>
+              <div className="space-y-2">
+                {sectionItems.map((item) => {
+                  const Icon = item.icon;
+                  const isActive = activeSection === item.key;
+                  return (
+                    <button
+                      key={item.key}
+                      type="button"
+                      onClick={() => scrollToSection(item.key)}
+                      className={`flex w-full items-center gap-3 rounded-xl px-3 py-2 text-left text-sm font-semibold transition ${
+                        isActive
+                          ? "bg-orange-100/80 text-orange-600 shadow-[0_6px_16px_-10px_rgba(234,88,12,0.7)]"
+                          : "text-slate-500 hover:bg-white/70 hover:text-slate-700"
+                      }`}
+                    >
+                      <Icon className="h-4 w-4" />
+                      <span>{item.label}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          </aside>
+
+          <div className="space-y-6">
+            {/* === SUMMARY BOX (top) === */}
+            {isActiveSection("summary") ? (
+              <div id="section-summary">
+                <ProfileSummaryCard profile={profile} userId={userId} />
+              </div>
+            ) : null}
 
         {/* Personal Details */}
-        <AccordionSection
-          title="Personal Details"
-          icon={UserRound}
-          value="personal"
-          openValue={openValue}
-          setOpenValue={setOpenValue}
-          locked={false}
-          contentClassName="text-left rounded-none bg-[#f5f5f5] shadow-[0_6px_24px_rgba(15,23,42,0.12)]"
-          className="!bg-[#f5f5f5] !from-[#f5f5f5] !via-[#f5f5f5] !to-[#f5f5f5] border-slate-200/70 shadow-[0_8px_26px_rgba(15,23,42,0.16)]"
-          headerClassName="bg-[#fcfcfc] shadow-[0_4px_14px_rgba(15,23,42,0.12)] !from-[#fcfcfc] !via-[#fcfcfc] !to-[#fcfcfc]"
-          staticShadow="0 10px 28px rgba(15,23,42,0.14)"
-        >
-          <SectionWrapper>
-            <SubSection className="border-orange-200/70 bg-slate-50 shadow-[0_18px_50px_-30px_rgba(15,23,42,0.35)]">
-              <DefinitionList>
-                <DLRow label="Full Name">{fullName}</DLRow>
-                <DLRow label="Email">{profile?.email || "—"}</DLRow>
-                <DLRow label="Mobile">{profile?.mobile || "—"}</DLRow>
-                <DLRow label="Gender">{profile?.gender || "—"}</DLRow>
-                <DLRow label="City">{profile?.city || "—"}</DLRow>
-                <DLRow label="Country">{profile?.country || "—"}</DLRow>
-              </DefinitionList>
-            </SubSection>
-          </SectionWrapper>
-        </AccordionSection>
+        {isActiveSection("personal") ? (
+          <SectionCard id="personal" title="Personal Details" icon={UserRound}>
+            <SectionWrapper>
+              <SubSection className="border-orange-200/70 bg-slate-50 shadow-[0_18px_50px_-30px_rgba(15,23,42,0.35)]">
+                <DefinitionList>
+                  <DLRow label="Full Name">{fullName}</DLRow>
+                  <DLRow label="Email">{profile?.email || ""}</DLRow>
+                  <DLRow label="Mobile">{profile?.mobile || ""}</DLRow>
+                  <DLRow label="Gender">{profile?.gender || ""}</DLRow>
+                  <DLRow label="City">{profile?.city || ""}</DLRow>
+                  <DLRow label="Country">{profile?.country || ""}</DLRow>
+                </DefinitionList>
+              </SubSection>
+            </SectionWrapper>
+          </SectionCard>
+        ) : null}
 
         {/* Education */}
-        <AccordionSection
-          title="Education"
-          icon={FileText}
-          value="education"
-          openValue={openValue}
-          setOpenValue={setOpenValue}
-          locked={!!profile?.educationLocked}
-          contentClassName="text-left rounded-none bg-[#f5f5f5] shadow-[0_6px_24px_rgba(15,23,42,0.12)]"
-          className="!bg-[#f5f5f5] !from-[#f5f5f5] !via-[#f5f5f5] !to-[#f5f5f5] border-slate-200/70 shadow-[0_8px_26px_rgba(15,23,42,0.16)]"
-          headerClassName="bg-[#fcfcfc] shadow-[0_4px_14px_rgba(15,23,42,0.12)] !from-[#fcfcfc] !via-[#fcfcfc] !to-[#fcfcfc]"
-          staticShadow="0 10px 28px rgba(15,23,42,0.14)"
-        >
-          <SectionWrapper>
-            {Array.isArray(profile?.education) && profile.education.length ? (
-              <div className="space-y-4">
-                {profile.education.map((edu) => {
-                  const cnt = edu.verifyCount || 0;
-                  const status = eduStatus({
-                    row: edu,
-                    meId,
-                    meProfile,
-                    eduCreditMap,
-                  });
-                  const verifications = Array.isArray(edu.verifications)
-                    ? edu.verifications
-                    : [];
+        {isActiveSection("education") ? (
+          <SectionCard id="education" title="Education" icon={FileText}>
+            <SectionWrapper>
+              {Array.isArray(profile?.education) && profile.education.length ? (
+                <div className="space-y-4">
+                  {profile.education.map((edu) => {
+                    const cnt = edu.verifyCount || 0;
+                    const status = eduStatus({
+                      row: edu,
+                      meId,
+                      meProfile,
+                      eduCreditMap,
+                    });
+                    const verifications = Array.isArray(edu.verifications)
+                      ? edu.verifications
+                      : [];
 
-                  return (
-                    <SubSection
-                      key={String(edu._id)}
-                      className="border-orange-200/70 bg-slate-50 shadow-[0_18px_50px_-30px_rgba(15,23,42,0.35)]"
-                    >
-                      <div className="flex items-center justify-between mb-3">
-                        <div className="flex-1 pr-3">
-                          <VerificationSummaryBox
-                            count={cnt}
-                            type="education"
-                            verifications={verifications}
-                            onOpen={() => openReviewListModal("education", edu)}
-                          />
+                    return (
+                      <SubSection
+                        key={String(edu._id)}
+                        className="border-orange-200/70 bg-slate-50 shadow-[0_18px_50px_-30px_rgba(15,23,42,0.35)]"
+                      >
+                        <div className="mb-3 grid grid-cols-1 gap-3 md:grid-cols-[minmax(0,320px)_1fr] md:items-start">
+                          <div>
+                            <VerificationSummaryBox
+                              count={cnt}
+                              type="education"
+                              verifications={verifications}
+                              onOpen={() =>
+                                openReviewListModal("education", edu)
+                              }
+                            />
+                          </div>
+                          <div className="md:justify-self-end">
+                            <VerifyButton
+                              type="education"
+                              status={status}
+                              isBusy={busyEdu === String(edu._id)}
+                              id={edu._id}
+                              onVerify={beginEducationReview}
+                            />
+                          </div>
                         </div>
-                        <VerifyButton
-                          type="education"
-                          status={status}
-                          isBusy={busyEdu === String(edu._id)}
-                          id={edu._id}
-                          onVerify={beginEducationReview}
-                        />
-                      </div>
-                      <EducationDetails edu={edu} fileUrl={fileUrl} />
-                    </SubSection>
-                  );
-                })}
-              </div>
-            ) : (
-              <div className="text-sm text-muted-foreground">
-                No education added.
-              </div>
-            )}
-          </SectionWrapper>
-        </AccordionSection>
+                        <div className="my-3 h-px bg-slate-200/60" />
+                        <EducationDetails edu={edu} fileUrl={fileUrl} />
+                      </SubSection>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="text-sm text-muted-foreground">
+                  No education added.
+                </div>
+              )}
+            </SectionWrapper>
+          </SectionCard>
+        ) : null}
 
         {/* Experience */}
-        <AccordionSection
-          title="Experience"
-          icon={Briefcase}
-          value="experience"
-          openValue={openValue}
-          setOpenValue={setOpenValue}
-          locked={!!profile?.experienceLocked}
-          contentClassName="text-left rounded-none bg-[#f5f5f5] shadow-[0_6px_24px_rgba(15,23,42,0.12)]"
-          className="!bg-[#f5f5f5] !from-[#f5f5f5] !via-[#f5f5f5] !to-[#f5f5f5] border-slate-200/70 shadow-[0_8px_26px_rgba(15,23,42,0.16)]"
-          headerClassName="bg-[#fcfcfc] shadow-[0_4px_14px_rgba(15,23,42,0.12)] !from-[#fcfcfc] !via-[#fcfcfc] !to-[#fcfcfc]"
-          staticShadow="0 10px 28px rgba(15,23,42,0.14)"
-        >
-          <SectionWrapper>
-            {Array.isArray(profile?.experience) && profile.experience.length ? (
-              <div className="space-y-4">
-                {profile.experience.map((exp) => {
-                  const cnt = exp.verifyCount || 0;
-                  const status = expStatus({
-                    row: exp,
-                    meId,
-                    meProfile,
-                    expCreditMap,
-                  });
-                  const verifications = Array.isArray(exp.verifications)
-                    ? exp.verifications
-                    : [];
+        {isActiveSection("experience") ? (
+          <SectionCard id="experience" title="Experience" icon={Briefcase}>
+            <SectionWrapper>
+              {Array.isArray(profile?.experience) && profile.experience.length ? (
+                <div className="space-y-4">
+                  {profile.experience.map((exp) => {
+                    const cnt = exp.verifyCount || 0;
+                    const status = expStatus({
+                      row: exp,
+                      meId,
+                      meProfile,
+                      expCreditMap,
+                    });
+                    const verifications = Array.isArray(exp.verifications)
+                      ? exp.verifications
+                      : [];
 
-                  return (
-                    <SubSection
-                      key={String(exp._id)}
-                      className="border-orange-200/70 bg-slate-50 shadow-[0_18px_50px_-30px_rgba(15,23,42,0.35)]"
-                    >
-                      <div className="flex items-center justify-between mb-3">
-                        <div className="flex-1 pr-3">
-                          <VerificationSummaryBox
-                            count={cnt}
-                            type="experience"
-                            verifications={verifications}
-                            onOpen={() => openReviewListModal("experience", exp)}
-                          />
+                    return (
+                      <SubSection
+                        key={String(exp._id)}
+                        className="border-orange-200/70 bg-slate-50 shadow-[0_18px_50px_-30px_rgba(15,23,42,0.35)]"
+                      >
+                        <div className="mb-3 grid grid-cols-1 gap-3 md:grid-cols-[minmax(0,320px)_1fr] md:items-start">
+                          <div>
+                            <VerificationSummaryBox
+                              count={cnt}
+                              type="experience"
+                              verifications={verifications}
+                              onOpen={() =>
+                                openReviewListModal("experience", exp)
+                              }
+                            />
+                          </div>
+                          <div className="md:justify-self-end">
+                            <VerifyButton
+                              type="experience"
+                              status={status}
+                              isBusy={busyExp === String(exp._id)}
+                              id={exp._id}
+                              onVerify={beginExperienceReview}
+                            />
+                          </div>
                         </div>
-                        <VerifyButton
-                          type="experience"
-                          status={status}
-                          isBusy={busyExp === String(exp._id)}
-                          id={exp._id}
-                          onVerify={beginExperienceReview}
-                        />
-                      </div>
-                      <ExperienceDetails exp={exp} fileUrl={fileUrl} />
-                    </SubSection>
-                  );
-                })}
-              </div>
-            ) : (
-              <div className="text-sm text-muted-foreground">
-                No experience added.
-              </div>
-            )}
-          </SectionWrapper>
-        </AccordionSection>
+                        <div className="my-3 h-px bg-slate-200/60" />
+                        <ExperienceDetails exp={exp} fileUrl={fileUrl} />
+                      </SubSection>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="text-sm text-muted-foreground">
+                  No experience added.
+                </div>
+              )}
+            </SectionWrapper>
+          </SectionCard>
+        ) : null}
 
         {/* Projects */}
-        <AccordionSection
-          title="Projects"
-          icon={ClipboardList}
-          value="projects"
-          openValue={openValue}
-          setOpenValue={setOpenValue}
-          locked={!!profile?.projectLocked}
-          contentClassName="text-left rounded-none bg-[#f5f5f5] shadow-[0_6px_24px_rgba(15,23,42,0.12)]"
-          className="!bg-[#f5f5f5] !from-[#f5f5f5] !via-[#f5f5f5] !to-[#f5f5f5] border-slate-200/70 shadow-[0_8px_26px_rgba(15,23,42,0.16)]"
-          headerClassName="bg-[#fcfcfc] shadow-[0_4px_14px_rgba(15,23,42,0.12)] !from-[#fcfcfc] !via-[#fcfcfc] !to-[#fcfcfc]"
-          staticShadow="0 10px 28px rgba(15,23,42,0.14)"
-        >
-          <SectionWrapper>
-            {Array.isArray(profile?.projects) && profile.projects.length ? (
-              <div className="space-y-4">
-                {profile.projects.map((project) => {
-                  const cnt = project.verifyCount || 0;
-                  const status = projectStatus({
-                    row: project,
-                    meId,
-                    meProfile,
-                    projectCreditMap,
-                  });
-                  const verifications = Array.isArray(project.verifications)
-                    ? project.verifications
-                    : [];
+        {isActiveSection("projects") ? (
+          <SectionCard id="projects" title="Projects" icon={ClipboardList}>
+            <SectionWrapper>
+              {Array.isArray(profile?.projects) && profile.projects.length ? (
+                <div className="space-y-4">
+                  {profile.projects.map((project) => {
+                    const cnt = project.verifyCount || 0;
+                    const status = projectStatus({
+                      row: project,
+                      meId,
+                      meProfile,
+                      projectCreditMap,
+                    });
+                    const verifications = Array.isArray(project.verifications)
+                      ? project.verifications
+                      : [];
 
-                  return (
-                    <SubSection
-                      key={String(project._id)}
-                      className="border-orange-200/70 bg-slate-50 shadow-[0_18px_50px_-30px_rgba(15,23,42,0.35)]"
-                    >
-                      <div className="flex items-center justify-between mb-3">
-                        <div className="flex-1 pr-3">
-                          <VerificationSummaryBox
-                            count={cnt}
-                            type="project"
-                            verifications={verifications}
-                            onOpen={() =>
-                              openReviewListModal("project", project)
-                            }
-                          />
+                    return (
+                      <SubSection
+                        key={String(project._id)}
+                        className="border-orange-200/70 bg-slate-50 shadow-[0_18px_50px_-30px_rgba(15,23,42,0.35)]"
+                      >
+                        <div className="mb-3 grid grid-cols-1 gap-3 md:grid-cols-[minmax(0,320px)_1fr] md:items-start">
+                          <div>
+                            <VerificationSummaryBox
+                              count={cnt}
+                              type="project"
+                              verifications={verifications}
+                              onOpen={() =>
+                                openReviewListModal("project", project)
+                              }
+                            />
+                          </div>
+                          <div className="md:justify-self-end">
+                            <VerifyButton
+                              type="project"
+                              status={status}
+                              isBusy={busyProject === String(project._id)}
+                              id={project._id}
+                              onVerify={beginProjectReview}
+                            />
+                          </div>
                         </div>
-                        <VerifyButton
-                          type="project"
-                          status={status}
-                          isBusy={busyProject === String(project._id)}
-                          id={project._id}
-                          onVerify={beginProjectReview}
-                        />
-                      </div>
-                      <ProjectDetails project={project} />
-                    </SubSection>
-                  );
-                })}
-              </div>
-            ) : (
-              <div className="text-sm text-muted-foreground">
-                No projects added.
-              </div>
-            )}
-          </SectionWrapper>
-        </AccordionSection>
+                        <div className="my-3 h-px bg-slate-200/60" />
+                        <ProjectDetails project={project} />
+                      </SubSection>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="text-sm text-muted-foreground">
+                  No projects added.
+                </div>
+              )}
+            </SectionWrapper>
+          </SectionCard>
+        ) : null}
+        {/* Audio Profile */}
+        {isActiveSection("audio") ? (
+          <SectionCard id="audio" title="Audio Profile" icon={Mic}>
+            <SectionWrapper>
+              <SubSection className="border-orange-200/70 bg-slate-50 shadow-[0_18px_50px_-30px_rgba(15,23,42,0.35)]">
+                {audioUrl ? (
+                  <audio controls src={audioUrl} className="w-full" />
+                ) : (
+                  <p className="text-sm text-muted-foreground">
+                    No audio profile uploaded.
+                  </p>
+                )}
+              </SubSection>
+            </SectionWrapper>
+          </SectionCard>
+        ) : null}
+
+        {/* Video Profile */}
+        {isActiveSection("video") ? (
+          <SectionCard id="video" title="Video Profile" icon={Video}>
+            <SectionWrapper>
+              <SubSection className="border-orange-200/70 bg-slate-50 shadow-[0_18px_50px_-30px_rgba(15,23,42,0.35)]">
+                {videoUrl ? (
+                  <video controls src={videoUrl} className="w-full rounded-xl" />
+                ) : (
+                  <p className="text-sm text-muted-foreground">
+                    No video profile uploaded.
+                  </p>
+                )}
+              </SubSection>
+            </SectionWrapper>
+          </SectionCard>
+        ) : null}
+
+        <div className="flex items-center justify-between pt-2">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={goPrev}
+            disabled={safeIndex === 0}
+          >
+            Previous
+          </Button>
+          <Button
+            type="button"
+            variant="default"
+            onClick={goNext}
+            disabled={safeIndex === sectionOrder.length - 1}
+          >
+            Next
+          </Button>
+        </div>
       </div>
+    </div>
+    </div>
     </>
   );
 }

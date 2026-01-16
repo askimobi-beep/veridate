@@ -11,7 +11,7 @@ export function SectionWrapper({ children }) {
 /* Fixed columns: 200px label, rest value. Stacks on mobile. */
 export function DefinitionList({ children }) {
   return (
-    <div className="grid grid-cols-1 gap-4 md:grid-cols-[200px_1fr]">
+    <div className="grid grid-cols-1 gap-4 md:grid-cols-[200px_1fr] text-left">
       {children}
     </div>
   );
@@ -21,8 +21,8 @@ export function DefinitionList({ children }) {
 export function DLRow({ label, children }) {
   return (
     <>
-      <div className="text-xs uppercase tracking-wide text-muted-foreground pt-2">{label}</div>
-      <div className="text-base font-medium text-foreground">{children ?? "—"}</div>
+      <div className="text-xs uppercase tracking-wide text-muted-foreground pt-2 text-left">{label}</div>
+      <div className="text-base font-medium text-foreground text-left">{children ?? ""}</div>
     </>
   );
 }
