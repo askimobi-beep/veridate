@@ -523,9 +523,21 @@ export default function DetailPage() {
   const sectionItems = [
     { key: "summary", label: "AI Profile Summary", icon: Star },
     { key: "personal", label: "Personal Details", icon: UserRound },
-    { key: "education", label: "Education", icon: FileText },
-    { key: "experience", label: "Experience", icon: Briefcase },
-    { key: "projects", label: "Projects", icon: ClipboardList },
+    {
+      key: "education",
+      label: `Education - ${profile?.education?.length || 0}`,
+      icon: FileText,
+    },
+    {
+      key: "experience",
+      label: `Experience - ${profile?.experience?.length || 0}`,
+      icon: Briefcase,
+    },
+    {
+      key: "projects",
+      label: `Projects - ${profile?.projects?.length || 0}`,
+      icon: ClipboardList,
+    },
     { key: "audio", label: "Audio Profile", icon: Mic },
     { key: "video", label: "Video Profile", icon: Video },
   ];
@@ -1006,6 +1018,49 @@ export default function DetailPage() {
   const videoUrl = profile?.videoProfile
     ? fileUrl("video", profile.videoProfile)
     : "";
+  const hiddenPersonalFields = new Set(profile?.personalHiddenFields || []);
+  const listToText = (list) =>
+    Array.isArray(list) && list.length ? list.join(", ") : "";
+  const personalDetails = [
+    { key: "name", label: "Full Name", value: fullName },
+    { key: "email", label: "Email", value: profile?.email || "" },
+    { key: "mobile", label: "Mobile", value: profile?.mobile || "" },
+    {
+      key: "mobileCountryCode",
+      label: "Mobile Country Code",
+      value: profile?.mobileCountryCode || "",
+    },
+    { key: "gender", label: "Gender", value: profile?.gender || "" },
+    { key: "fatherName", label: "Father Name", value: profile?.fatherName || "" },
+    { key: "cnic", label: "CNIC", value: profile?.cnic || "" },
+    { key: "dob", label: "Date of Birth", value: fmtDate(profile?.dob) },
+    {
+      key: "maritalStatus",
+      label: "Marital Status",
+      value: profile?.maritalStatus || "",
+    },
+    {
+      key: "residentStatus",
+      label: "Resident Status",
+      value: profile?.residentStatus || "",
+    },
+    { key: "nationality", label: "Nationality", value: profile?.nationality || "" },
+    { key: "city", label: "City", value: profile?.city || "" },
+    { key: "country", label: "Country", value: profile?.country || "" },
+    {
+      key: "shiftPreferences",
+      label: "Shift Preferences",
+      value: listToText(profile?.shiftPreferences),
+    },
+    {
+      key: "workAuthorization",
+      label: "Work Authorization",
+      value: listToText(profile?.workAuthorization),
+    },
+  ];
+  const visiblePersonalDetails = personalDetails.filter(
+    (item) => !hiddenPersonalFields.has(item.key)
+  );
 
   const scrollToSection = (key) => {
     setActiveSection(key);
@@ -1284,19 +1339,18 @@ export default function DetailPage() {
         </div>
 
         {/* Header */}
-        <Card className="mb-6 overflow-hidden border border-orange-100/60 shadow-[0_18px_50px_-26px_rgba(230,146,64,0.45)]">
+        <Card className="mb-6 overflow-hidden border border-orange-200/70 bg-[#f3f4f6] shadow-[0_18px_40px_-28px_rgba(15,23,42,0.35)]">
           <div className="relative">
-            <div className="absolute inset-0 bg-gradient-to-r from-orange-100 via-orange-50 to-amber-100" />
             <CardContent className="relative flex flex-col gap-6 p-6 text-slate-900 md:flex-row md:items-center md:justify-between">
               <div className="flex items-start gap-4 md:gap-6">
                 <div className="relative">
-                  <div className="absolute inset-0 rounded-3xl bg-white/80 blur-xl" />
-                  <div className="relative rounded-3xl bg-orange-200 p-1.5 shadow-sm backdrop-blur-sm">
-                    <Avatar className="h-20 w-20 rounded-2xl border border-orange-100 shadow-md">
+                  <div className="absolute inset-0 rounded-full bg-white/80 blur-xl" />
+                  <div className="relative rounded-full bg-orange-200 p-1.5 shadow-sm backdrop-blur-sm">
+                    <Avatar className="h-20 w-20 rounded-full border border-orange-100 shadow-md">
                       {avatarUrl ? (
                         <AvatarImage src={avatarUrl} alt={fullName} />
                       ) : null}
-                      <AvatarFallback className="rounded-2xl bg-orange-100 text-lg font-semibold text-orange-600">
+                      <AvatarFallback className="rounded-full bg-orange-100 text-lg font-semibold text-orange-600">
                         {initials(fullName)}
                       </AvatarFallback>
                     </Avatar>
@@ -1346,7 +1400,7 @@ export default function DetailPage() {
                   <Button
                     type="button"
                     variant="outline"
-                    className="rounded-full border-orange-200 bg-white/80 text-orange-700 hover:bg-white"
+                    className="rounded-xl border-orange-200 bg-white/80 text-orange-700 hover:bg-slate-100"
                     onClick={handleShare}
                   >
                     {copied ? "Copied" : "Share"}
@@ -1400,14 +1454,24 @@ export default function DetailPage() {
           <SectionCard id="personal" title="Personal Details" icon={UserRound}>
             <SectionWrapper>
               <SubSection className="border-orange-200/70 bg-slate-50 shadow-[0_18px_50px_-30px_rgba(15,23,42,0.35)]">
-                <DefinitionList>
-                  <DLRow label="Full Name">{fullName}</DLRow>
-                  <DLRow label="Email">{profile?.email || ""}</DLRow>
-                  <DLRow label="Mobile">{profile?.mobile || ""}</DLRow>
-                  <DLRow label="Gender">{profile?.gender || ""}</DLRow>
-                  <DLRow label="City">{profile?.city || ""}</DLRow>
-                  <DLRow label="Country">{profile?.country || ""}</DLRow>
-                </DefinitionList>
+                {visiblePersonalDetails.length ? (
+                  <div className="grid grid-cols-1 gap-3 text-left md:grid-cols-2">
+                    {visiblePersonalDetails.map((detail) => (
+                      <div key={detail.key} className="text-sm text-foreground">
+                        <span className="font-semibold text-slate-600">
+                          {detail.label}:
+                        </span>{" "}
+                        <span className="font-medium text-slate-800">
+                          {detail.value || ""}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-sm text-muted-foreground">
+                    No personal details provided.
+                  </div>
+                )}
               </SubSection>
             </SectionWrapper>
           </SectionCard>
@@ -1418,7 +1482,7 @@ export default function DetailPage() {
           <SectionCard id="education" title="Education" icon={FileText}>
             <SectionWrapper>
               {Array.isArray(profile?.education) && profile.education.length ? (
-                <div className="space-y-4">
+                <div className="space-y-6">
                   {profile.education.map((edu) => {
                     const cnt = edu.verifyCount || 0;
                     const status = eduStatus({
@@ -1477,7 +1541,7 @@ export default function DetailPage() {
           <SectionCard id="experience" title="Experience" icon={Briefcase}>
             <SectionWrapper>
               {Array.isArray(profile?.experience) && profile.experience.length ? (
-                <div className="space-y-4">
+                <div className="space-y-6">
                   {profile.experience.map((exp) => {
                     const cnt = exp.verifyCount || 0;
                     const status = expStatus({
@@ -1536,7 +1600,7 @@ export default function DetailPage() {
           <SectionCard id="projects" title="Projects" icon={ClipboardList}>
             <SectionWrapper>
               {Array.isArray(profile?.projects) && profile.projects.length ? (
-                <div className="space-y-4">
+                <div className="space-y-6">
                   {profile.projects.map((project) => {
                     const cnt = project.verifyCount || 0;
                     const status = projectStatus({
@@ -1629,6 +1693,7 @@ export default function DetailPage() {
             variant="outline"
             onClick={goPrev}
             disabled={safeIndex === 0}
+            className="rounded-full border border-slate-200 bg-white/70 px-4 py-2 text-sm font-semibold text-slate-600 transition hover:text-slate-800 disabled:cursor-not-allowed disabled:opacity-50"
           >
             Previous
           </Button>
@@ -1637,6 +1702,7 @@ export default function DetailPage() {
             variant="default"
             onClick={goNext}
             disabled={safeIndex === sectionOrder.length - 1}
+            className="rounded-full border border-orange-200 bg-orange-50/80 px-4 py-2 text-sm font-semibold text-orange-600 transition hover:text-orange-700 disabled:cursor-not-allowed disabled:opacity-50"
           >
             Next
           </Button>

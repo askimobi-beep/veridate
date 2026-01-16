@@ -223,16 +223,15 @@ export default function ProfileSummaryCard({ profile, userId }) {
   );
 
   return (
-    <Card className="mb-6 border-blue-200">
-      <CardContent className="p-5 md:p-6 text-left">
-        <div className="flex items-center gap-2">
-          <Sparkles className="h-5 w-5" />
-          <h2 className="text-base md:text-lg font-semibold">
-            AI Profile Summary
-          </h2>
-        </div>
-
-        <div className="mt-4">
+    <Card className="mb-6 rounded-2xl border border-white/60 bg-white shadow-[0_18px_40px_-28px_rgba(15,23,42,0.35)]">
+      <div className="flex items-center gap-2 border-b border-white/60 px-4 py-3">
+        <Sparkles className="h-4 w-4 text-orange-600" />
+        <h3 className="text-sm font-semibold text-slate-800">
+          AI Profile Summary
+        </h3>
+      </div>
+      <CardContent className="p-4 text-left">
+        <div>
           {summaryLoading ? (
             <SummaryLoadingState />
           ) : (
