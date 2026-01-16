@@ -595,7 +595,23 @@ export default function PersonalInformation() {
           onPhotoSave={async () => {
             const res = await saveProfilePhoto();
             if (res?.ok) {
-              enqueueSnackbar("Profile photo saved", { variant: "success" });
+              const serverProfile = res?.data?.profile;
+              if (serverProfile) {
+                setFormData((prev) => ({
+                  ...prev,
+                  profilePic:
+                    typeof serverProfile.profilePic !== "undefined"
+                      ? serverProfile.profilePic
+                      : prev.profilePic,
+                  profilePicPending:
+                    typeof serverProfile.profilePicPending !== "undefined"
+                      ? serverProfile.profilePicPending
+                      : prev.profilePicPending,
+                }));
+              }
+              enqueueSnackbar(res?.data?.message || "Profile photo updated", {
+                variant: "success",
+              });
               profilePicRef.current?.reset?.();
             } else {
               enqueueSnackbar(res?.error || "Failed to save photo", {

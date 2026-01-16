@@ -20,6 +20,7 @@ const getEmptyForm = () => ({
   workAuthorization: [],
   resume: null,
   profilePic: null,
+  profilePicPending: null,
   audioProfile: null,
   videoProfile: null,
   personalHiddenFields: [],

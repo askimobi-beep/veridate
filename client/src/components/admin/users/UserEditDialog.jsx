@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react"
+import React, { useState, useEffect, useMemo } from "react"
 import { motion } from "framer-motion"
 import { useSnackbar } from "notistack"
 import axiosInstance from "@/utils/axiosInstance"
@@ -30,6 +30,16 @@ export default function UserEditDialog({ open, onOpenChange, user, onUpdated }) 
   const { enqueueSnackbar } = useSnackbar();
   const [draft, setDraft] = useState(null);
   const [saving, setSaving] = useState(false);
+  const [photoStatus, setPhotoStatus] = useState(null);
+  const [photoLoading, setPhotoLoading] = useState(false);
+  const [photoSaving, setPhotoSaving] = useState(false);
+
+  const uploadBase = useMemo(() => {
+    const base = import.meta.env.VITE_API_PIC_URL
+      ? `${import.meta.env.VITE_API_PIC_URL}/uploads/profile`
+      : "/uploads/profile";
+    return base.replace(/\/$/, "");
+  }, []);
 
   useEffect(() => {
     if (user) {
@@ -50,6 +60,35 @@ export default function UserEditDialog({ open, onOpenChange, user, onUpdated }) 
       setDraft(null);
     }
   }, [user]);
+
+  useEffect(() => {
+    if (!open || !user?._id) {
+      setPhotoStatus(null);
+      return;
+    }
+
+    let active = true;
+    const loadPhotoStatus = async () => {
+      setPhotoLoading(true);
+      try {
+        const res = await axiosInstance.get(`/admin/profile-photo/${user._id}`);
+        if (!active) return;
+        setPhotoStatus(
+          res?.data?.data || { profilePic: "", profilePicPending: "" }
+        );
+      } catch (e) {
+        if (!active) return;
+        setPhotoStatus(null);
+      } finally {
+        if (active) setPhotoLoading(false);
+      }
+    };
+
+    loadPhotoStatus();
+    return () => {
+      active = false;
+    };
+  }, [open, user?._id]);
 
   const close = () => onOpenChange(false);
   const setField = (key, value) => setDraft((s) => ({ ...s, [key]: value }));
@@ -84,10 +123,62 @@ export default function UserEditDialog({ open, onOpenChange, user, onUpdated }) 
     }
   };
 
+  const approvePhoto = async () => {
+    if (!user?._id) return;
+    setPhotoSaving(true);
+    try {
+      const res = await axiosInstance.post(
+        `/admin/profile-photo/${user._id}/approve`
+      );
+      setPhotoStatus(
+        res?.data?.data || { profilePic: "", profilePicPending: "" }
+      );
+      enqueueSnackbar("Profile photo approved", { variant: "success" });
+    } catch (e) {
+      enqueueSnackbar(
+        e?.response?.data?.message ||
+          e?.message ||
+          "Failed to approve profile photo",
+        { variant: "error" }
+      );
+    } finally {
+      setPhotoSaving(false);
+    }
+  };
+
+  const rejectPhoto = async () => {
+    if (!user?._id) return;
+    setPhotoSaving(true);
+    try {
+      await axiosInstance.post(`/admin/profile-photo/${user._id}/reject`);
+      setPhotoStatus((prev) => ({
+        ...(prev || {}),
+        profilePicPending: "",
+      }));
+      enqueueSnackbar("Profile photo rejected", { variant: "success" });
+    } catch (e) {
+      enqueueSnackbar(
+        e?.response?.data?.message ||
+          e?.message ||
+          "Failed to reject profile photo",
+        { variant: "error" }
+      );
+    } finally {
+      setPhotoSaving(false);
+    }
+  };
+
   if (!draft) return null;
 
   const edu = sumCredits(draft.verifyCredits.education);
   const exp = sumCredits(draft.verifyCredits.experience);
+  const approvedPhotoUrl = photoStatus?.profilePic
+    ? `${uploadBase}/${photoStatus.profilePic}`
+    : "";
+  const pendingPhotoUrl = photoStatus?.profilePicPending
+    ? `${uploadBase}/${photoStatus.profilePicPending}`
+    : "";
+  const hasPending = !!photoStatus?.profilePicPending;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -148,6 +239,56 @@ export default function UserEditDialog({ open, onOpenChange, user, onUpdated }) 
               <div>Education — used {edu.used}/{edu.total}, available {edu.available}</div>
               <div>Experience — used {exp.used}/{exp.total}, available {exp.available}</div>
             </div>
+          </div>
+
+          <div className="rounded-md border p-3 bg-muted/30 space-y-3">
+            <div className="text-sm font-medium">Profile photo approval</div>
+            {photoLoading ? (
+              <div className="text-sm text-muted-foreground">Loading photo status...</div>
+            ) : (
+              <>
+                <div className="flex flex-wrap items-center gap-3">
+                  <div className="text-xs uppercase tracking-wide text-muted-foreground">
+                    Current
+                  </div>
+                  {approvedPhotoUrl ? (
+                    <img
+                      src={approvedPhotoUrl}
+                      alt="Approved profile"
+                      className="h-12 w-12 rounded-full border object-cover"
+                    />
+                  ) : (
+                    <span className="text-xs text-muted-foreground">None</span>
+                  )}
+                </div>
+                <div className="flex flex-wrap items-center gap-3">
+                  <div className="text-xs uppercase tracking-wide text-muted-foreground">
+                    Pending
+                  </div>
+                  {pendingPhotoUrl ? (
+                    <img
+                      src={pendingPhotoUrl}
+                      alt="Pending profile"
+                      className="h-12 w-12 rounded-full border object-cover"
+                    />
+                  ) : (
+                    <span className="text-xs text-muted-foreground">None</span>
+                  )}
+                </div>
+                <div className="flex items-center gap-2">
+                  <Button onClick={approvePhoto} disabled={!hasPending || photoSaving}>
+                    {photoSaving ? "Saving..." : "Approve"}
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={rejectPhoto}
+                    disabled={!hasPending || photoSaving}
+                  >
+                    Reject
+                  </Button>
+                </div>
+              </>
+            )}
           </div>
         </motion.div>
 

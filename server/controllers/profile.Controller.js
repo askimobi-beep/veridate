@@ -38,6 +38,7 @@ function redactPersonalFields(profileDoc) {
   for (const key of PERSONAL_PRIVACY_KEYS) {
     if (hidden.has(key)) delete p[key];
   }
+  delete p.profilePicPending;
   return p;
 }
 
@@ -144,7 +145,7 @@ exports.savePersonalInfo = async (req, res) => {
     if (req.files?.resume?.[0])
       filesUpdate.resume = req.files.resume[0].filename;
     if (req.files?.profilePic?.[0])
-      filesUpdate.profilePic = req.files.profilePic[0].filename;
+      filesUpdate.profilePicPending = req.files.profilePic[0].filename;
     if (req.files?.audioProfile?.[0])
       filesUpdate.audioProfile = req.files.audioProfile[0].filename;
     if (req.files?.videoProfile?.[0])
@@ -211,8 +212,8 @@ exports.savePersonalInfo = async (req, res) => {
     if (profile) {
       if (filesUpdate.resume && profile.resume)
         removeOldPersonalFile?.("resume", profile.resume);
-      if (filesUpdate.profilePic && profile.profilePic)
-        removeOldPersonalFile?.("profilePic", profile.profilePic);
+      if (filesUpdate.profilePicPending && profile.profilePicPending)
+        removeOldPersonalFile?.("profilePic", profile.profilePicPending);
       if (filesUpdate.audioProfile && profile.audioProfile)
         removeOldPersonalFile?.("audioProfile", profile.audioProfile);
       if (filesUpdate.videoProfile && profile.videoProfile)
@@ -270,36 +271,66 @@ exports.saveProfilePhoto = async (req, res) => {
     const isClearIntent =
       typeof req.body.profilePic !== "undefined" && req.body.profilePic === "";
 
-    if (!req.file && !isClearIntent) {
+    const pendingUpload = req.file?.filename || null;
+
+    if (!pendingUpload && !isClearIntent) {
       return res
         .status(400)
         .json({ error: "No photo uploaded or clear intent provided" });
     }
 
     // compute next value
-    const nextPhoto = isClearIntent ? null : req.file?.filename;
+    const update = {};
+    if (isClearIntent) {
+      update.profilePic = null;
+      update.profilePicPending = null;
+    } else if (pendingUpload) {
+      update.profilePicPending = pendingUpload;
+    }
 
-    // cleanup: if replacing/removing and old photo exists, remove it
-    if (profile && profile.profilePic && (nextPhoto || isClearIntent)) {
-      try {
-        removeOldPersonalFile("profilePic", profile.profilePic);
-      } catch (e) {
-        // don’t block user on cleanup issues
-        console.warn("Failed to remove old profile photo:", e?.message || e);
+    if (profile) {
+      if (isClearIntent) {
+        if (profile.profilePic) {
+          try {
+            removeOldPersonalFile("profilePic", profile.profilePic);
+          } catch (e) {
+            // don’t block user on cleanup issues
+            console.warn("Failed to remove old profile photo:", e?.message || e);
+          }
+        }
+        if (profile.profilePicPending) {
+          try {
+            removeOldPersonalFile("profilePic", profile.profilePicPending);
+          } catch (e) {
+            console.warn(
+              "Failed to remove pending profile photo:",
+              e?.message || e
+            );
+          }
+        }
+      } else if (pendingUpload && profile.profilePicPending) {
+        try {
+          removeOldPersonalFile("profilePic", profile.profilePicPending);
+        } catch (e) {
+          console.warn(
+            "Failed to remove pending profile photo:",
+            e?.message || e
+          );
+        }
       }
     }
 
     // IMPORTANT: do NOT touch personalInfoLocked here
     const updated = await Profile.findOneAndUpdate(
       { user: userId },
-      { $set: { profilePic: nextPhoto } },
+      { $set: update },
       { new: true, upsert: true }
     );
 
     return res.status(200).json({
       message: isClearIntent
         ? "Profile photo removed"
-        : "Profile photo updated",
+        : "Profile photo uploaded and pending approval",
       profile: updated,
     });
   } catch (err) {

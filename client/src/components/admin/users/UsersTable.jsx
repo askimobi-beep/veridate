@@ -132,6 +132,7 @@ export default function UsersTable({ users, onPatch }) {
                 filtered.map((u) => {
                   const edu = sumCredits(u?.verifyCredits?.education);
                   const exp = sumCredits(u?.verifyCredits?.experience);
+                  const hasPendingPhoto = Boolean(u?.profilePicPending);
                   return (
                     <motion.tr
                       key={u._id}
@@ -139,9 +140,20 @@ export default function UsersTable({ users, onPatch }) {
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0 }}
                       transition={{ duration: 0.12 }}
-                      className="border-b last:border-0"
+                      className={`border-b last:border-0 ${
+                        hasPendingPhoto ? "bg-amber-50/70" : ""
+                      }`}
                     >
-                      <TableCell className="font-medium">{userDisplayName(u)}</TableCell>
+                      <TableCell className="font-medium">
+                        <div className="flex items-center gap-2">
+                          <span>{userDisplayName(u)}</span>
+                          {hasPendingPhoto ? (
+                            <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-semibold text-amber-800">
+                              Photo pending
+                            </span>
+                          ) : null}
+                        </div>
+                      </TableCell>
                       <TableCell className="truncate max-w-[240px]">{u.email}</TableCell>
                       <TableCell>
                         <Badge variant="secondary" className="capitalize">{u.provider || "local"}</Badge>

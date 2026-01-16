@@ -28,6 +28,7 @@ export default function ProfileHeader({
 }) {
   // const BASE_UPLOAD_URL = "https://api.veridate.store/uploads";
   const BASE_UPLOAD_URL = `${import.meta.env.VITE_API_PIC_URL}/uploads`;
+  const hasPendingPhoto = Boolean(user?.profilePicPending);
 
   // make a preview that works for: empty | filename | absolute URL | File
   const blobUrlRef = useRef(null);
@@ -104,6 +105,11 @@ export default function ProfileHeader({
           >
             Fill in your details and upload required documents.
           </motion.p>
+          {hasPendingPhoto ? (
+            <span className="mt-2 inline-flex w-fit items-center rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-semibold text-amber-800">
+              Photo pending approval
+            </span>
+          ) : null}
         </div>
       </div>
 

@@ -108,6 +108,7 @@ const ProfileSchema = new mongoose.Schema(
     dob: Date,
     resume: String,
     profilePic: String,
+    profilePicPending: String,
     audioProfile: String,
     videoProfile: String,
     shiftPreferences: [String],
