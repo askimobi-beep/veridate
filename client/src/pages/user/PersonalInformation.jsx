@@ -6,6 +6,8 @@ import {
   FileText,
   UserRound,
   ClipboardList,
+  Mic,
+  Video,
 } from "lucide-react";
 
 import ProfileHeader from "@/components/profile/ProfileHeader";
@@ -13,6 +15,7 @@ import PersonalDetailsForm from "@/components/profile/PersonalDetailsForm";
 import EducationForm from "@/components/profile/EducationForm";
 import ExperienceForm from "@/components/profile/ExperienceForm";
 import ProjectForm from "@/components/profile/ProjectForm";
+import MediaProfileSection from "@/components/profile/MediaProfileSection";
 import ConfirmDialog from "@/components/common/ConfirmDialog";
 
 import usePersonalInformationForm from "@/hooks/usePersonalInformationForm";
@@ -533,8 +536,21 @@ export default function PersonalInformation() {
   const hasProjects = Boolean(
     firstProject && (firstProject?.projectTitle || firstProject?.company)
   );
+  const hasAudio =
+    formData?.audioProfile instanceof File ||
+    (typeof formData?.audioProfile === "string" && formData?.audioProfile);
+  const hasVideo =
+    formData?.videoProfile instanceof File ||
+    (typeof formData?.videoProfile === "string" && formData?.videoProfile);
 
-  const sectionOrder = ["pi", "education", "experience", "projects"];
+  const sectionOrder = [
+    "pi",
+    "education",
+    "experience",
+    "projects",
+    "audio",
+    "video",
+  ];
   const sectionItems = [
     {
       key: "pi",
@@ -563,6 +579,20 @@ export default function PersonalInformation() {
       icon: ClipboardList,
       done: hasProjects,
       hint: hasProjects ? "Completed" : "Add project",
+    },
+    {
+      key: "audio",
+      label: "Audio Profile",
+      icon: Mic,
+      done: hasAudio,
+      hint: hasAudio ? "Completed" : "Add audio",
+    },
+    {
+      key: "video",
+      label: "Video Profile",
+      icon: Video,
+      done: hasVideo,
+      hint: hasVideo ? "Completed" : "Add video",
     },
   ];
 
@@ -665,6 +695,8 @@ export default function PersonalInformation() {
                     {open === "education" ? <FileText className="h-5 w-5 text-orange-600" /> : null}
                     {open === "experience" ? <Briefcase className="h-5 w-5 text-orange-600" /> : null}
                     {open === "projects" ? <ClipboardList className="h-5 w-5 text-orange-600" /> : null}
+                    {open === "audio" ? <Mic className="h-5 w-5 text-orange-600" /> : null}
+                    {open === "video" ? <Video className="h-5 w-5 text-orange-600" /> : null}
                     <h2 className="text-lg font-semibold text-slate-800">
                       {sectionItems[safeIndex]?.label}
                     </h2>
@@ -731,6 +763,34 @@ export default function PersonalInformation() {
                       saveProject={saveProjectRow}
                       isRowSaving={isProjectRowSaving}
                       onAskConfirm={onAskConfirm}
+                    />
+                  ) : null}
+
+                  {open === "audio" ? (
+                    <MediaProfileSection
+                      kind="audio"
+                      title="Audio Profile"
+                      icon={Mic}
+                      formData={formData}
+                      handleCustomChange={handleCustomChange}
+                      locked={!!locked.pi}
+                      onAskConfirm={onAskConfirm}
+                      savePersonalInfo={savePersonalInfo}
+                      saving={saving}
+                    />
+                  ) : null}
+
+                  {open === "video" ? (
+                    <MediaProfileSection
+                      kind="video"
+                      title="Video Profile"
+                      icon={Video}
+                      formData={formData}
+                      handleCustomChange={handleCustomChange}
+                      locked={!!locked.pi}
+                      onAskConfirm={onAskConfirm}
+                      savePersonalInfo={savePersonalInfo}
+                      saving={saving}
                     />
                   ) : null}
                 </div>

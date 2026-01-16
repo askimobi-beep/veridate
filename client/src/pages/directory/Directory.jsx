@@ -16,9 +16,12 @@ export default function Directory() {
   const [company, setCompany] = useState("");
   const [industry, setIndustry] = useState("");
   const [institute, setInstitute] = useState("");
+  const [companyOptions, setCompanyOptions] = useState([]);
+  const [instituteOptions, setInstituteOptions] = useState([]);
   const [jobFunctions, setJobFunctions] = useState("");
   const [skillset, setSkillset] = useState("");
   const [location, setLocation] = useState("");
+  const [locationOptions, setLocationOptions] = useState([]);
   const [experienceDuration, setExperienceDuration] = useState("");
   const [page, setPage] = useState(1);
   const [limit] = useState(9);
@@ -91,6 +94,65 @@ export default function Directory() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [page, activeFilters, hasSearched]);
 
+  useEffect(() => {
+    let active = true;
+    const loadLocations = async () => {
+      try {
+        const { data } = await fetchProfiles({ page: 1, limit: 500 });
+        if (!active) return;
+        const map = new Map();
+        const companySet = new Set();
+        const instituteSet = new Set();
+        data.forEach((profile) => {
+          const city = String(profile?.city || "").trim();
+          const country = String(profile?.country || "").trim();
+          if (city) {
+            const label = country ? `${city}, ${country}` : city;
+            map.set(`city:${label}`, { label, value: city });
+          }
+          if (country) {
+            map.set(`country:${country}`, { label: country, value: country });
+          }
+          const experience = Array.isArray(profile?.experience)
+            ? profile.experience
+            : [];
+          experience.forEach((exp) => {
+            const name = String(exp?.company || "").trim();
+            if (name) companySet.add(name);
+          });
+          const education = Array.isArray(profile?.education)
+            ? profile.education
+            : [];
+          education.forEach((edu) => {
+            const name = String(edu?.institute || "").trim();
+            if (name) instituteSet.add(name);
+          });
+        });
+        const options = Array.from(map.values()).sort((a, b) =>
+          a.label.localeCompare(b.label)
+        );
+        setLocationOptions(options);
+        setCompanyOptions(
+          Array.from(companySet)
+            .sort((a, b) => a.localeCompare(b))
+            .map((name) => ({ label: name, value: name }))
+        );
+        setInstituteOptions(
+          Array.from(instituteSet)
+            .sort((a, b) => a.localeCompare(b))
+            .map((name) => ({ label: name, value: name }))
+        );
+      } catch (err) {
+        console.error("Failed to load location options", err);
+      }
+    };
+
+    loadLocations();
+    return () => {
+      active = false;
+    };
+  }, []);
+
   const onSearch = (e) => {
     e.preventDefault();
     if (!hasFilters) {
@@ -130,7 +192,7 @@ export default function Directory() {
 
   return (
     <div className="max-w-6xl mx-auto px-4 py-8">
-      <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-[340px_1fr] gap-6">
         <aside className="lg:sticky lg:top-6 h-fit">
           <Card className="rounded-2xl border border-white/60 bg-white/60 shadow-[0_22px_50px_-26px_rgba(15,23,42,0.4)] backdrop-blur-md">
             <div className="border-b border-white/60 px-4 py-3">
@@ -164,6 +226,9 @@ export default function Directory() {
                 setSkillset={setSkillset}
                 location={location}
                 setLocation={setLocation}
+                companyOptions={companyOptions}
+                instituteOptions={instituteOptions}
+                locationOptions={locationOptions}
                 experienceDuration={experienceDuration}
                 setExperienceDuration={setExperienceDuration}
                 onSearch={onSearch}
