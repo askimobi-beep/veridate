@@ -658,9 +658,7 @@ export default function PersonalInformation() {
         <div className="grid gap-6 lg:grid-cols-[240px_1fr]">
           <aside className="hidden lg:block">
             <div className="sticky top-24 space-y-3 rounded-2xl border border-white/60 bg-white/60 p-4 shadow-[0_20px_50px_-24px_rgba(15,23,42,0.35)] backdrop-blur-md">
-              <div className="text-xs font-semibold uppercase tracking-[0.2em] text-orange-600/80">
-                Profile Sections
-              </div>
+              <div className="sr-only">Profile Sections</div>
               <div className="space-y-2">
                 {sectionItems.map((item) => {
                   const Icon = item.icon;

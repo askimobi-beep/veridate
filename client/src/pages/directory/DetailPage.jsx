@@ -156,7 +156,7 @@ const statusIconByStatus = (status) => {
     case "eligible":
       return BadgeCheck;
     case "no-credits":
-      return AlertTriangle;
+      return XCircle;
     case "ineligible":
     default:
       return XCircle;
@@ -168,7 +168,7 @@ const statusIconColor = (status) => {
     case "already-verified":
       return "text-green-600";
     case "eligible":
-      return "text-blue-600";
+      return "text-orange-600";
     case "no-credits":
       return "text-red-600";
     case "ineligible":
@@ -211,7 +211,7 @@ function ReviewStars({ value = 5, onChange, readOnly = false, size = "lg", class
   const stars = [1, 2, 3, 4, 5];
   const numericValue = Number.isFinite(Number(value)) ? Number(value) : 0;
   const iconSize =
-    size === "sm" ? "h-4 w-4" : size === "lg" ? "h-7 w-7" : "h-6 w-6";
+    size === "sm" ? "h-5 w-5" : size === "lg" ? "h-8 w-8" : "h-6 w-6";
 
   if (readOnly) {
     return (
@@ -313,7 +313,7 @@ function VerificationPreview({ verifications = [], onOpen }) {
           </span>
         </div>
         <span className="text-xs font-semibold text-white drop-shadow-sm">
-          {numericRatings.length} review{numericRatings.length > 1 ? "s" : ""}
+          {numericRatings.length} veridation{numericRatings.length > 1 ? "s" : ""}
         </span>
       </div>
       
@@ -353,23 +353,33 @@ function VerificationSummaryBox({ count = 0, type, verifications = [], onOpen })
         </span>
       </div>
       <div className="mt-1 text-xs font-semibold text-slate-600">
-        {reviewsCount} review{reviewsCount === 1 ? "" : "s"}
+        {reviewsCount} veridation{reviewsCount === 1 ? "" : "s"}
       </div>
     </BoxTag>
   );
 }
 
+function sentenceCase(value) {
+  const text = String(value || "").trim();
+  if (!text) return "";
+  const lower = text.toLowerCase();
+  return lower.charAt(0).toUpperCase() + lower.slice(1);
+}
+
 function reviewerLabel(entry) {
   const user = entry?.user;
   if (user && typeof user === "object") {
-    return (
+    const fullName = [user.firstName, user.lastName].filter(Boolean).join(" ").trim();
+    const name =
+      fullName ||
       user.name ||
       user.fullName ||
-      user.email ||
-      "Verified user"
-    );
+      user.username ||
+      user.displayName ||
+      "";
+    return sentenceCase(name) || "Verified User";
   }
-  return "Verified user";
+  return "Verified User";
 }
 
 function formatReviewDate(value) {
@@ -525,18 +535,21 @@ export default function DetailPage() {
     { key: "personal", label: "Personal Details", icon: UserRound },
     {
       key: "education",
-      label: `Education - ${profile?.education?.length || 0}`,
+      label: "Education",
       icon: FileText,
+      count: profile?.education?.length || 0,
     },
     {
       key: "experience",
-      label: `Experience - ${profile?.experience?.length || 0}`,
+      label: "Experience",
       icon: Briefcase,
+      count: profile?.experience?.length || 0,
     },
     {
       key: "projects",
-      label: `Projects - ${profile?.projects?.length || 0}`,
+      label: "Projects",
       icon: ClipboardList,
+      count: profile?.projects?.length || 0,
     },
     { key: "audio", label: "Audio Profile", icon: Mic },
     { key: "video", label: "Video Profile", icon: Video },
@@ -1101,21 +1114,19 @@ export default function DetailPage() {
           <DialogHeader>
             <DialogTitle>
               {reviewModal.type === "education"
-                ? "Veridate education entry"
+                ? "Veridate Education"
                 : reviewModal.type === "experience"
-                ? "Veridate experience entry"
+                ? "Veridate Experience"
                 : reviewModal.type === "project"
-                ? "Veridate project entry"
-                : "Veridate profile entry"}
+                ? "Veridate Project"
+                : "Veridate Profile"}
             </DialogTitle>
-            <DialogDescription>
-              Share a star rating (required) and an optional comment before
-              submitting your verification.
-            </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <div className="space-y-2">
-              <p className="text-sm font-medium text-gray-700">Star rating</p>
+              <p className="text-sm font-medium text-gray-700">
+                Star rating <span className="text-red-500">*</span>
+              </p>
               <ReviewStars value={reviewRating} onChange={setReviewRating} />
             </div>
             <div className="space-y-2">
@@ -1161,11 +1172,7 @@ export default function DetailPage() {
               {reviewListModal.title || "Verification feedback"}
             </DialogTitle>
             <DialogDescription>
-              {reviewEntries.length
-                ? `Collected from ${reviewEntries.length} verifier${
-                    reviewEntries.length > 1 ? "s" : ""
-                  }.`
-                : "No reviews captured yet."}
+              {reviewEntries.length ? "" : "No veridations captured yet."}
             </DialogDescription>
           </DialogHeader>
           {reviewEntries.length ? (
@@ -1184,7 +1191,7 @@ export default function DetailPage() {
                     </span>
                   </div>
                   <div className="rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-600">
-                    {reviewEntries.length} review
+                    {reviewEntries.length} veridation
                     {reviewEntries.length > 1 ? "s" : ""}
                   </div>
                 </div>
@@ -1251,17 +1258,11 @@ export default function DetailPage() {
                         <div className="flex-1">
                           <div className="flex items-start justify-between gap-2">
                             <div className="flex flex-col">
-                              <p className="text-sm font-semibold uppercase tracking-wide text-slate-800">
+                              <p className="text-sm font-semibold text-slate-800">
                                 {reviewer}
                               </p>
-                              <p className="text-xs text-slate-500">1 review</p>
                             </div>
-                            <button
-                              type="button"
-                              className="rounded-full p-1 text-slate-400 transition hover:bg-slate-100 hover:text-slate-600"
-                            >
-                              <MoreVertical className="h-4 w-4" />
-                            </button>
+                            <div />
                           </div>
                           <div className="mt-2 flex flex-wrap items-center gap-2 text-sm text-slate-600">
                             <ReviewStars
@@ -1276,8 +1277,8 @@ export default function DetailPage() {
                               </span>
                             ) : null}
                           </div>
-                          <p className="mt-3 whitespace-pre-wrap text-sm leading-relaxed text-slate-700">
-                            {displayComment}
+                          <p className="mt-3 whitespace-pre-wrap text-sm italic leading-relaxed text-slate-700">
+                            “{displayComment}”
                             {truncated && !isExpanded ? (
                               <button
                                 type="button"
@@ -1293,22 +1294,7 @@ export default function DetailPage() {
                               </button>
                             ) : null}
                           </p>
-                          <div className="mt-4 flex items-center gap-6 text-sm text-slate-500">
-                            <button
-                              type="button"
-                              className="flex items-center gap-2 rounded-full px-2 py-1 transition hover:text-orange-600"
-                            >
-                              <Heart className="h-4 w-4" />
-                              <span>Helpful</span>
-                            </button>
-                            <button
-                              type="button"
-                              className="flex items-center gap-2 rounded-full px-2 py-1 transition hover:text-orange-600"
-                            >
-                              <Share2 className="h-4 w-4" />
-                              <span>Share</span>
-                            </button>
-                          </div>
+                          <div />
                         </div>
                       </div>
                     </div>
@@ -1318,7 +1304,7 @@ export default function DetailPage() {
             </div>
           ) : (
             <p className="text-sm text-muted-foreground">
-              No reviews captured yet.
+              No veridations captured yet.
             </p>
           )}
         </DialogContent>
@@ -1330,7 +1316,7 @@ export default function DetailPage() {
           <Button
             variant="ghost"
             size="sm"
-            className="flex items-center gap-2 bg-orange-200 text-black"
+            className="flex items-center gap-2 text-slate-700 hover:text-slate-900"
             onClick={() => navigate(-1)}
           >
             <ArrowLeft className="h-4 w-4" />
@@ -1367,31 +1353,7 @@ export default function DetailPage() {
                       </Badge>
                     ) : null}
                   </div>
-                  <div className="flex flex-wrap items-center gap-3 text-xs text-slate-600 md:text-sm">
-                    {profile?.email ? (
-                      <span className="inline-flex items-center gap-1.5 rounded-full bg-white/70 px-3 py-1 text-orange-700 shadow-sm">
-                        <Mail className="h-3.5 w-3.5 text-orange-500" />
-                        {profile.email}
-                      </span>
-                    ) : null}
-                    {profile?.mobile ? (
-                      <span className="inline-flex items-center gap-1.5 rounded-full bg-white/70 px-3 py-1 text-orange-700 shadow-sm">
-                        <Phone className="h-3.5 w-3.5 text-orange-500" />
-                        {profile.mobile}
-                      </span>
-                    ) : null}
-                    {location ? (
-                      <span className="inline-flex items-center gap-1.5 rounded-full bg-white/70 px-3 py-1 text-orange-700 shadow-sm">
-                        <MapPin className="h-3.5 w-3.5 text-orange-500" />
-                        {location}
-                      </span>
-                    ) : null}
-                    {!profile?.email && !profile?.mobile && !location ? (
-                      <span className="text-sm text-slate-500">
-                        Contact details not provided
-                      </span>
-                    ) : null}
-                  </div>
+                  <div />
                 </div>
               </div>
               <div className="flex w-full flex-col gap-3 md:w-auto md:items-end">
@@ -1403,6 +1365,7 @@ export default function DetailPage() {
                     className="rounded-xl border-orange-200 bg-white/80 text-orange-700 hover:bg-slate-100"
                     onClick={handleShare}
                   >
+                    <Share2 className="h-4 w-4" />
                     {copied ? "Copied" : "Share"}
                   </Button>
                 </div>
@@ -1414,9 +1377,7 @@ export default function DetailPage() {
         <div className="grid gap-6 lg:grid-cols-[240px_1fr]">
           <aside className="hidden lg:block">
             <div className="sticky top-24 space-y-3 rounded-2xl border border-white/60 bg-white/60 p-4 shadow-[0_20px_50px_-24px_rgba(15,23,42,0.35)] backdrop-blur-md">
-              <div className="text-xs font-semibold uppercase tracking-[0.2em] text-orange-600/80">
-                Profile Sections
-              </div>
+              <div className="sr-only">Profile Sections</div>
               <div className="space-y-2">
                 {sectionItems.map((item) => {
                   const Icon = item.icon;
@@ -1426,14 +1387,27 @@ export default function DetailPage() {
                       key={item.key}
                       type="button"
                       onClick={() => scrollToSection(item.key)}
-                      className={`flex w-full items-center gap-3 rounded-xl px-3 py-2 text-left text-sm font-semibold transition ${
+                      className={`flex w-full items-center justify-between gap-3 rounded-xl px-3 py-2 text-left text-sm font-semibold transition ${
                         isActive
                           ? "bg-orange-100/80 text-orange-600 shadow-[0_6px_16px_-10px_rgba(234,88,12,0.7)]"
                           : "text-slate-500 hover:bg-white/70 hover:text-slate-700"
                       }`}
                     >
-                      <Icon className="h-4 w-4" />
-                      <span>{item.label}</span>
+                      <span className="flex items-center gap-3">
+                        <Icon className="h-4 w-4" />
+                        <span>{item.label}</span>
+                      </span>
+                      {typeof item.count === "number" ? (
+                        <span
+                          className={`flex h-6 w-6 items-center justify-center rounded-full text-xs font-bold ${
+                            isActive
+                              ? "bg-orange-500 text-white"
+                              : "bg-slate-200 text-slate-700"
+                          }`}
+                        >
+                          {item.count}
+                        </span>
+                      ) : null}
                     </button>
                   );
                 })}
@@ -1456,16 +1430,27 @@ export default function DetailPage() {
               <SubSection className="border-orange-200/70 bg-slate-50 shadow-[0_18px_50px_-30px_rgba(15,23,42,0.35)]">
                 {visiblePersonalDetails.length ? (
                   <div className="grid grid-cols-1 gap-3 text-left md:grid-cols-2">
-                    {visiblePersonalDetails.map((detail) => (
-                      <div key={detail.key} className="text-sm text-foreground">
-                        <span className="font-semibold text-slate-600">
-                          {detail.label}:
-                        </span>{" "}
-                        <span className="font-medium text-slate-800">
-                          {detail.value || ""}
-                        </span>
-                      </div>
-                    ))}
+                    {visiblePersonalDetails.map((detail) => {
+                      const isName = detail.key === "name";
+                      return (
+                        <div key={detail.key} className="text-sm text-foreground">
+                          <span
+                            className={`font-semibold ${
+                              isName ? "text-[#444]" : "text-slate-600"
+                            }`}
+                          >
+                            {detail.label}:
+                          </span>{" "}
+                          <span
+                            className={`${
+                              isName ? "font-bold text-black" : "font-medium text-slate-800"
+                            }`}
+                          >
+                            {detail.value || ""}
+                          </span>
+                        </div>
+                      );
+                    })}
                   </div>
                 ) : (
                   <div className="text-sm text-muted-foreground">

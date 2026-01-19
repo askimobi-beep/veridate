@@ -29,6 +29,17 @@ export default function ProfileHeader({
   // const BASE_UPLOAD_URL = "https://api.veridate.store/uploads";
   const BASE_UPLOAD_URL = `${import.meta.env.VITE_API_PIC_URL}/uploads`;
   const hasPendingPhoto = Boolean(user?.profilePicPending);
+  const hasApprovedPhoto = Boolean(user?.profilePic) && !hasPendingPhoto;
+  const photoRingClass = hasPendingPhoto
+    ? "ring-2 ring-amber-400"
+    : hasApprovedPhoto
+    ? "ring-2 ring-orange-500"
+    : "";
+  const photoTooltip = hasPendingPhoto
+    ? "Photo pending approval"
+    : hasApprovedPhoto
+    ? "Photo approved"
+    : "";
 
   // make a preview that works for: empty | filename | absolute URL | File
   const blobUrlRef = useRef(null);
@@ -81,6 +92,8 @@ export default function ProfileHeader({
           fallbackText={initials(user?.name)}
           onChange={onPhotoChange}
           avatarClassName="size-25"
+          buttonClassName={photoRingClass}
+          buttonTitle={photoTooltip}
           onSave={onPhotoSave}
           modalZ={9999}
           accept="image/*"
@@ -105,11 +118,6 @@ export default function ProfileHeader({
           >
             Fill in your details and upload required documents.
           </motion.p>
-          {hasPendingPhoto ? (
-            <span className="mt-2 inline-flex w-fit items-center rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-semibold text-amber-800">
-              Photo pending approval
-            </span>
-          ) : null}
         </div>
       </div>
 
@@ -119,7 +127,7 @@ export default function ProfileHeader({
         <button
           type="button"
           onClick={onShare}
-          className="inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold text-white bg-orange-600 hover:bg-orange-700 active:scale-[0.98] shadow-sm transition"
+          className="inline-flex items-center gap-2 rounded-xl border border-orange-200 bg-white px-4 py-2 text-sm font-semibold text-orange-700 hover:bg-slate-100 active:scale-[0.98] shadow-sm transition"
           aria-label="Share profile link"
         >
           {copied ? <Check className="h-4 w-4" /> : <Share2 className="h-4 w-4" />}
