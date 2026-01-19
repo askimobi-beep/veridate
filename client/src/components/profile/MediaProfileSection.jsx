@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Save, UploadCloud, X } from "lucide-react";
+import ConfirmDialog from "@/components/common/ConfirmDialog";
 
 const MAX_MEDIA_BYTES = 50 * 1024 * 1024;
 
@@ -25,6 +26,10 @@ export default function MediaProfileSection({
 
   const [error, setError] = useState("");
   const [previewUrl, setPreviewUrl] = useState("");
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [saved, setSaved] = useState(false);
+  const [awaitingSave, setAwaitingSave] = useState(false);
+  const [sawSaving, setSawSaving] = useState(false);
   const inputRef = useRef(null);
   const previewRef = useRef("");
   const disabled = !!locked && !allowWhenLocked;
@@ -55,6 +60,17 @@ export default function MediaProfileSection({
     };
   }, []);
 
+  useEffect(() => {
+    if (awaitingSave && saving) {
+      setSawSaving(true);
+    }
+    if (awaitingSave && sawSaving && !saving) {
+      setSaved(true);
+      setAwaitingSave(false);
+      setSawSaving(false);
+    }
+  }, [awaitingSave, saving, sawSaving]);
+
   const handleFileChange = (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -63,6 +79,7 @@ export default function MediaProfileSection({
       return;
     }
     setError("");
+    setSaved(false);
     handleCustomChange(field, file);
   };
 
@@ -73,8 +90,21 @@ export default function MediaProfileSection({
 
   const clearFile = () => {
     setError("");
+    setSaved(false);
     handleCustomChange(field, null);
     if (inputRef.current) inputRef.current.value = "";
+  };
+
+  const handleDelete = () => {
+    setDeleteOpen(true);
+  };
+
+  const handleUploadNew = () => {
+    clearFile();
+    setTimeout(() => {
+      if (disabled) return;
+      inputRef.current?.click();
+    }, 0);
   };
 
   const formatLabel = kind === "video" ? "mp4" : "mp3";
@@ -83,30 +113,36 @@ export default function MediaProfileSection({
   return (
     <div className="space-y-5">
       <div className="rounded-2xl border border-dashed border-slate-200 bg-white/70 p-6">
-        <div className="flex flex-col items-center gap-3 text-center">
-          <label
-            className={`inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-5 py-2 text-xs font-semibold text-slate-700 shadow-sm transition ${
-              disabled
-                ? "opacity-60 cursor-not-allowed"
-                : "cursor-pointer hover:border-orange-200 hover:text-orange-600"
-            }`}
-          >
-            <UploadCloud className="h-4 w-4" />
-            {kind === "video" ? "Upload Video File" : "Upload Audio File"}
-            <Input
-              ref={inputRef}
-              type="file"
-              accept={accept}
-              onChange={handleFileChange}
-              disabled={disabled}
-              className="hidden"
-            />
-          </label>
-          <div className="text-xs text-slate-500">
-            Max Size: 50 MB, Format: {formatLabel}
+        {!previewUrl ? (
+          <div className="flex flex-col items-center gap-3 text-center">
+            <label
+              className={`inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-5 py-2 text-xs font-semibold text-slate-700 shadow-sm transition ${
+                disabled
+                  ? "opacity-60 cursor-not-allowed"
+                  : "cursor-pointer hover:border-orange-200 hover:text-orange-600"
+              }`}
+            >
+              <UploadCloud className="h-4 w-4" />
+              {kind === "video" ? "Upload Video File" : "Upload Audio File"}
+              <Input
+                ref={inputRef}
+                type="file"
+                accept={accept}
+                onChange={handleFileChange}
+                disabled={disabled}
+                className="hidden"
+              />
+            </label>
+            <div className="text-xs text-slate-500">
+              Max Size: 50 MB, Format: {formatLabel}
+            </div>
+            {error ? <p className="text-sm text-red-500">{error}</p> : null}
           </div>
-          {error ? <p className="text-sm text-red-500">{error}</p> : null}
-        </div>
+        ) : (
+          <div className="flex flex-col items-center gap-3 text-center">
+            {error ? <p className="text-sm text-red-500">{error}</p> : null}
+          </div>
+        )}
 
         {previewUrl && kind === "audio" ? (
           <audio controls className="mt-4 w-full" src={previewUrl} />
@@ -120,18 +156,24 @@ export default function MediaProfileSection({
         <div className="flex flex-wrap items-center justify-center gap-2">
           <button
             type="button"
-            onClick={() =>
-              onAskConfirm?.(`media:${kind}`, title, () => savePersonalInfo())
-            }
-            disabled={disabled || !!saving}
-            className="inline-flex h-10 items-center gap-2 rounded-xl border border-orange-600 px-4 py-2 text-sm font-medium text-white bg-orange-600 hover:bg-orange-700 active:scale-[0.98] transition disabled:cursor-not-allowed disabled:opacity-60"
+            onClick={() => {
+              setAwaitingSave(true);
+              setSawSaving(false);
+              onAskConfirm?.(`media:${kind}`, title, () => savePersonalInfo());
+            }}
+            disabled={disabled || !!saving || (saved && !!previewUrl)}
+            className={`inline-flex h-10 items-center gap-2 rounded-xl border px-4 py-2 text-sm font-medium transition disabled:cursor-not-allowed disabled:opacity-60 ${
+              saved && !saving
+                ? "border-slate-200 text-slate-600 bg-white"
+                : "border-orange-600 text-white bg-orange-600 hover:bg-orange-700"
+            }`}
           >
             <Save className="h-4 w-4" />
-            {saving ? "Saving..." : "Save"}
+            {saving ? "Saving..." : saved ? "Saved" : "Save"}
           </button>
           <button
             type="button"
-            onClick={clearFile}
+            onClick={handleDelete}
             disabled={disabled || !previewUrl}
             className="inline-flex h-10 items-center gap-2 rounded-xl border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700 hover:border-orange-200 hover:text-orange-600 disabled:cursor-not-allowed disabled:opacity-60"
           >
@@ -140,7 +182,7 @@ export default function MediaProfileSection({
           </button>
           <button
             type="button"
-            onClick={handlePick}
+            onClick={handleUploadNew}
             disabled={disabled}
             className="inline-flex h-10 items-center gap-2 rounded-xl border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700 hover:border-orange-200 hover:text-orange-600 disabled:cursor-not-allowed disabled:opacity-60"
           >
@@ -149,6 +191,18 @@ export default function MediaProfileSection({
           </button>
         </div>
       </div>
+      <ConfirmDialog
+        isOpen={deleteOpen}
+        onConfirm={() => {
+          clearFile();
+          setDeleteOpen(false);
+        }}
+        onCancel={() => setDeleteOpen(false)}
+        title="Delete file?"
+        description="Are you sure you want to delete it?"
+        confirmText="Yes"
+        cancelText="No"
+      />
     </div>
   );
 }

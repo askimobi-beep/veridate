@@ -25,12 +25,12 @@ export default function DirectoryCard({ profile }) {
 
   return (
     <Card className="hover:shadow-xl transition rounded-xl border border-gray-200">
-      <CardHeader className="flex flex-row items-center gap-3">
+      <CardHeader className="flex flex-row items-center gap-4">
         <Avatar className="h-12 w-12 ring-2 ring-orange-200">
           <AvatarImage src={profile.profilePicUrl || ""} alt={profile.name} />
           <AvatarFallback>{initials(profile.name)}</AvatarFallback>
         </Avatar>
-        <div className="space-y-0.5">
+        <div className="flex flex-col items-start justify-center space-y-0.5 text-left -mt-2">
           <CardTitle className="text-base">{profile.name}</CardTitle>
           <div className="text-xs text-muted-foreground flex items-center gap-1">
             <Mail className="h-3.5 w-3.5" />

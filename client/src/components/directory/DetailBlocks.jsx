@@ -49,9 +49,8 @@ export function LinkText({ href, children }) {
       href={href}
       target="_blank"
       rel="noreferrer"
-      className="inline-flex items-center gap-1 underline underline-offset-4 hover:opacity-80"
+      className="hover:underline hover:underline-offset-4 hover:opacity-80"
     >
-      <LinkIcon className="h-3.5 w-3.5" />
       <span>{children}</span>
     </a>
   );

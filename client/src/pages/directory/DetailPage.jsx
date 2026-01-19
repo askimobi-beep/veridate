@@ -343,17 +343,15 @@ function VerificationSummaryBox({ count = 0, type, verifications = [], onOpen })
       onClick={canOpen ? onOpen : undefined}
       className="w-full max-w-[520px] mr-auto rounded-xl border-0 bg-transparent px-0 py-0 text-left text-slate-700 shadow-none"
     >
-      <div className="text-sm font-semibold text-slate-800">
-        {count} {verifyCountText(count, type)}.
-      </div>
-      <div className="mt-2 flex flex-wrap items-center gap-2 text-sm text-slate-700">
+      <div className="flex items-center gap-2 text-sm text-slate-700">
+        <span className="font-semibold text-slate-600">Rating:</span>
         <ReviewStars value={average} readOnly size="sm" className="drop-shadow-sm" />
         <span className="text-xs font-semibold text-slate-700">
-          {average ? `${average.toFixed(1)} / 5` : "0 / 5"}
+          {average ? `${Math.round(average)} / 5` : "0 / 5"}
         </span>
       </div>
       <div className="mt-1 text-xs font-semibold text-slate-600">
-        {reviewsCount} veridation{reviewsCount === 1 ? "" : "s"}
+        {count} veridation{count === 1 ? "" : "s"}
       </div>
     </BoxTag>
   );
@@ -414,76 +412,120 @@ function timeAgo(value) {
 }
 
 function EducationDetails({ edu, fileUrl }) {
+  const instituteHref = edu.instituteWebsite || undefined;
+  const fileHref = edu.degreeFile ? fileUrl("education", edu.degreeFile) : undefined;
+  const dateRange = [fmtDate(edu.startDate), fmtDate(edu.endDate)]
+    .filter(Boolean)
+    .join(" till ");
+
   return (
-    <DefinitionList>
-      <DLRow label="Degree Title">{edu.degreeTitle}</DLRow>
-      <DLRow label="Institute">{edu.institute}</DLRow>
-      <DLRow label="Institute Website">
-        <LinkText href={edu.instituteWebsite}>{edu.instituteWebsite}</LinkText>
-      </DLRow>
-      <DLRow label="Start">{fmtDate(edu.startDate)}</DLRow>
-      <DLRow label="End">{fmtDate(edu.endDate)}</DLRow>
-      <DLRow label="Degree File">
-        <LinkText
-          href={
-            edu.degreeFile ? fileUrl("education", edu.degreeFile) : undefined
-          }
-        >
-          {edu.degreeFile || "—"}
-        </LinkText>
-      </DLRow>
-    </DefinitionList>
+    <div className="space-y-3 text-left">
+      <div>
+        <h4 className="text-[18px] font-semibold text-slate-800">
+          {edu.degreeTitle || "Education"}
+        </h4>
+        <div className="mt-1 text-[16px] text-slate-600">
+          {edu.institute ? (
+            <LinkText href={instituteHref}>{edu.institute}</LinkText>
+          ) : (
+            <span>Institute not provided</span>
+          )}
+          {dateRange ? <span>, {dateRange}</span> : null}
+          {fileHref ? (
+            <span className="block mt-1 text-[14px]">
+              <LinkText href={fileHref}>View Degree File</LinkText>
+            </span>
+          ) : null}
+        </div>
+      </div>
+      {!fileHref ? (
+        <span className="text-sm text-slate-500">Degree file not provided</span>
+      ) : null}
+    </div>
   );
 }
-
 function ExperienceDetails({ exp, fileUrl }) {
+  const companyHref = exp.companyWebsite || undefined;
+  const fileHref = exp.experienceLetterFile
+    ? fileUrl("experience", exp.experienceLetterFile)
+    : undefined;
+  const dateRange = [fmtDate(exp.startDate), fmtDate(exp.endDate)]
+    .filter(Boolean)
+    .join(" till ");
+
   return (
-    <DefinitionList>
-      <DLRow label="Job Title">{exp.jobTitle}</DLRow>
-      <DLRow label="Company">{exp.company}</DLRow>
-      <DLRow label="Company Website">
-        <LinkText href={exp.companyWebsite}>{exp.companyWebsite}</LinkText>
-      </DLRow>
-      <DLRow label="Start">{fmtDate(exp.startDate)}</DLRow>
-      <DLRow label="End">{fmtDate(exp.endDate)}</DLRow>
-      <DLRow label="Experience Letter">
-        <LinkText
-          href={
-            exp.experienceLetterFile
-              ? fileUrl("experience", exp.experienceLetterFile)
-              : undefined
-          }
-        >
-          {exp.experienceLetterFile || "—"}
-        </LinkText>
-      </DLRow>
-      <DLRow label="Job Functions">{joinArr(exp.jobFunctions)}</DLRow>
-      <DLRow label="Industry">{exp.industry}</DLRow>
-    </DefinitionList>
+    <div className="space-y-3 text-left">
+      <div>
+        <h4 className="text-[18px] font-semibold text-slate-800">
+          {exp.jobTitle || "Experience"}
+        </h4>
+        <div className="mt-1 text-[16px] text-slate-600">
+          {exp.company ? (
+            <LinkText href={companyHref}>{exp.company}</LinkText>
+          ) : (
+            <span>Company not provided</span>
+          )}
+          {dateRange ? <span>, {dateRange}</span> : null}
+          {fileHref ? (
+            <span className="block mt-1 text-[14px]">
+              <LinkText href={fileHref}>View Experience Letter</LinkText>
+            </span>
+          ) : null}
+        </div>
+      </div>
+      {!fileHref ? (
+        <span className="text-sm text-slate-500">Experience letter not provided</span>
+      ) : null}
+    </div>
   );
 }
-
 function ProjectDetails({ project }) {
-  const members = Array.isArray(project.projectMember)
-    ? project.projectMember.join(", ")
-    : project.projectMember;
+  const projectHref = project.projectUrl || undefined;
+  const dateRange = [fmtDate(project.startDate), fmtDate(project.endDate)]
+    .filter(Boolean)
+    .join(" till ");
+
   return (
-    <DefinitionList>
-      <DLRow label="Project Title">{project.projectTitle}</DLRow>
-      <DLRow label="Work Experience">{project.company}</DLRow>
-      <DLRow label="Project URL">
-        <LinkText href={project.projectUrl}>{project.projectUrl}</LinkText>
-      </DLRow>
-      <DLRow label="Start">{fmtDate(project.startDate)}</DLRow>
-      <DLRow label="End">{fmtDate(project.endDate)}</DLRow>
-      <DLRow label="Department">{project.department}</DLRow>
-      <DLRow label="Project members">{members}</DLRow>
-      <DLRow label="Role">{project.role}</DLRow>
-      <DLRow label="Description">{project.description}</DLRow>
-    </DefinitionList>
+    <div className="space-y-3 text-left">
+      <div>
+        <h4 className="text-[18px] font-semibold text-slate-800">
+          {project.projectTitle || "Project"}
+        </h4>
+        <div className="mt-1 text-[16px] text-slate-600">
+          {project.company ? (
+            <span>{project.company}</span>
+          ) : (
+            <span>Company not provided</span>
+          )}
+          {dateRange ? <span>, {dateRange}</span> : null}
+          {projectHref ? (
+            <span className="block mt-0 text-[14px]">
+              <LinkText href={projectHref}>View Project URL</LinkText>
+            </span>
+          ) : null}
+        </div>
+      </div>
+      {!projectHref ? (
+        <span className="text-sm text-slate-500">Project URL not provided</span>
+      ) : null}
+      <div className="text-[14px] text-slate-700 space-y-1">
+        {project.department ? <div>Department: {project.department}</div> : null}
+        {project.projectMember ? (
+          <div>
+            Project members:{" "}
+            {Array.isArray(project.projectMember)
+              ? project.projectMember.join(", ")
+              : project.projectMember}
+          </div>
+        ) : null}
+        {project.role ? <div>Role: {project.role}</div> : null}
+        {project.description ? (
+          <div>Description: {project.description}</div>
+        ) : null}
+      </div>
+    </div>
   );
 }
-
 function SectionCard({ id, title, icon: Icon, children }) {
   return (
     <div
@@ -1038,11 +1080,6 @@ export default function DetailPage() {
     { key: "name", label: "Full Name", value: fullName },
     { key: "email", label: "Email", value: profile?.email || "" },
     { key: "mobile", label: "Mobile", value: profile?.mobile || "" },
-    {
-      key: "mobileCountryCode",
-      label: "Mobile Country Code",
-      value: profile?.mobileCountryCode || "",
-    },
     { key: "gender", label: "Gender", value: profile?.gender || "" },
     { key: "fatherName", label: "Father Name", value: profile?.fatherName || "" },
     { key: "cnic", label: "CNIC", value: profile?.cnic || "" },
@@ -1317,7 +1354,13 @@ export default function DetailPage() {
             variant="ghost"
             size="sm"
             className="flex items-center gap-2 text-slate-700 hover:text-slate-900"
-            onClick={() => navigate(-1)}
+            onClick={() => {
+              if (window.history.length > 1) {
+                navigate(-1);
+              } else {
+                navigate("/dashboard/directory");
+              }
+            }}
           >
             <ArrowLeft className="h-4 w-4" />
             Back
@@ -1328,7 +1371,7 @@ export default function DetailPage() {
         <Card className="mb-6 overflow-hidden border border-orange-200/70 bg-[#f3f4f6] shadow-[0_18px_40px_-28px_rgba(15,23,42,0.35)]">
           <div className="relative">
             <CardContent className="relative flex flex-col gap-6 p-6 text-slate-900 md:flex-row md:items-center md:justify-between">
-              <div className="flex items-start gap-4 md:gap-6">
+                <div className="flex items-center gap-5 md:gap-7">
                 <div className="relative">
                   <div className="absolute inset-0 rounded-full bg-white/80 blur-xl" />
                   <div className="relative rounded-full bg-orange-200 p-1.5 shadow-sm backdrop-blur-sm">
@@ -1343,7 +1386,7 @@ export default function DetailPage() {
                   </div>
                 </div>
                 <div className="flex flex-1 flex-col gap-4">
-                  <div className="flex flex-wrap items-center gap-2">
+                  <div className="flex flex-wrap items-center justify-center gap-2 text-center md:justify-start md:text-left">
                     <h1 className="text-2xl font-semibold tracking-tight md:text-3xl">
                       {fullName}
                     </h1>
@@ -1441,11 +1484,7 @@ export default function DetailPage() {
                           >
                             {detail.label}:
                           </span>{" "}
-                          <span
-                            className={`${
-                              isName ? "font-bold text-black" : "font-medium text-slate-800"
-                            }`}
-                          >
+                          <span className="font-bold text-black">
                             {detail.value || ""}
                           </span>
                         </div>
@@ -1485,7 +1524,9 @@ export default function DetailPage() {
                         key={String(edu._id)}
                         className="border-orange-200/70 bg-slate-50 shadow-[0_18px_50px_-30px_rgba(15,23,42,0.35)]"
                       >
-                        <div className="mb-3 grid grid-cols-1 gap-3 md:grid-cols-[minmax(0,320px)_1fr] md:items-start">
+                        <EducationDetails edu={edu} fileUrl={fileUrl} />
+                        <div className="my-3 h-px bg-slate-200/40" />
+                        <div className="grid grid-cols-1 gap-3 md:grid-cols-[minmax(0,320px)_1fr] md:items-start">
                           <div>
                             <VerificationSummaryBox
                               count={cnt}
@@ -1506,8 +1547,6 @@ export default function DetailPage() {
                             />
                           </div>
                         </div>
-                        <div className="my-3 h-px bg-slate-200/60" />
-                        <EducationDetails edu={edu} fileUrl={fileUrl} />
                       </SubSection>
                     );
                   })}
@@ -1544,7 +1583,9 @@ export default function DetailPage() {
                         key={String(exp._id)}
                         className="border-orange-200/70 bg-slate-50 shadow-[0_18px_50px_-30px_rgba(15,23,42,0.35)]"
                       >
-                        <div className="mb-3 grid grid-cols-1 gap-3 md:grid-cols-[minmax(0,320px)_1fr] md:items-start">
+                        <ExperienceDetails exp={exp} fileUrl={fileUrl} />
+                        <div className="my-3 h-px bg-slate-200/40" />
+                        <div className="grid grid-cols-1 gap-3 md:grid-cols-[minmax(0,320px)_1fr] md:items-start">
                           <div>
                             <VerificationSummaryBox
                               count={cnt}
@@ -1565,8 +1606,6 @@ export default function DetailPage() {
                             />
                           </div>
                         </div>
-                        <div className="my-3 h-px bg-slate-200/60" />
-                        <ExperienceDetails exp={exp} fileUrl={fileUrl} />
                       </SubSection>
                     );
                   })}
@@ -1603,7 +1642,9 @@ export default function DetailPage() {
                         key={String(project._id)}
                         className="border-orange-200/70 bg-slate-50 shadow-[0_18px_50px_-30px_rgba(15,23,42,0.35)]"
                       >
-                        <div className="mb-3 grid grid-cols-1 gap-3 md:grid-cols-[minmax(0,320px)_1fr] md:items-start">
+                        <ProjectDetails project={project} />
+                        <div className="my-3 h-px bg-slate-200/40" />
+                        <div className="grid grid-cols-1 gap-3 md:grid-cols-[minmax(0,320px)_1fr] md:items-start">
                           <div>
                             <VerificationSummaryBox
                               count={cnt}
@@ -1624,8 +1665,6 @@ export default function DetailPage() {
                             />
                           </div>
                         </div>
-                        <div className="my-3 h-px bg-slate-200/60" />
-                        <ProjectDetails project={project} />
                       </SubSection>
                     );
                   })}
@@ -1711,3 +1750,7 @@ function badgeClass(count) {
   if (count >= 3) return "bg-zinc-300 text-zinc-900 hover:bg-zinc-300";
   return "bg-zinc-900 text-white hover:bg-zinc-900";
 }
+
+
+
+
