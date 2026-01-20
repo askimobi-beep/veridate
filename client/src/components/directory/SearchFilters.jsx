@@ -125,8 +125,6 @@ export default function SearchFilters({
   setEmail,
   mobile,
   setMobile,
-  userId,
-  setUserId,
   jobTitle,
   setJobTitle,
   degreeTitle,
@@ -153,7 +151,7 @@ export default function SearchFilters({
 }) {
   return (
     <form onSubmit={onSearch} className="space-y-3 text-left">
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+      <div className="grid grid-cols-1 gap-3">
         <FilterField label="Name">
           <Input
             placeholder="Candidate name"
@@ -177,15 +175,6 @@ export default function SearchFilters({
             placeholder="Mobile"
             value={mobile}
             onChange={(e) => setMobile(e.target.value)}
-            className="h-9 rounded-xl border border-slate-200/80 bg-white/70 text-left text-slate-700 shadow-[0_12px_30px_-20px_rgba(15,23,42,0.55)] backdrop-blur-md"
-          />
-        </FilterField>
-
-        <FilterField label="User ID">
-          <Input
-            placeholder="User ID"
-            value={userId}
-            onChange={(e) => setUserId(e.target.value)}
             className="h-9 rounded-xl border border-slate-200/80 bg-white/70 text-left text-slate-700 shadow-[0_12px_30px_-20px_rgba(15,23,42,0.55)] backdrop-blur-md"
           />
         </FilterField>

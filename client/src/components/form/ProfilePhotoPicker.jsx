@@ -50,9 +50,11 @@
       onChange,          // (file|null)
       onSave,            // () => Promise<void>
       className,
+      buttonClassName,
       avatarClassName = "h-24 w-24", // slightly bigger default
       modalZ = 9999,
       fallbackText = "",
+      buttonTitle,
     },
     ref
   ) {
@@ -349,8 +351,10 @@
               "ring-0 outline-none focus-visible:ring-2 focus-visible:ring-orange-500",
               "aspect-square object-cover",
               disabled ? "opacity-60 cursor-not-allowed" : "cursor-pointer",
-              avatarClassName
+              avatarClassName,
+              buttonClassName
             )}
+            title={buttonTitle}
             aria-label="Open profile photo options"
           >
             {previewUrl ? (
