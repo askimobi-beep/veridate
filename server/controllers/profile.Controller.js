@@ -947,82 +947,87 @@ exports.listProfilesPublic = async (req, res) => {
     page = parseInt(page, 10);
     limit = Math.min(50, parseInt(limit, 10) || 12);
 
-    const andClauses = [];
+    const matchClauses = [];
+    const orClauses = [];
+    const addMatchClause = (clause, includeInOr = true) => {
+      matchClauses.push(clause);
+      if (includeInOr) orClauses.push(clause);
+    };
 
     const qValue = String(q || "").trim();
     if (qValue) {
       const rx = new RegExp(qValue, "i");
-      andClauses.push({ name: rx });
+      addMatchClause({ name: rx });
     }
 
     const emailValue = String(email || "").trim();
     if (emailValue) {
       const rx = new RegExp(emailValue, "i");
-      andClauses.push({ email: rx });
+      addMatchClause({ email: rx });
     }
 
     const mobileValue = String(mobile || "").trim();
     if (mobileValue) {
       const rx = new RegExp(mobileValue, "i");
-      andClauses.push({ mobile: rx });
+      addMatchClause({ mobile: rx });
     }
 
     const userIdValue = String(userId || "").trim();
     if (userIdValue) {
       if (ObjectId.isValid(userIdValue)) {
         const oid = new ObjectId(userIdValue);
-        andClauses.push({ $or: [{ user: oid }, { _id: oid }] });
+        addMatchClause({ $or: [{ user: oid }, { _id: oid }] });
       } else {
-        andClauses.push({ _id: { $in: [] } });
+        addMatchClause({ _id: { $in: [] } }, false);
       }
     }
 
     const jobTitleValue = String(jobTitle || "").trim();
     if (jobTitleValue) {
       const rx = new RegExp(jobTitleValue, "i");
-      andClauses.push({ "experience.jobTitle": rx });
+      addMatchClause({ "experience.jobTitle": rx });
     }
 
     const degreeTitleValue = String(degreeTitle || "").trim();
     if (degreeTitleValue) {
       const rx = new RegExp(degreeTitleValue, "i");
-      andClauses.push({ "education.degreeTitle": rx });
+      addMatchClause({ "education.degreeTitle": rx });
     }
 
     const companyValue = String(company || "").trim();
     if (companyValue) {
       const rx = new RegExp(companyValue, "i");
-      andClauses.push({ "experience.company": rx });
+      addMatchClause({ "experience.company": rx });
     }
 
     const industryValue = String(industry || "").trim();
     if (industryValue) {
       const rx = new RegExp(industryValue, "i");
-      andClauses.push({ "experience.industry": rx });
+      addMatchClause({ "experience.industry": rx });
     }
 
     const instituteValue = String(institute || "").trim();
     if (instituteValue) {
       const rx = new RegExp(instituteValue, "i");
-      andClauses.push({ "education.institute": rx });
+      addMatchClause({ "education.institute": rx });
     }
 
     const jobFunctionsValue = String(jobFunctions || "").trim();
     if (jobFunctionsValue) {
       const rx = new RegExp(jobFunctionsValue, "i");
-      andClauses.push({ "experience.jobFunctions": rx });
+      addMatchClause({ "experience.jobFunctions": rx });
     }
 
     const skillsetValue = String(skillset || "").trim();
     if (skillsetValue) {
       const rx = new RegExp(skillsetValue, "i");
-      andClauses.push({ "experience.jobFunctions": rx });
+      addMatchClause({ "experience.jobFunctions": rx });
     }
 
     const locationValue = String(location || "").trim();
     if (locationValue) {
       const rx = new RegExp(locationValue, "i");
-      andClauses.push({ $or: [{ city: rx }, { country: rx }] });
+      addMatchClause({ $or: [{ city: rx }, { country: rx }] });
     }
 
     const durationValue = Number(experienceDuration);
@@ -1030,7 +1035,7 @@ exports.listProfilesPublic = async (req, res) => {
       const durationMs = Math.round(
         durationValue * 365 * 24 * 60 * 60 * 1000
       );
-      andClauses.push({
+      addMatchClause({
         experience: {
           $elemMatch: {
             startDate: { $ne: null },
@@ -1049,10 +1054,11 @@ exports.listProfilesPublic = async (req, res) => {
         },
       });
     }
+
     const expValue = String(experience || "").trim();
     if (expValue) {
       const rx = new RegExp(expValue, "i");
-      andClauses.push({
+      addMatchClause({
         $or: [{ "experience.company": rx }, { "experience.jobTitle": rx }],
       });
     }
@@ -1060,38 +1066,154 @@ exports.listProfilesPublic = async (req, res) => {
     const uniValue = String(university || "").trim();
     if (uniValue) {
       const rx = new RegExp(uniValue, "i");
-      andClauses.push({ "education.institute": rx });
+      addMatchClause({ "education.institute": rx });
     }
-    if (gender) andClauses.push({ gender });
-    if (country) andClauses.push({ country });
 
-    // 🔒 hide my own profile if logged in
+    if (gender) addMatchClause({ gender });
+    if (country) addMatchClause({ country });
+
+    // dY"' hide my own profile if logged in
+    const globalClauses = [];
     const loggedUserId = req.user?.id || req.user?._id; // depends on your JWT payload
     if (loggedUserId && ObjectId.isValid(loggedUserId)) {
-      andClauses.push({ user: { $ne: new ObjectId(loggedUserId) } });
+      globalClauses.push({ user: { $ne: new ObjectId(loggedUserId) } });
     }
 
     // optional: also honor ?excludeId=<profileId or userId>
     if (excludeId) {
       if (ObjectId.isValid(excludeId)) {
-        andClauses.push({ _id: { $ne: new ObjectId(excludeId) } });
-        andClauses.push({ user: { $ne: new ObjectId(excludeId) } });
+        globalClauses.push({ _id: { $ne: new ObjectId(excludeId) } });
+        globalClauses.push({ user: { $ne: new ObjectId(excludeId) } });
       }
     }
 
-    const filter = andClauses.length ? { $and: andClauses } : {};
+    const noFilters = matchClauses.length === 0 && orClauses.length === 0;
+    if (noFilters) {
+      const filter = globalClauses.length ? { $and: globalClauses } : {};
 
-    const [rows, total] = await Promise.all([
-      Profile.find(filter)
+      const [rows, total] = await Promise.all([
+        Profile.find(filter)
+          .select(
+            "user name email mobile gender city country profilePic education experience personalHiddenFields"
+          )
+          .sort({ createdAt: -1 })
+          .skip((page - 1) * limit)
+          .limit(limit)
+          .lean(),
+        Profile.countDocuments(filter),
+      ]);
+
+      const data = rows.map((p) => {
+        const isHidden = (k) =>
+          Array.isArray(p.personalHiddenFields) &&
+          p.personalHiddenFields.includes(k);
+
+        const pickLatest = (arr, endKey = "endDate", startKey = "startDate") => {
+          if (!Array.isArray(arr) || !arr.length) return null;
+          const copy = [...arr];
+          copy.sort((a, b) => {
+            const ad = new Date(a?.[endKey] || a?.[startKey] || 0).getTime();
+            const bd = new Date(b?.[endKey] || b?.[startKey] || 0).getTime();
+            return bd - ad;
+          });
+          return copy[0] || null;
+        };
+
+        const latestEdu = pickLatest(p.education);
+        const latestExp = pickLatest(p.experience);
+
+        const educationCard = latestEdu
+          ? {
+              degreeTitle:
+                Array.isArray(latestEdu.hiddenFields) &&
+                latestEdu.hiddenFields.includes("degreeTitle")
+                  ? ""
+                  : latestEdu.degreeTitle || "",
+            }
+          : null;
+
+        return {
+          _id: p._id,
+          user:
+            typeof p.user === "object" && p.user?.toString
+              ? p.user.toString()
+              : p.user || "",
+          name: p.name || "Unnamed",
+          email: isHidden("email") ? "" : p.email || "",
+          mobile: isHidden("mobile") ? "" : p.mobile || "",
+          gender: p.gender || "",
+          city: p.city || "",
+          country: p.country || "",
+          profilePicUrl: makeFileUrl(req, "profile", p.profilePic),
+          education: educationCard,
+          experience: latestExp
+            ? {
+                jobTitle: latestExp.jobTitle || "",
+                company: latestExp.company || "",
+              }
+            : null,
+        };
+      });
+
+      return res.status(200).json({
+        page,
+        limit,
+        total,
+        hasMore: page * limit < total,
+        data,
+      });
+    }
+
+    const exactClauses = [...matchClauses, ...globalClauses];
+    const exactFilter = exactClauses.length ? { $and: exactClauses } : {};
+
+    const exactTotal = matchClauses.length
+      ? await Profile.countDocuments(exactFilter)
+      : 0;
+
+    let partialFilter = null;
+    let partialTotal = 0;
+    if (orClauses.length) {
+      const partialClauses = [{ $or: orClauses }, ...globalClauses];
+      if (matchClauses.length) {
+        partialClauses.push({ $nor: [{ $and: matchClauses }] });
+      }
+      partialFilter =
+        partialClauses.length > 1 ? { $and: partialClauses } : partialClauses[0];
+      partialTotal = await Profile.countDocuments(partialFilter);
+    }
+
+    const total = exactTotal + partialTotal;
+    const offset = (page - 1) * limit;
+
+    let exactRows = [];
+    if (exactTotal > offset) {
+      const exactLimit = Math.min(limit, exactTotal - offset);
+      exactRows = await Profile.find(exactFilter)
         .select(
           "user name email mobile gender city country profilePic education experience personalHiddenFields"
         )
         .sort({ createdAt: -1 })
-        .skip((page - 1) * limit)
-        .limit(limit)
-        .lean(),
-      Profile.countDocuments(filter),
-    ]);
+        .skip(offset)
+        .limit(exactLimit)
+        .lean();
+    }
+
+    const remaining = limit - exactRows.length;
+    let partialRows = [];
+    if (remaining > 0 && partialFilter && partialTotal > 0) {
+      const partialSkip = Math.max(0, offset - exactTotal);
+      partialRows = await Profile.find(partialFilter)
+        .select(
+          "user name email mobile gender city country profilePic education experience personalHiddenFields"
+        )
+        .sort({ createdAt: -1 })
+        .skip(partialSkip)
+        .limit(remaining)
+        .lean();
+    }
+
+    const rows = [...exactRows, ...partialRows];
 
     const data = rows.map((p) => {
       const isHidden = (k) =>
