@@ -1144,6 +1144,7 @@ exports.listProfilesPublic = async (req, res) => {
           gender: p.gender || "",
           city: p.city || "",
           country: p.country || "",
+          matchType: "",
           profilePicUrl: makeFileUrl(req, "profile", p.profilePic),
           education: educationCard,
           experience: latestExp
@@ -1198,6 +1199,11 @@ exports.listProfilesPublic = async (req, res) => {
         .limit(exactLimit)
         .lean();
     }
+    if (exactRows.length) {
+      exactRows.forEach((row) => {
+        row.matchType = "exact";
+      });
+    }
 
     const remaining = limit - exactRows.length;
     let partialRows = [];
@@ -1211,6 +1217,11 @@ exports.listProfilesPublic = async (req, res) => {
         .skip(partialSkip)
         .limit(remaining)
         .lean();
+    }
+    if (partialRows.length) {
+      partialRows.forEach((row) => {
+        row.matchType = "partial";
+      });
     }
 
     const rows = [...exactRows, ...partialRows];
@@ -1256,6 +1267,7 @@ exports.listProfilesPublic = async (req, res) => {
         gender: p.gender || "",
         city: p.city || "",
         country: p.country || "",
+        matchType: p.matchType || "",
         profilePicUrl: makeFileUrl(req, "profile", p.profilePic),
         education: educationCard,
         experience: latestExp

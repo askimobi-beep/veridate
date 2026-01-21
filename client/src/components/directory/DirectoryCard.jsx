@@ -31,10 +31,17 @@ export default function DirectoryCard({ profile }) {
           <AvatarFallback>{initials(profile.name)}</AvatarFallback>
         </Avatar>
         <div className="flex flex-col items-start justify-center space-y-0.5 text-left -mt-2">
-          <CardTitle className="text-base">{profile.name}</CardTitle>
+          <div className="flex items-center gap-2">
+            <CardTitle className="text-base">{profile.name}</CardTitle>
+            {profile.matchType === "exact" ? (
+              <Badge variant="secondary" className="rounded-full px-2 py-0.5 text-[10px]">
+                Exact match
+              </Badge>
+            ) : null}
+          </div>
           <div className="text-xs text-muted-foreground flex items-center gap-1">
             <Mail className="h-3.5 w-3.5" />
-            {profile.email || "—"}
+            {profile.email || "?"}
           </div>
         </div>
       </CardHeader>
