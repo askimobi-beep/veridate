@@ -125,6 +125,15 @@ exports.savePersonalInfo = async (req, res) => {
   try {
     const userId = req.user.id;
     const profile = await Profile.findOne({ user: userId });
+    const isTruthy = (value) => {
+      if (typeof value === "boolean") return value;
+      if (typeof value === "number") return value > 0;
+      return ["true", "1", "yes", "y"].includes(
+        String(value || "")
+          .trim()
+          .toLowerCase()
+      );
+    };
 
     // fields allowed to update when section is locked
     const ALLOWED_WHEN_LOCKED = new Set([
@@ -151,6 +160,23 @@ exports.savePersonalInfo = async (req, res) => {
       filesUpdate.audioProfile = req.files.audioProfile[0].filename;
     if (req.files?.videoProfile?.[0])
       filesUpdate.videoProfile = req.files.videoProfile[0].filename;
+
+    const removeAudioProfile = isTruthy(req.body.removeAudioProfile);
+    const removeVideoProfile = isTruthy(req.body.removeVideoProfile);
+
+    if (removeAudioProfile && !filesUpdate.audioProfile) {
+      if (profile?.audioProfile) {
+        removeOldPersonalFile?.("audioProfile", profile.audioProfile);
+      }
+      filesUpdate.audioProfile = null;
+    }
+
+    if (removeVideoProfile && !filesUpdate.videoProfile) {
+      if (profile?.videoProfile) {
+        removeOldPersonalFile?.("videoProfile", profile.videoProfile);
+      }
+      filesUpdate.videoProfile = null;
+    }
 
     // read body fields (now includes mobileCountryCode)
     const fields = [
@@ -1306,15 +1332,15 @@ exports.getProfileByUserId = async (req, res) => {
     const profile = await Profile.findOne({ user: userId })
       .populate({
         path: "education.verifications.user",
-        select: "name email profilePic",
+        select: "firstName lastName name email profilePic",
       })
       .populate({
         path: "experience.verifications.user",
-        select: "name email profilePic",
+        select: "firstName lastName name email profilePic",
       })
       .populate({
         path: "projects.verifications.user",
-        select: "name email profilePic",
+        select: "firstName lastName name email profilePic",
       })
       .lean();
 
@@ -1341,15 +1367,15 @@ exports.getProfile = async (req, res) => {
     const profile = await Profile.findOne({ user: req.user.id })
       .populate({
         path: "education.verifications.user",
-        select: "name email profilePic",
+        select: "firstName lastName name email profilePic",
       })
       .populate({
         path: "experience.verifications.user",
-        select: "name email profilePic",
+        select: "firstName lastName name email profilePic",
       })
       .populate({
         path: "projects.verifications.user",
-        select: "name email profilePic",
+        select: "firstName lastName name email profilePic",
       });
     if (!profile) return res.status(404).json({ message: "No profile found" });
     res.status(200).json(profile);

@@ -18,6 +18,7 @@ export default function MediaProfileSection({
   saving,
 }) {
   const field = kind === "video" ? "videoProfile" : "audioProfile";
+  const removeField = kind === "video" ? "removeVideoProfile" : "removeAudioProfile";
   const folder = kind === "video" ? "video" : "audio";
   const accept = kind === "video" ? "video/*" : "audio/*";
   const baseUploads = import.meta.env.VITE_API_PIC_URL
@@ -80,6 +81,7 @@ export default function MediaProfileSection({
     }
     setError("");
     setSaved(false);
+    handleCustomChange(removeField, false);
     handleCustomChange(field, file);
   };
 
@@ -100,6 +102,7 @@ export default function MediaProfileSection({
   };
 
   const handleUploadNew = () => {
+    handleCustomChange(removeField, false);
     clearFile();
     setTimeout(() => {
       if (disabled) return;
@@ -152,49 +155,55 @@ export default function MediaProfileSection({
         ) : null}
       </div>
 
-      <div className="flex justify-center">
-        <div className="flex flex-wrap items-center justify-center gap-2">
-          <button
-            type="button"
-            onClick={() => {
-              setAwaitingSave(true);
-              setSawSaving(false);
-              onAskConfirm?.(`media:${kind}`, title, () => savePersonalInfo());
-            }}
-            disabled={disabled || !!saving || (saved && !!previewUrl)}
-            className={`inline-flex h-10 items-center gap-2 rounded-xl border px-4 py-2 text-sm font-medium transition disabled:cursor-not-allowed disabled:opacity-60 ${
-              saved && !saving
-                ? "border-slate-200 text-slate-600 bg-white"
-                : "border-orange-600 text-white bg-orange-600 hover:bg-orange-700"
-            }`}
-          >
-            <Save className="h-4 w-4" />
-            {saving ? "Saving..." : saved ? "Saved" : "Save"}
-          </button>
-          <button
-            type="button"
-            onClick={handleDelete}
-            disabled={disabled || !previewUrl}
-            className="inline-flex h-10 items-center gap-2 rounded-xl border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700 hover:border-orange-200 hover:text-orange-600 disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            <X className="h-4 w-4" />
-            Delete
-          </button>
-          <button
-            type="button"
-            onClick={handleUploadNew}
-            disabled={disabled}
-            className="inline-flex h-10 items-center gap-2 rounded-xl border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700 hover:border-orange-200 hover:text-orange-600 disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            <UploadCloud className="h-4 w-4" />
-            {uploadNewLabel}
-          </button>
+      {previewUrl ? (
+        <div className="flex">
+          <div className="flex w-full items-center justify-end gap-[15px]">
+            <button
+              type="button"
+              onClick={handleUploadNew}
+              disabled={disabled}
+              className="inline-flex h-10 items-center gap-2 rounded-xl border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700 hover:border-orange-200 hover:text-orange-600 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              <UploadCloud className="h-4 w-4" />
+              {uploadNewLabel}
+            </button>
+            <button
+              type="button"
+              onClick={handleDelete}
+              disabled={disabled || !previewUrl}
+              className="inline-flex h-10 items-center gap-2 rounded-xl border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700 hover:border-orange-200 hover:text-orange-600 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              <X className="h-4 w-4" />
+              Delete
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setAwaitingSave(true);
+                setSawSaving(false);
+                onAskConfirm?.(`media:${kind}`, title, () => savePersonalInfo());
+              }}
+              disabled={disabled || !!saving || (saved && !!previewUrl)}
+              className={`inline-flex h-10 items-center gap-2 rounded-xl border px-4 py-2 text-sm font-medium transition disabled:cursor-not-allowed disabled:opacity-60 ${
+                saved && !saving
+                  ? "border-slate-200 text-slate-600 bg-white"
+                  : "border-orange-600 text-white bg-orange-600 hover:bg-orange-700"
+              }`}
+            >
+              <Save className="h-4 w-4" />
+              {saving ? "Saving..." : saved ? "Saved" : "Save"}
+            </button>
+          </div>
         </div>
-      </div>
+      ) : null}
       <ConfirmDialog
         isOpen={deleteOpen}
         onConfirm={() => {
           clearFile();
+          handleCustomChange(removeField, true);
+          setAwaitingSave(true);
+          setSawSaving(false);
+          savePersonalInfo();
           setDeleteOpen(false);
         }}
         onCancel={() => setDeleteOpen(false)}

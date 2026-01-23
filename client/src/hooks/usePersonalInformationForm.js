@@ -23,6 +23,8 @@ const getEmptyForm = () => ({
   profilePicPending: null,
   audioProfile: null,
   videoProfile: null,
+  removeAudioProfile: false,
+  removeVideoProfile: false,
   personalHiddenFields: [],
 
   // --- education ---
@@ -299,12 +301,24 @@ export default function usePersonalInformationForm() {
       if (formData.videoProfile instanceof File) {
         fd.append("videoProfile", formData.videoProfile);
       }
+      if (formData.removeAudioProfile) {
+        fd.append("removeAudioProfile", "true");
+      }
+      if (formData.removeVideoProfile) {
+        fd.append("removeVideoProfile", "true");
+      }
 
       const res = await axiosInstance.post("/profile/save-personal-info", fd, {
         headers: { "Content-Type": "multipart/form-data" },
       });
 
-
+      if (formData.removeAudioProfile || formData.removeVideoProfile) {
+        setFormData((prev) => ({
+          ...prev,
+          removeAudioProfile: false,
+          removeVideoProfile: false,
+        }));
+      }
 
       return { ok: true, data: res.data };
     } catch (err) {

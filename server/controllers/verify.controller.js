@@ -244,7 +244,7 @@ exports.verifyEducation = async (req, res) => {
         .select("education")
         .populate({
           path: "education.verifications.user",
-          select: "name email profilePic",
+          select: "firstName lastName name email profilePic",
         })
         .lean(),
     ]);
@@ -493,7 +493,7 @@ exports.verifyExperience = async (req, res) => {
         .select("experience")
         .populate({
           path: "experience.verifications.user",
-          select: "name email profilePic",
+          select: "firstName lastName name email profilePic",
         })
         .lean(),
     ]);
@@ -771,7 +771,7 @@ exports.verifyProject = async (req, res) => {
         .select("projects")
         .populate({
           path: "projects.verifications.user",
-          select: "name email profilePic",
+          select: "firstName lastName name email profilePic",
         })
         .lean(),
     ]);

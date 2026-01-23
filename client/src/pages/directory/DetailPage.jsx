@@ -22,6 +22,7 @@ import {
   Mail,
   MapPin,
   Phone,
+  FileDown,
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -55,7 +56,20 @@ import {
 } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 
-const fmtDate = (d) => (d ? new Date(d).toLocaleDateString() : "");
+const fmtDate = (d) => {
+  if (!d) return "";
+  const dt = new Date(d);
+  if (Number.isNaN(dt.getTime())) return "";
+  const parts = new Intl.DateTimeFormat("en-GB", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  }).formatToParts(dt);
+  const day = parts.find((p) => p.type === "day")?.value || "";
+  const month = parts.find((p) => p.type === "month")?.value || "";
+  const year = parts.find((p) => p.type === "year")?.value || "";
+  return [day, month, year].filter(Boolean).join("-");
+};
 const joinArr = (a) => (Array.isArray(a) && a.length ? a.join(", ") : "");
 const normalize = (s) => (s || "").trim().toLowerCase().replace(/\s+/g, " ");
 const normalizeInstitute = normalize;
@@ -166,7 +180,7 @@ const statusIconByStatus = (status) => {
 const statusIconColor = (status) => {
   switch (status) {
     case "already-verified":
-      return "text-green-600";
+      return "text-orange-600";
     case "eligible":
       return "text-orange-600";
     case "no-credits":
@@ -430,10 +444,15 @@ function EducationDetails({ edu, fileUrl }) {
           ) : (
             <span>Institute not provided</span>
           )}
-          {dateRange ? <span>, {dateRange}</span> : null}
+          {dateRange ? <span> | {dateRange}</span> : null}
           {fileHref ? (
             <span className="block mt-1 text-[14px]">
-              <LinkText href={fileHref}>View Degree File</LinkText>
+              <LinkText href={fileHref}>
+                <span className="inline-flex items-center gap-1">
+                  <FileDown className="h-4 w-4" />
+                  View Degree File
+                </span>
+              </LinkText>
             </span>
           ) : null}
         </div>
@@ -465,10 +484,15 @@ function ExperienceDetails({ exp, fileUrl }) {
           ) : (
             <span>Company not provided</span>
           )}
-          {dateRange ? <span>, {dateRange}</span> : null}
+          {dateRange ? <span> | {dateRange}</span> : null}
           {fileHref ? (
             <span className="block mt-1 text-[14px]">
-              <LinkText href={fileHref}>View Experience Letter</LinkText>
+              <LinkText href={fileHref}>
+                <span className="inline-flex items-center gap-1">
+                  <FileDown className="h-4 w-4" />
+                  View Experience Letter
+                </span>
+              </LinkText>
             </span>
           ) : null}
         </div>
@@ -497,7 +521,7 @@ function ProjectDetails({ project }) {
           ) : (
             <span>Company not provided</span>
           )}
-          {dateRange ? <span>, {dateRange}</span> : null}
+          {dateRange ? <span> | {dateRange}</span> : null}
           {projectHref ? (
             <span className="block mt-0 text-[14px]">
               <LinkText href={projectHref}>View Project URL</LinkText>
@@ -1390,11 +1414,6 @@ export default function DetailPage() {
                     <h1 className="text-2xl font-semibold tracking-tight md:text-3xl">
                       {fullName}
                     </h1>
-                    {profile?.gender ? (
-                      <Badge className="rounded-full border border-orange-200/80 bg-orange-50/80 px-3 py-1 text-[13px] font-medium text-orange-700">
-                        {profile.gender}
-                      </Badge>
-                    ) : null}
                   </div>
                   <div />
                 </div>
