@@ -336,7 +336,7 @@ export default function PersonalDetailsForm({
           name="dob"
           value={formData.dob}
           onChange={handleChange}
-          placeholder="Select month and year"
+          placeholder="MM / YYYY"
           disabled={isDisabled(locked, "dob")}
         />
       </div>

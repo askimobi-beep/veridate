@@ -78,7 +78,9 @@ const fmtMonthYear = (d) => {
     ? new Date(Number(match[1]), Number(match[2]) - 1, 1)
     : new Date(d);
   if (Number.isNaN(dt.getTime())) return "";
-  return dt.toLocaleString("en-GB", { month: "short", year: "numeric" });
+  const mm = String(dt.getMonth() + 1).padStart(2, "0");
+  const yyyy = String(dt.getFullYear());
+  return `${mm} / ${yyyy}`;
 };
 const joinArr = (a) => (Array.isArray(a) && a.length ? a.join(", ") : "");
 const normalize = (s) => (s || "").trim().toLowerCase().replace(/\s+/g, " ");
@@ -1456,9 +1458,6 @@ export default function DetailPage() {
                   <div className="w-full max-w-[320px] rounded-xl border border-orange-200 bg-white/80 px-3 py-2 text-left shadow-sm">
                     <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">
                       Over All Profile Rating
-                    </div>
-                    <div className="mt-1 text-xs text-slate-500">
-                      Total records: {overallRating.totalRecords} • Sum: {overallRating.sumRatings}
                     </div>
                     <div className="mt-1 text-sm font-semibold text-slate-800">
                       ⭐ {overallRating.average.toFixed(1)} / 5

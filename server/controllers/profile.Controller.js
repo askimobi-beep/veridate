@@ -1118,7 +1118,7 @@ exports.listProfilesPublic = async (req, res) => {
       const [rows, total] = await Promise.all([
         Profile.find(filter)
           .select(
-            "user name email mobile gender city country profilePic education experience personalHiddenFields"
+            "user name email mobile gender city country profilePic education experience projects personalHiddenFields"
           )
           .sort({ createdAt: -1 })
           .skip((page - 1) * limit)
@@ -1138,19 +1138,25 @@ exports.listProfilesPublic = async (req, res) => {
           });
           return copy[0] || null;
         };
+        const pickLatestN = (
+          arr,
+          endKey = "endDate",
+          startKey = "startDate",
+          limit = 3
+        ) => {
+          if (!Array.isArray(arr) || !arr.length) return [];
+          const copy = [...arr];
+          copy.sort((a, b) => {
+            const ad = new Date(a?.[endKey] || a?.[startKey] || 0).getTime();
+            const bd = new Date(b?.[endKey] || b?.[startKey] || 0).getTime();
+            return bd - ad;
+          });
+          return copy.slice(0, limit);
+        };
 
-        const latestEdu = pickLatest(p.education);
-        const latestExp = pickLatest(p.experience);
-
-        const educationCard = latestEdu
-          ? {
-              degreeTitle:
-                Array.isArray(latestEdu.hiddenFields) &&
-                latestEdu.hiddenFields.includes("degreeTitle")
-                  ? ""
-                  : latestEdu.degreeTitle || "",
-            }
-          : null;
+        const latestEdu = pickLatestN(p.education);
+        const latestExp = pickLatestN(p.experience);
+        const latestProjects = pickLatestN(p.projects);
 
         return {
           _id: p._id,
@@ -1166,13 +1172,28 @@ exports.listProfilesPublic = async (req, res) => {
           country: p.country || "",
           matchType: "",
           profilePicUrl: makeFileUrl(req, "profile", p.profilePic),
-          education: educationCard,
-          experience: latestExp
-            ? {
-                jobTitle: latestExp.jobTitle || "",
-                company: latestExp.company || "",
-              }
-            : null,
+          education: latestEdu.map((row) => ({
+            degreeTitle:
+              Array.isArray(row.hiddenFields) &&
+              row.hiddenFields.includes("degreeTitle")
+                ? ""
+                : row.degreeTitle || "",
+            institute: row.institute || "",
+            startDate: row.startDate || "",
+            endDate: row.endDate || "",
+          })),
+          experience: latestExp.map((row) => ({
+            jobTitle: row.jobTitle || "",
+            company: row.company || "",
+            startDate: row.startDate || "",
+            endDate: row.endDate || "",
+          })),
+          projects: latestProjects.map((row) => ({
+            projectTitle: row.projectTitle || "",
+            company: row.company || "",
+            startDate: row.startDate || "",
+            endDate: row.endDate || "",
+          })),
         };
       });
 
@@ -1212,7 +1233,7 @@ exports.listProfilesPublic = async (req, res) => {
       const exactLimit = Math.min(limit, exactTotal - offset);
       exactRows = await Profile.find(exactFilter)
         .select(
-          "user name email mobile gender city country profilePic education experience personalHiddenFields"
+          "user name email mobile gender city country profilePic education experience projects personalHiddenFields"
         )
         .sort({ createdAt: -1 })
         .skip(offset)
@@ -1231,7 +1252,7 @@ exports.listProfilesPublic = async (req, res) => {
       const partialSkip = Math.max(0, offset - exactTotal);
       partialRows = await Profile.find(partialFilter)
         .select(
-          "user name email mobile gender city country profilePic education experience personalHiddenFields"
+          "user name email mobile gender city country profilePic education experience projects personalHiddenFields"
         )
         .sort({ createdAt: -1 })
         .skip(partialSkip)
@@ -1257,19 +1278,25 @@ exports.listProfilesPublic = async (req, res) => {
         });
         return copy[0] || null;
       };
+      const pickLatestN = (
+        arr,
+        endKey = "endDate",
+        startKey = "startDate",
+        limit = 3
+      ) => {
+        if (!Array.isArray(arr) || !arr.length) return [];
+        const copy = [...arr];
+        copy.sort((a, b) => {
+          const ad = new Date(a?.[endKey] || a?.[startKey] || 0).getTime();
+          const bd = new Date(b?.[endKey] || b?.[startKey] || 0).getTime();
+          return bd - ad;
+        });
+        return copy.slice(0, limit);
+      };
 
-      const latestEdu = pickLatest(p.education);
-      const latestExp = pickLatest(p.experience);
-
-      const educationCard = latestEdu
-        ? {
-            degreeTitle:
-              Array.isArray(latestEdu.hiddenFields) &&
-              latestEdu.hiddenFields.includes("degreeTitle")
-                ? ""
-                : latestEdu.degreeTitle || "",
-          }
-        : null;
+      const latestEdu = pickLatestN(p.education);
+      const latestExp = pickLatestN(p.experience);
+      const latestProjects = pickLatestN(p.projects);
 
       return {
         _id: p._id,
@@ -1285,13 +1312,27 @@ exports.listProfilesPublic = async (req, res) => {
         country: p.country || "",
         matchType: p.matchType || "",
         profilePicUrl: makeFileUrl(req, "profile", p.profilePic),
-        education: educationCard,
-        experience: latestExp
-          ? {
-              jobTitle: latestExp.jobTitle || "",
-              company: latestExp.company || "",
-            }
-          : null,
+        education: latestEdu.map((row) => ({
+          degreeTitle:
+            Array.isArray(row.hiddenFields) && row.hiddenFields.includes("degreeTitle")
+              ? ""
+              : row.degreeTitle || "",
+          institute: row.institute || "",
+          startDate: row.startDate || "",
+          endDate: row.endDate || "",
+        })),
+        experience: latestExp.map((row) => ({
+          jobTitle: row.jobTitle || "",
+          company: row.company || "",
+          startDate: row.startDate || "",
+          endDate: row.endDate || "",
+        })),
+        projects: latestProjects.map((row) => ({
+          projectTitle: row.projectTitle || "",
+          company: row.company || "",
+          startDate: row.startDate || "",
+          endDate: row.endDate || "",
+        })),
       };
     });
 
