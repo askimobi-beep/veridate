@@ -39,7 +39,13 @@ const yearOf = (value) => {
 
 const formatRange = (start, end) => `${yearOf(start)} - ${yearOf(end)}`;
 
-const normalizeList = (value) => {\r\n  if (Array.isArray(value)) return value;\r\n  return value ? [value] : [];\r\n};\r\n\r\nconst sortLatest = (list = []) => {\r\n  const copy = [...normalizeList(list)];
+const normalizeList = (value) => {
+  if (Array.isArray(value)) return value;
+  return value ? [value] : [];
+};
+
+const sortLatest = (list = []) => {
+  const copy = [...normalizeList(list)];
   copy.sort((a, b) => {
     const ad = new Date(a?.endDate || a?.startDate || 0).getTime();
     const bd = new Date(b?.endDate || b?.startDate || 0).getTime();
@@ -186,4 +192,5 @@ export default function DirectoryCard({ profile }) {
     </Card>
   );
 }
+
 
