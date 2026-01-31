@@ -4,18 +4,38 @@ import { latestByDate } from "@/utils/profileUtils";
 
 export const fetchProfiles = async (params) => {
   const res = await axiosInstance.get("/profile/directory", { params });
-  const raw = res.data?.data || [];
+  const raw = Array.isArray(res.data?.data) ? res.data.data : [];
 
   const normalized = raw.map((p) => {
-    const educationLatest = Array.isArray(p.education)
-      ? latestByDate(p.education)
-      : p.education || null;
+    const educationArr = Array.isArray(p.education)
+      ? p.education
+      : p.education
+      ? [p.education]
+      : [];
+    const experienceArr = Array.isArray(p.experience)
+      ? p.experience
+      : p.experience
+      ? [p.experience]
+      : [];
+    const projectsArr = Array.isArray(p.projects)
+      ? p.projects
+      : p.projects
+      ? [p.projects]
+      : [];
 
-    const experienceLatest = Array.isArray(p.experience)
-      ? latestByDate(p.experience)
-      : p.experience || null;
+    const educationLatest = educationArr.length ? latestByDate(educationArr) : null;
+    const experienceLatest = experienceArr.length
+      ? latestByDate(experienceArr)
+      : null;
 
-    return { ...p, educationLatest, experienceLatest };
+    return {
+      ...p,
+      education: educationArr,
+      experience: experienceArr,
+      projects: projectsArr,
+      educationLatest,
+      experienceLatest,
+    };
   });
 
   return { data: normalized, total: res.data?.total || 0 };
