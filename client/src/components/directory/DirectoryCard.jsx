@@ -31,9 +31,9 @@ async function toDataUrl(url) {
 }
 
 const yearOf = (value) => {
-  if (!value) return "�";
+  if (!value) return "N/A";
   const dt = new Date(value);
-  if (Number.isNaN(dt.getTime())) return "�";
+  if (Number.isNaN(dt.getTime())) return "N/A";
   return String(dt.getFullYear());
 };
 
@@ -98,7 +98,7 @@ export default function DirectoryCard({ profile }) {
               </div>
               <div className="mt-0.5 flex items-center gap-1 text-xs text-slate-500">
                 <MapPin className="h-3.5 w-3.5" />
-                <span>{location || "�"}</span>
+                <span>{location || "N/A"}</span>
               </div>
             </div>
           </div>
@@ -146,7 +146,7 @@ export default function DirectoryCard({ profile }) {
               {experiences.length ? (
                 experiences.map((row, idx) => (
                   <div key={`exp-${idx}`}>
-                    {row.jobTitle || "�"} | {row.company || "�"} |{" "}
+                    {row.jobTitle || "N/A"} | {row.company || "N/A"} |{" "}
                     {formatRange(row.startDate, row.endDate)}
                   </div>
                 ))
@@ -162,7 +162,7 @@ export default function DirectoryCard({ profile }) {
               {projects.length ? (
                 projects.map((row, idx) => (
                   <div key={`proj-${idx}`}>
-                    {row.projectTitle || "�"} | {row.company || "�"} |{" "}
+                    {row.projectTitle || "N/A"} | {row.company || "N/A"} |{" "}
                     {formatRange(row.startDate, row.endDate)}
                   </div>
                 ))
@@ -178,7 +178,7 @@ export default function DirectoryCard({ profile }) {
               {educations.length ? (
                 educations.map((row, idx) => (
                   <div key={`edu-${idx}`}>
-                    {row.degreeTitle || "�"} | {row.institute || "�"} |{" "}
+                    {row.degreeTitle || "N/A"} | {row.institute || "N/A"} |{" "}
                     {formatRange(row.startDate, row.endDate)}
                   </div>
                 ))
@@ -192,5 +192,6 @@ export default function DirectoryCard({ profile }) {
     </Card>
   );
 }
+
 
 
