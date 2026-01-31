@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+ï»¿import React, { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Link } from "react-router-dom";
@@ -31,16 +31,15 @@ async function toDataUrl(url) {
 }
 
 const yearOf = (value) => {
-  if (!value) return "—";
+  if (!value) return "ï¿½";
   const dt = new Date(value);
-  if (Number.isNaN(dt.getTime())) return "—";
+  if (Number.isNaN(dt.getTime())) return "ï¿½";
   return String(dt.getFullYear());
 };
 
 const formatRange = (start, end) => `${yearOf(start)} - ${yearOf(end)}`;
 
-const sortLatest = (list = []) => {
-  const copy = [...list];
+const normalizeList = (value) => {\r\n  if (Array.isArray(value)) return value;\r\n  return value ? [value] : [];\r\n};\r\n\r\nconst sortLatest = (list = []) => {\r\n  const copy = [...normalizeList(list)];
   copy.sort((a, b) => {
     const ad = new Date(a?.endDate || a?.startDate || 0).getTime();
     const bd = new Date(b?.endDate || b?.startDate || 0).getTime();
@@ -52,9 +51,9 @@ const sortLatest = (list = []) => {
 export default function DirectoryCard({ profile }) {
   const [downloading, setDownloading] = useState(false);
   const location = [profile.city, profile.country].filter(Boolean).join(", ");
-  const experiences = sortLatest(profile.experience || []);
-  const projects = sortLatest(profile.projects || []);
-  const educations = sortLatest(profile.education || []);
+  const experiences = sortLatest(profile.experience);
+  const projects = sortLatest(profile.projects);
+  const educations = sortLatest(profile.education);
 
   const handleDownload = async () => {
     if (downloading) return;
@@ -93,7 +92,7 @@ export default function DirectoryCard({ profile }) {
               </div>
               <div className="mt-0.5 flex items-center gap-1 text-xs text-slate-500">
                 <MapPin className="h-3.5 w-3.5" />
-                <span>{location || "—"}</span>
+                <span>{location || "ï¿½"}</span>
               </div>
             </div>
           </div>
@@ -141,7 +140,7 @@ export default function DirectoryCard({ profile }) {
               {experiences.length ? (
                 experiences.map((row, idx) => (
                   <div key={`exp-${idx}`}>
-                    {row.jobTitle || "—"} | {row.company || "—"} |{" "}
+                    {row.jobTitle || "ï¿½"} | {row.company || "ï¿½"} |{" "}
                     {formatRange(row.startDate, row.endDate)}
                   </div>
                 ))
@@ -157,7 +156,7 @@ export default function DirectoryCard({ profile }) {
               {projects.length ? (
                 projects.map((row, idx) => (
                   <div key={`proj-${idx}`}>
-                    {row.projectTitle || "—"} | {row.company || "—"} |{" "}
+                    {row.projectTitle || "ï¿½"} | {row.company || "ï¿½"} |{" "}
                     {formatRange(row.startDate, row.endDate)}
                   </div>
                 ))
@@ -173,7 +172,7 @@ export default function DirectoryCard({ profile }) {
               {educations.length ? (
                 educations.map((row, idx) => (
                   <div key={`edu-${idx}`}>
-                    {row.degreeTitle || "—"} | {row.institute || "—"} |{" "}
+                    {row.degreeTitle || "ï¿½"} | {row.institute || "ï¿½"} |{" "}
                     {formatRange(row.startDate, row.endDate)}
                   </div>
                 ))
@@ -187,3 +186,4 @@ export default function DirectoryCard({ profile }) {
     </Card>
   );
 }
+
