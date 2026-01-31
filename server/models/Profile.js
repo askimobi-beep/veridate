@@ -95,15 +95,12 @@ const ProfileSchema = new mongoose.Schema(
     // --- personal ---
     name: String,
     email: String,
-    fatherName: String,
     mobileCountryCode: String, // 👈 add
     mobile: String,
-    cnic: String,
     street: String,
     city: String,
     country: String,
     gender: String,
-    maritalStatus: String,
     residentStatus: String,
     nationality: String,
     dob: Date,
@@ -133,3 +130,4 @@ const ProfileSchema = new mongoose.Schema(
 );
 
 module.exports = mongoose.model("Profile", ProfileSchema);
+

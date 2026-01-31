@@ -6,14 +6,11 @@ const getEmptyForm = () => ({
   // --- personal ---
   name: "",
   email: "",
-  fatherName: "",
   mobile: "",
-  cnic: "",
   street: "",
   city: "",
   country: "",
   gender: "",
-  maritalStatus: "",
   residentStatus: "",
   nationality: "",
   dob: "",
@@ -26,7 +23,7 @@ const getEmptyForm = () => ({
   videoProfile: null,
   removeAudioProfile: false,
   removeVideoProfile: false,
-  personalHiddenFields: ["fatherName", "cnic", "maritalStatus"],
+  personalHiddenFields: [],
 
   // --- education ---
   education: [
@@ -264,15 +261,12 @@ export default function usePersonalInformationForm() {
       const fd = new FormData();
       fd.append("name", formData.name || "");
       fd.append("email", formData.email || "");
-      fd.append("fatherName", formData.fatherName || "");
       fd.append("mobile", formData.mobile || "");
       fd.append("mobileCountryCode", formData.mobileCountryCode || "+92"); // 👈 ADD THIS
-      fd.append("cnic", formData.cnic || "");
       fd.append("street", formData.street || "");
       fd.append("city", formData.city || "");
       fd.append("country", formData.country || "");
       fd.append("gender", formData.gender || "");
-      fd.append("maritalStatus", formData.maritalStatus || "");
       fd.append("residentStatus", formData.residentStatus || "");
       fd.append("nationality", formData.nationality || "");
       fd.append("dob", formData.dob || "");
@@ -695,3 +689,4 @@ export default function usePersonalInformationForm() {
     saving,
   };
 }
+

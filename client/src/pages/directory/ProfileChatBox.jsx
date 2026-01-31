@@ -41,13 +41,11 @@ const buildAIContext = (p) => {
   return {
     name: p.name || null,
     email: p.email || null,
-    fatherName: p.fatherName || null,
     mobileCountryCode: p.mobileCountryCode || null,
     mobile: p.mobile || null,
     city: p.city || null,
     country: p.country || null,
     gender: p.gender || null,
-    maritalStatus: p.maritalStatus || null,
     residentStatus: p.residentStatus || null,
     nationality: p.nationality || null,
     dob: toISO(p.dob),

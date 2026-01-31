@@ -1119,14 +1119,7 @@ export default function DetailPage() {
     { key: "email", label: "Email", value: profile?.email || "" },
     { key: "mobile", label: "Mobile", value: profile?.mobile || "" },
     { key: "gender", label: "Gender", value: profile?.gender || "" },
-    { key: "fatherName", label: "Father Name", value: profile?.fatherName || "" },
-    { key: "cnic", label: "CNIC", value: profile?.cnic || "" },
     { key: "dob", label: "Date of Birth", value: fmtMonthYear(profile?.dob) },
-    {
-      key: "maritalStatus",
-      label: "Marital Status",
-      value: profile?.maritalStatus || "",
-    },
     {
       key: "residentStatus",
       label: "Resident Status",

@@ -18,13 +18,11 @@ function extractProfileFields(profileDoc) {
   return {
     name: profileDoc.name || null,
     email: profileDoc.email || null,
-    fatherName: profileDoc.fatherName || null,
     mobileCountryCode: profileDoc.mobileCountryCode || null,
     mobile: profileDoc.mobile || null,
     city: profileDoc.city || null,
     country: profileDoc.country || null,
     gender: profileDoc.gender || null,
-    maritalStatus: profileDoc.maritalStatus || null,
     residentStatus: profileDoc.residentStatus || null,
     nationality: profileDoc.nationality || null,
     dob: toISO(profileDoc.dob),
@@ -106,4 +104,5 @@ function buildAIContext(profileDoc) {
     facts, // add derived facts so "most recent" lookups are trivial
   };
 }
+
 

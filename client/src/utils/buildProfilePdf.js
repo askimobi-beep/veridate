@@ -145,12 +145,9 @@ function drawPersonalGrid(pdf, data, startY) {
   const rows = [
     ["Name", data?.name],
     ["Email", data?.email],
-    ["Father Name", data?.fatherName],
     ["Mobile", data?.mobile],
-    ["CNIC", data?.cnic],
     ["DOB", toMonYYYY(data?.dob)],
     ["Gender", data?.gender],
-    ["Marital Status", data?.maritalStatus],
     ["Resident Status", data?.residentStatus],
     ["Nationality", data?.nationality],
     ["Street", data?.street],

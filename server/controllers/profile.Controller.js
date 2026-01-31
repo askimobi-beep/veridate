@@ -15,9 +15,6 @@ const { normalizeInstitute, normalizeCompany } = require("../utils/normalize");
 
 // --- Personal privacy keys ---
 const PERSONAL_PRIVACY_KEYS = new Set([
-  "maritalStatus",
-  "cnic",
-  "fatherName",
   "dob",
 ]);
 
@@ -138,7 +135,6 @@ exports.savePersonalInfo = async (req, res) => {
       "email",
       "mobile",
       "mobileCountryCode", // 👈 allow code to come through when locked
-      "maritalStatus",
       "street",
       "city",
       "country",
@@ -181,15 +177,12 @@ exports.savePersonalInfo = async (req, res) => {
     const fields = [
       "name",
       "email",
-      "fatherName",
       "mobile",
       "mobileCountryCode", // 👈 NEW
-      "cnic",
       "street",
       "city",
       "country",
       "gender",
-      "maritalStatus",
       "residentStatus",
       "nationality",
       "dob",
@@ -1520,3 +1513,4 @@ exports.profileChat = async (req, res) => {
     return res.status(500).json({ error: "Failed to answer question" });
   }
 };
+

@@ -11,7 +11,6 @@ import {
 } from "@/components/ui/tooltip";
 import {
   genders,
-  maritalStatuses,
   residentStatuses,
   shiftOptions,
   workAuthorizationOptions,
@@ -21,7 +20,6 @@ import BlockSwitch from "../form/Switch";
 const PERSONAL_UNLOCKED = new Set([
   "email",
   "mobile",
-  "maritalStatus",
   "resume",
   "profilePic",
   "street",
@@ -243,15 +241,6 @@ export default function PersonalDetailsForm({
           disabled
         />
 
-        <AppInput
-          label={withPrivacy("Father Name", "fatherName")}
-          name="fatherName"
-          value={formData.fatherName}
-          onChange={handleChange}
-          placeholder="Enter father's full name"
-          disabled={isDisabled(locked, "fatherName")}
-        />
-
         {/* Mobile: country code SELECT embedded inside the same field */}
         <AppInput
           name="mobile"
@@ -309,14 +298,6 @@ export default function PersonalDetailsForm({
           startPaddingClass="pl-28" // 👈 give the input enough left space for the select
         />
 
-        <AppInput
-          label={withPrivacy("CNIC", "cnic")}
-          name="cnic"
-          value={formData.cnic}
-          onChange={handleChange}
-          placeholder="35201-XXXXXXX-X"
-          disabled={isDisabled(locked, "cnic")}
-        />
         <AppSelect
           label="Gender"
           name="gender"
@@ -327,15 +308,6 @@ export default function PersonalDetailsForm({
           disabled={isDisabled(locked, "gender")}
         />
 
-        <AppSelect
-          label={withPrivacy("Marital Status", "maritalStatus")}
-          name="maritalStatus"
-          value={formData.maritalStatus}
-          onChange={handleChange}
-          options={maritalStatuses}
-          placeholder="Select Marital Status"
-          disabled={isDisabled(locked, "maritalStatus")}
-        />
 
         <AppSelect
           label="Resident Status"

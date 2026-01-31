@@ -50,7 +50,7 @@ export default function FacebookSignIn({ onError }) {
             const { accessToken, userID } = response.authResponse;
             const res = await facebookLogin(accessToken, userID);
             const user = res?.data?.user;
-            if (!user?.cnic || !user?.address || !user?.contact) {
+            if (!user?.address || !user?.contact) {
               navigate("/auth/complete-profile");
             } else {
               navigate("/dashboard", { replace: true });
