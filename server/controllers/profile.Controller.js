@@ -20,7 +20,9 @@ const PERSONAL_PRIVACY_KEYS = new Set([
 
 const makeFileUrl = (req, folder, filename) => {
   if (!filename) return null;
-  return `${req.protocol}://${req.get("host")}/uploads/${folder}/${filename}`;
+  const xfProto = String(req.get("x-forwarded-proto") || "").split(",")[0].trim();
+  const proto = xfProto || req.protocol || "https";
+  return `${proto}://${req.get("host")}/uploads/${folder}/${filename}`;
 };
 
 function redactPersonalFields(profileDoc) {

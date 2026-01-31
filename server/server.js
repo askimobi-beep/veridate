@@ -16,6 +16,8 @@ const corsOptions = require("./config/corsOptions");
 dotenv.config();
 
 const app = express();
+// Trust proxy (Vercel/HTTPS) so req.protocol reflects x-forwarded-proto
+app.set("trust proxy", 1);
 
 const PORT = process.env.PORT || 3000;
 

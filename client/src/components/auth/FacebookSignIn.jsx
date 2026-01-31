@@ -7,6 +7,11 @@ export default function FacebookSignIn({ onError }) {
   const { facebookLogin } = useAuth();
   const navigate = useNavigate();
   const [ready, setReady] = useState(false);
+  const normalizeVersion = (raw) => {
+    const v = String(raw || "").trim();
+    if (/^v?\d+\.\d+$/.test(v)) return v.startsWith("v") ? v : `v${v}`;
+    return "v20.0";
+  };
 
   useEffect(() => {
     // prevent double-loading
@@ -28,7 +33,7 @@ export default function FacebookSignIn({ onError }) {
           appId: import.meta.env.VITE_FB_APP_ID,
           cookie: true,
           xfbml: false,
-          version: import.meta.env.VITE_FB_API_VERSION || "v20.0", // 👈 valid version
+          version: normalizeVersion(import.meta.env.VITE_FB_API_VERSION),
         });
         window.__FB_SDK_LOADED__ = true;
       }
