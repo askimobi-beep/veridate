@@ -22,6 +22,7 @@ const PERSONAL_UNLOCKED = new Set([
   "mobile",
   "resume",
   "profilePic",
+  "dob",
   "street",
   "city",
   "country",

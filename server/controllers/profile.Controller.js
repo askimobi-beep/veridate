@@ -134,7 +134,8 @@ exports.savePersonalInfo = async (req, res) => {
     const ALLOWED_WHEN_LOCKED = new Set([
       "email",
       "mobile",
-      "mobileCountryCode", // 👈 allow code to come through when locked
+      "mobileCountryCode", // allow code to come through when locked
+      "dob",
       "street",
       "city",
       "country",
@@ -178,8 +179,7 @@ exports.savePersonalInfo = async (req, res) => {
       "name",
       "email",
       "mobile",
-      "mobileCountryCode", // 👈 NEW
-      "street",
+      "mobileCountryCode", // ?? allow code to come through when locked`r`n      "dob"`r`n      "street",
       "city",
       "country",
       "gender",
@@ -1513,4 +1513,5 @@ exports.profileChat = async (req, res) => {
     return res.status(500).json({ error: "Failed to answer question" });
   }
 };
+
 
