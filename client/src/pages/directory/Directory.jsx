@@ -8,8 +8,6 @@ import { fetchProfiles } from "@/services/profileService";
 export default function Directory() {
   const [items, setItems] = useState([]);
   const [q, setQ] = useState("");
-  const [email, setEmail] = useState("");
-  const [mobile, setMobile] = useState("");
   const [jobTitle, setJobTitle] = useState("");
   const [degreeTitle, setDegreeTitle] = useState("");
   const [company, setCompany] = useState("");
@@ -32,8 +30,6 @@ export default function Directory() {
   const currentFilters = useMemo(
     () => ({
       q,
-      email,
-      mobile,
       jobTitle,
       degreeTitle,
       company,
@@ -46,8 +42,6 @@ export default function Directory() {
     }),
     [
       q,
-      email,
-      mobile,
       jobTitle,
       degreeTitle,
       company,
@@ -167,8 +161,6 @@ export default function Directory() {
 
   const onReset = () => {
     setQ("");
-    setEmail("");
-    setMobile("");
     setJobTitle("");
     setDegreeTitle("");
     setCompany("");
@@ -198,10 +190,6 @@ export default function Directory() {
               <SearchFilters
                 q={q}
                 setQ={setQ}
-                email={email}
-                setEmail={setEmail}
-                mobile={mobile}
-                setMobile={setMobile}
                 jobTitle={jobTitle}
                 setJobTitle={setJobTitle}
                 degreeTitle={degreeTitle}

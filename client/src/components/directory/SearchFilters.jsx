@@ -121,10 +121,6 @@ function FilterSelect({
 export default function SearchFilters({
   q,
   setQ,
-  email,
-  setEmail,
-  mobile,
-  setMobile,
   jobTitle,
   setJobTitle,
   degreeTitle,
@@ -157,24 +153,6 @@ export default function SearchFilters({
             placeholder="Candidate name"
             value={q}
             onChange={(e) => setQ(e.target.value)}
-            className="h-9 rounded-xl border border-slate-200/80 bg-white/70 text-left text-slate-700 shadow-[0_12px_30px_-20px_rgba(15,23,42,0.55)] backdrop-blur-md"
-          />
-        </FilterField>
-
-        <FilterField label="Email">
-          <Input
-            placeholder="Email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            className="h-9 rounded-xl border border-slate-200/80 bg-white/70 text-left text-slate-700 shadow-[0_12px_30px_-20px_rgba(15,23,42,0.55)] backdrop-blur-md"
-          />
-        </FilterField>
-
-        <FilterField label="Mobile">
-          <Input
-            placeholder="Mobile"
-            value={mobile}
-            onChange={(e) => setMobile(e.target.value)}
             className="h-9 rounded-xl border border-slate-200/80 bg-white/70 text-left text-slate-700 shadow-[0_12px_30px_-20px_rgba(15,23,42,0.55)] backdrop-blur-md"
           />
         </FilterField>

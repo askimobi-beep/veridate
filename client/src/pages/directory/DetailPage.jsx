@@ -411,6 +411,35 @@ function formatReviewDate(value) {
   return date.toLocaleDateString();
 }
 
+function recordAverageRating(row) {
+  const ratings = Array.isArray(row?.verifications)
+    ? row.verifications
+        .map((entry) => Number(entry?.rating ?? 0))
+        .filter((r) => Number.isFinite(r) && r >= 0)
+    : [];
+  if (!ratings.length) return 0;
+  return ratings.reduce((acc, curr) => acc + curr, 0) / ratings.length;
+}
+
+function overallProfileRating(profile) {
+  const rows = [
+    ...(Array.isArray(profile?.education) ? profile.education : []),
+    ...(Array.isArray(profile?.experience) ? profile.experience : []),
+    ...(Array.isArray(profile?.projects) ? profile.projects : []),
+  ];
+
+  const totalRecords = rows.length;
+  const sumRatings = rows.reduce((acc, row) => acc + recordAverageRating(row), 0);
+  const average = totalRecords ? sumRatings / totalRecords : 0;
+  const rounded = Number(average.toFixed(1));
+
+  return {
+    totalRecords,
+    sumRatings: Number(sumRatings.toFixed(1)),
+    average: rounded,
+  };
+}
+
 function timeAgo(value) {
   if (!value) return "";
   const date = new Date(value);
@@ -1093,6 +1122,7 @@ export default function DetailPage() {
 
   const meId = authUser?._id;
   const fullName = profile?.name || "Unnamed";
+  const overallRating = overallProfileRating(profile);
   const location = [profile?.city, profile?.country].filter(Boolean).join(", ");
   const avatarUrl =
     profile?.profilePicUrl ||
@@ -1403,7 +1433,7 @@ export default function DetailPage() {
         <Card className="mb-6 overflow-hidden border border-orange-200/70 bg-[#f3f4f6] shadow-[0_18px_40px_-28px_rgba(15,23,42,0.35)]">
           <div className="relative">
             <CardContent className="relative flex flex-col gap-6 p-6 text-slate-900 md:flex-row md:items-center md:justify-between">
-                <div className="flex items-center gap-5 md:gap-7">
+              <div className="flex items-center gap-5 md:gap-7">
                 <div className="relative">
                   <div className="absolute inset-0 rounded-full bg-white/80 blur-xl" />
                   <div className="relative rounded-full bg-orange-200 p-1.5 shadow-sm backdrop-blur-sm">
@@ -1422,6 +1452,17 @@ export default function DetailPage() {
                     <h1 className="text-2xl font-semibold tracking-tight md:text-3xl">
                       {fullName}
                     </h1>
+                  </div>
+                  <div className="w-full max-w-[320px] rounded-xl border border-orange-200 bg-white/80 px-3 py-2 text-left shadow-sm">
+                    <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                      Over All Profile Rating
+                    </div>
+                    <div className="mt-1 text-xs text-slate-500">
+                      Total records: {overallRating.totalRecords} • Sum: {overallRating.sumRatings}
+                    </div>
+                    <div className="mt-1 text-sm font-semibold text-slate-800">
+                      ⭐ {overallRating.average.toFixed(1)} / 5
+                    </div>
                   </div>
                   <div />
                 </div>
