@@ -70,6 +70,16 @@ const fmtDate = (d) => {
   const year = parts.find((p) => p.type === "year")?.value || "";
   return [day, month, year].filter(Boolean).join("-");
 };
+const fmtMonthYear = (d) => {
+  if (!d) return "";
+  const raw = String(d || "").trim();
+  const match = raw.match(/^(\d{4})-(\d{2})$/);
+  const dt = match
+    ? new Date(Number(match[1]), Number(match[2]) - 1, 1)
+    : new Date(d);
+  if (Number.isNaN(dt.getTime())) return "";
+  return dt.toLocaleString("en-GB", { month: "short", year: "numeric" });
+};
 const joinArr = (a) => (Array.isArray(a) && a.length ? a.join(", ") : "");
 const normalize = (s) => (s || "").trim().toLowerCase().replace(/\s+/g, " ");
 const normalizeInstitute = normalize;
@@ -1097,7 +1107,11 @@ export default function DetailPage() {
   const videoUrl = profile?.videoProfile
     ? fileUrl("video", profile.videoProfile)
     : "";
-  const hiddenPersonalFields = new Set(profile?.personalHiddenFields || []);
+  const hiddenPersonalFields = new Set(
+    (profile?.personalHiddenFields || []).filter(
+      (field) => field !== "email" && field !== "mobile"
+    )
+  );
   const listToText = (list) =>
     Array.isArray(list) && list.length ? list.join(", ") : "";
   const personalDetails = [
@@ -1107,7 +1121,7 @@ export default function DetailPage() {
     { key: "gender", label: "Gender", value: profile?.gender || "" },
     { key: "fatherName", label: "Father Name", value: profile?.fatherName || "" },
     { key: "cnic", label: "CNIC", value: profile?.cnic || "" },
-    { key: "dob", label: "Date of Birth", value: fmtDate(profile?.dob) },
+    { key: "dob", label: "Date of Birth", value: fmtMonthYear(profile?.dob) },
     {
       key: "maritalStatus",
       label: "Marital Status",
@@ -1119,6 +1133,7 @@ export default function DetailPage() {
       value: profile?.residentStatus || "",
     },
     { key: "nationality", label: "Nationality", value: profile?.nationality || "" },
+    { key: "street", label: "Street", value: profile?.street || "" },
     { key: "city", label: "City", value: profile?.city || "" },
     { key: "country", label: "Country", value: profile?.country || "" },
     {

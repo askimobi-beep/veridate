@@ -10,6 +10,7 @@ const personalInformationSchema = z.object({
   cnic: z
     .string()
     .regex(/^\d{5}-\d{7}-\d$/, "CNIC format must be 12345-1234567-1"),
+  street: z.string().min(1, "Street is required"),
   city: z.string().min(1, "City is required"),
   country: z.string().min(1, "Country is required"),
   gender: z.enum(["Male", "Female", "Other"], {
@@ -22,7 +23,9 @@ const personalInformationSchema = z.object({
     errorMap: () => ({ message: "Resident status must be Temporary or Permanent" }),
   }),
   nationality: z.string().min(1, "Nationality is required"),
-  dob: z.string().min(1, "Date of birth is required"),
+  dob: z
+    .string()
+    .regex(/^\d{4}-\d{2}$/, "Date of birth must be month/year (YYYY-MM)"),
   resume: z.any().optional(),
   profilePic: z.any().optional(),
 });

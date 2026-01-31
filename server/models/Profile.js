@@ -99,6 +99,7 @@ const ProfileSchema = new mongoose.Schema(
     mobileCountryCode: String, // 👈 add
     mobile: String,
     cnic: String,
+    street: String,
     city: String,
     country: String,
     gender: String,

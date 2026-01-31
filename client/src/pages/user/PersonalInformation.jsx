@@ -19,7 +19,7 @@ import MediaProfileSection from "@/components/profile/MediaProfileSection";
 import ConfirmDialog from "@/components/common/ConfirmDialog";
 
 import usePersonalInformationForm from "@/hooks/usePersonalInformationForm";
-import { toYMD } from "@/lib/dates";
+import { toYMD, toYM } from "@/lib/dates";
 import { getProfileMe } from "@/lib/profileApi";
 import { useAuth } from "@/context/AuthContext";
 import ProfilePdfDownload from "@/components/profile/ProfilePdf";
@@ -166,10 +166,10 @@ export default function PersonalInformation() {
       email: user?.email ?? data.email ?? "",
       personalHiddenFields: Array.isArray(data.personalHiddenFields)
         ? data.personalHiddenFields
-        : [],
+        : prev.personalHiddenFields,
       audioProfile: data.audioProfile || null,
       videoProfile: data.videoProfile || null,
-      dob: toYMD(data.dob),
+      dob: toYM(data.dob),
       education: Array.isArray(data.education)
         ? data.education.map((e, i) => ({
             ...e,
@@ -380,7 +380,7 @@ export default function PersonalInformation() {
           email: user?.email ?? data.email ?? prev.email ?? "",
           audioProfile: data.audioProfile || null,
           videoProfile: data.videoProfile || null,
-          dob: toYMD(data.dob),
+          dob: toYM(data.dob),
           education: Array.isArray(data.education)
             ? data.education.map((e, i) => ({
                 ...e,

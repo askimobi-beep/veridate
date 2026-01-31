@@ -24,6 +24,7 @@ const PERSONAL_UNLOCKED = new Set([
   "maritalStatus",
   "resume",
   "profilePic",
+  "street",
   "city",
   "country",
   "residentStatus",
@@ -83,11 +84,17 @@ export default function PersonalDetailsForm({
     !!formData.email && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email);
 
   // ----- privacy helpers -----
-  const hiddenSet = new Set(formData.personalHiddenFields || []);
+  const hiddenSet = new Set(
+    (formData.personalHiddenFields || []).filter(
+      (field) => field !== "email" && field !== "mobile"
+    )
+  );
   const isHidden = (field) => hiddenSet.has(field);
 
   const setVisibility = (field, visible) => {
-    let updated = [...(formData.personalHiddenFields || [])];
+    let updated = [...(formData.personalHiddenFields || [])].filter(
+      (key) => key !== "email" && key !== "mobile"
+    );
     const idx = updated.indexOf(field);
     if (visible) {
       if (idx !== -1) updated.splice(idx, 1);
@@ -249,41 +256,30 @@ export default function PersonalDetailsForm({
         <AppInput
           name="mobile"
           label={
-            <div className="flex items-center justify-between gap-3 w-full">
-              <div className="flex items-center gap-2">
-                <span>Mobile Number</span>
-                <TooltipProvider delayDuration={150}>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <button
-                        type="button"
-                        aria-label="Mobile number help"
-                        className="rounded-md p-1.5  text-gray-500 hover:text-gray-700"
-                      >
-                        <CircleHelp className="h-4 w-4" />
-                      </button>
-                    </TooltipTrigger>
-                    <TooltipContent
-                      side="left"
-                      align="center"
-                      className="max-w-sm rounded-xl border border-gray-200 shadow-lg p-3 bg-white"
+            <div className="flex items-center gap-2">
+              <span>Mobile Number</span>
+              <TooltipProvider delayDuration={150}>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <button
+                      type="button"
+                      aria-label="Mobile number help"
+                      className="rounded-md p-1.5  text-gray-500 hover:text-gray-700"
                     >
-                      <div className="text-sm font-semibold text-gray-900 mb-1">
-                        Unverified
-                      </div>
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
-              </div>
-              <div className="flex items-center gap-2 text-xs text-gray-500">
-                {/* <span className="min-w-[44px] text-right">
-                  {isHidden("mobile") ? "Hidden" : "Visible"}
-                </span> */}
-                <BlockSwitch
-                  checked={!isHidden("mobile")}
-                  onChange={(checked) => setVisibility("mobile", checked)}
-                />
-              </div>
+                      <CircleHelp className="h-4 w-4" />
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent
+                    side="left"
+                    align="center"
+                    className="max-w-sm rounded-xl border border-gray-200 shadow-lg p-3 bg-white"
+                  >
+                    <div className="text-sm font-semibold text-gray-900 mb-1">
+                      Unverified
+                    </div>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
             </div>
           }
           type="tel"
@@ -321,42 +317,6 @@ export default function PersonalDetailsForm({
           placeholder="35201-XXXXXXX-X"
           disabled={isDisabled(locked, "cnic")}
         />
-
-        <AppSelect
-          label="City"
-          name="city"
-          value={formData.city}
-          onChange={handleChange}
-          options={cityOptions}
-          placeholder={
-            !formData.country
-              ? "Select country first"
-              : cityLoading
-              ? "Loading cities…"
-              : cityOptions.length
-              ? "Select city"
-              : "No cities found"
-          }
-          disabled={
-            isDisabled(locked, "city") || !formData.country || cityLoading
-          }
-          endAdornment={
-            cityLoading ? (
-              <Loader2 className="h-4 w-4 animate-spin text-gray-500" />
-            ) : null
-          }
-        />
-
-        <AppSelect
-          label="Country"
-          name="country"
-          value={formData.country}
-          onChange={handleChange}
-          options={countriesList}
-          placeholder="Select your country"
-          disabled={isDisabled(locked, "country")}
-        />
-
         <AppSelect
           label="Gender"
           name="gender"
@@ -399,16 +359,68 @@ export default function PersonalDetailsForm({
 
         <AppInput
           label={withPrivacy("Date of Birth", "dob")}
-          type="date"
+          type="month"
           name="dob"
           value={formData.dob}
           onChange={handleChange}
-          placeholder="Enter your date of birth"
+          placeholder="Select month and year"
           disabled={isDisabled(locked, "dob")}
         />
       </div>
 
-      <div className="mt-6 grid grid-cols-1 md:grid-cols-1 gap-6">
+      <div className="mt-6 space-y-6">
+        <div className="space-y-3">
+          <h3 className="text-base font-semibold text-gray-900 flex items-center gap-2">
+            Complete Address
+          </h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <AppInput
+              label="Street"
+              name="street"
+              value={formData.street}
+              onChange={handleChange}
+              placeholder="Street / Area"
+              disabled={isDisabled(locked, "street")}
+            />
+
+            <AppSelect
+              label="City"
+              name="city"
+              value={formData.city}
+              onChange={handleChange}
+              options={cityOptions}
+              placeholder={
+                !formData.country
+                  ? "Select country first"
+                  : cityLoading
+                  ? "Loading cities..."
+                  : cityOptions.length
+                  ? "Select city"
+                  : "No cities found"
+              }
+              disabled={
+                isDisabled(locked, "city") || !formData.country || cityLoading
+              }
+              endAdornment={
+                cityLoading ? (
+                  <Loader2 className="h-4 w-4 animate-spin text-gray-500" />
+                ) : null
+              }
+            />
+
+            <AppSelect
+              label="Country"
+              name="country"
+              value={formData.country}
+              onChange={handleChange}
+              options={countriesList}
+              placeholder="Select your country"
+              disabled={isDisabled(locked, "country")}
+            />
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 gap-6">
         <CheckboxGroup
           title="Shift Preferences"
           options={shiftOptions}
@@ -430,6 +442,7 @@ export default function PersonalDetailsForm({
           disabled={isDisabled(locked, "workAuthorization")}
           gridClassName="gap-6"
         />
+        </div>
       </div>
 
       <div className="mt-4 flex justify-center">
@@ -454,3 +467,5 @@ export default function PersonalDetailsForm({
     </>
   );
 }
+
+

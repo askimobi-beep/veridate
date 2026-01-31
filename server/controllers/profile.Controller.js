@@ -19,8 +19,6 @@ const PERSONAL_PRIVACY_KEYS = new Set([
   "cnic",
   "fatherName",
   "dob",
-  "mobile",
-  "email",
 ]);
 
 const makeFileUrl = (req, folder, filename) => {
@@ -141,6 +139,7 @@ exports.savePersonalInfo = async (req, res) => {
       "mobile",
       "mobileCountryCode", // 👈 allow code to come through when locked
       "maritalStatus",
+      "street",
       "city",
       "country",
       "residentStatus",
@@ -186,6 +185,7 @@ exports.savePersonalInfo = async (req, res) => {
       "mobile",
       "mobileCountryCode", // 👈 NEW
       "cnic",
+      "street",
       "city",
       "country",
       "gender",
@@ -212,6 +212,11 @@ exports.savePersonalInfo = async (req, res) => {
               : JSON.parse(req.body[key] || "[]");
           } catch {
             bodyUpdate[key] = [];
+          }
+          if (key === "personalHiddenFields") {
+            bodyUpdate[key] = (bodyUpdate[key] || []).filter(
+              (field) => field !== "email" && field !== "mobile"
+            );
           }
         } else {
           bodyUpdate[key] = req.body[key];
@@ -1130,10 +1135,6 @@ exports.listProfilesPublic = async (req, res) => {
       ]);
 
       const data = rows.map((p) => {
-        const isHidden = (k) =>
-          Array.isArray(p.personalHiddenFields) &&
-          p.personalHiddenFields.includes(k);
-
         const pickLatest = (arr, endKey = "endDate", startKey = "startDate") => {
           if (!Array.isArray(arr) || !arr.length) return null;
           const copy = [...arr];
@@ -1165,8 +1166,8 @@ exports.listProfilesPublic = async (req, res) => {
               ? p.user.toString()
               : p.user || "",
           name: p.name || "Unnamed",
-          email: isHidden("email") ? "" : p.email || "",
-          mobile: isHidden("mobile") ? "" : p.mobile || "",
+          email: p.email || "",
+          mobile: p.mobile || "",
           gender: p.gender || "",
           city: p.city || "",
           country: p.country || "",
@@ -1253,10 +1254,6 @@ exports.listProfilesPublic = async (req, res) => {
     const rows = [...exactRows, ...partialRows];
 
     const data = rows.map((p) => {
-      const isHidden = (k) =>
-        Array.isArray(p.personalHiddenFields) &&
-        p.personalHiddenFields.includes(k);
-
       const pickLatest = (arr, endKey = "endDate", startKey = "startDate") => {
         if (!Array.isArray(arr) || !arr.length) return null;
         const copy = [...arr];
@@ -1288,8 +1285,8 @@ exports.listProfilesPublic = async (req, res) => {
             ? p.user.toString()
             : p.user || "",
         name: p.name || "Unnamed",
-        email: isHidden("email") ? "" : p.email || "",
-        mobile: isHidden("mobile") ? "" : p.mobile || "",
+        email: p.email || "",
+        mobile: p.mobile || "",
         gender: p.gender || "",
         city: p.city || "",
         country: p.country || "",

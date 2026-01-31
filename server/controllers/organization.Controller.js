@@ -16,10 +16,9 @@ const buildDisplayName = (profile, user) => {
 };
 
 const redactPersonal = (profile) => {
-  const hidden = new Set(profile?.personalHiddenFields || []);
   return {
-    email: hidden.has("email") ? "" : profile?.email || "",
-    mobile: hidden.has("mobile") ? "" : profile?.mobile || "",
+    email: profile?.email || "",
+    mobile: profile?.mobile || "",
   };
 };
 

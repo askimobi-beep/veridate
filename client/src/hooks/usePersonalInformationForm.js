@@ -9,6 +9,7 @@ const getEmptyForm = () => ({
   fatherName: "",
   mobile: "",
   cnic: "",
+  street: "",
   city: "",
   country: "",
   gender: "",
@@ -25,7 +26,7 @@ const getEmptyForm = () => ({
   videoProfile: null,
   removeAudioProfile: false,
   removeVideoProfile: false,
-  personalHiddenFields: [],
+  personalHiddenFields: ["fatherName", "cnic", "maritalStatus"],
 
   // --- education ---
   education: [
@@ -267,6 +268,7 @@ export default function usePersonalInformationForm() {
       fd.append("mobile", formData.mobile || "");
       fd.append("mobileCountryCode", formData.mobileCountryCode || "+92"); // 👈 ADD THIS
       fd.append("cnic", formData.cnic || "");
+      fd.append("street", formData.street || "");
       fd.append("city", formData.city || "");
       fd.append("country", formData.country || "");
       fd.append("gender", formData.gender || "");
