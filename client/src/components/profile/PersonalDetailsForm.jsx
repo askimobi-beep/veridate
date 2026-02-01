@@ -73,7 +73,7 @@ export default function PersonalDetailsForm({
   savePersonalInfo,
   saving,
 }) {
- 
+  const [dobFocused, setDobFocused] = useState(false);
 
   const [countriesList, setCountriesList] = useState([]);
   const [cityOptions, setCityOptions] = useState([]);
@@ -332,12 +332,14 @@ export default function PersonalDetailsForm({
 
         <AppInput
           label={withPrivacy("Date of Birth", "dob")}
-          type="month"
+          type={dobFocused ? "month" : "text"}
           name="dob"
           value={formData.dob}
           onChange={handleChange}
           placeholder="MM / YYYY"
           disabled={isDisabled(locked, "dob")}
+          onFocus={() => setDobFocused(true)}
+          onBlur={() => setDobFocused(false)}
         />
       </div>
 

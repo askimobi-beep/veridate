@@ -143,50 +143,50 @@ export default function DirectoryCard({ profile }) {\r\n  const [downloading, se
         </div>
 
         <div className="mt-4 space-y-3 text-sm text-slate-700 text-left">
-          <div>
-            <div className="font-semibold text-slate-700">Experience</div>
-            <div className="mt-1 space-y-1">
+          <div className="text-left">
+            <div className="font-semibold text-slate-700 text-left">Experience</div>
+            <div className="mt-1 space-y-1 text-left">
               {experiences.length ? (
                 experiences.map((row, idx) => (
-                  <div key={`exp-${idx}`}>
+                  <div key={`exp-${idx}`} className="text-left">
                     {row.jobTitle || "N/A"} | {row.company || "N/A"} |{" "}
                     {formatRange(row.startDate, row.endDate)}
                   </div>
                 ))
               ) : (
-                <div className="text-xs text-slate-400">No experience added.</div>
+                <div className="text-xs text-slate-400 text-left">No experience added.</div>
               )}
             </div>
           </div>
 
-          <div>
-            <div className="font-semibold text-slate-700">Project</div>
-            <div className="mt-1 space-y-1">
+          <div className="text-left">
+            <div className="font-semibold text-slate-700 text-left">Project</div>
+            <div className="mt-1 space-y-1 text-left">
               {projects.length ? (
                 projects.map((row, idx) => (
-                  <div key={`proj-${idx}`}>
+                  <div key={`proj-${idx}`} className="text-left">
                     {row.projectTitle || "N/A"} | {row.company || "N/A"} |{" "}
                     {formatRange(row.startDate, row.endDate)}
                   </div>
                 ))
               ) : (
-                <div className="text-xs text-slate-400">No projects added.</div>
+                <div className="text-xs text-slate-400 text-left">No projects added.</div>
               )}
             </div>
           </div>
 
-          <div>
-            <div className="font-semibold text-slate-700">Education</div>
-            <div className="mt-1 space-y-1">
+          <div className="text-left">
+            <div className="font-semibold text-slate-700 text-left">Education</div>
+            <div className="mt-1 space-y-1 text-left">
               {educations.length ? (
                 educations.map((row, idx) => (
-                  <div key={`edu-${idx}`}>
+                  <div key={`edu-${idx}`} className="text-left">
                     {row.degreeTitle || "N/A"} | {row.institute || "N/A"} |{" "}
                     {formatRange(row.startDate, row.endDate)}
                   </div>
                 ))
               ) : (
-                <div className="text-xs text-slate-400">No education added.</div>
+                <div className="text-xs text-slate-400 text-left">No education added.</div>
               )}
             </div>
           </div>
