@@ -6,6 +6,8 @@ const allowedOrigins = [
   "https://veridate.vercel.app",
   "https://www.veridate.vercel.app",
   "https://veridate-dwiq4n7oy-veridates-projects.vercel.app",
+  "https://veridate.store",
+  "https://www.veridate.store",
 ];
 
 
