@@ -58,8 +58,38 @@ const sortLatest = (list = []) => {
   return copy.slice(0, 3);
 };
 
-export default function DirectoryCard({ profile }) {\r\n  const [downloading, setDownloading] = useState(false);\r\n  const [detail, setDetail] = useState(null);
-  const location = [profile.city, profile.country].filter(Boolean).join(", ");\r\n  const needsDetailFetch = () => {\r\n    const expList = normalizeList(profile.experience);\r\n    const eduList = normalizeList(profile.education);\r\n    const projList = normalizeList(profile.projects);\r\n    const expMissingDates = expList.some((row) => row && (!row.startDate || !row.endDate));\r\n    const eduMissingDates = eduList.some((row) => row && (!row.startDate || !row.endDate));\r\n    const noProjects = projList.length === 0;\r\n    return expMissingDates || eduMissingDates || noProjects;\r\n  };\r\n\r\n  useEffect(() => {\r\n    let active = true;\r\n    if (!profile?.user || !needsDetailFetch()) return undefined;\r\n    axiosInstance\r\n      .get(`/profile/getonid/${encodeURIComponent(profile.user)}`)\r\n      .then((res) => {\r\n        if (active) setDetail(res?.data || null);\r\n      })\r\n      .catch(() => {});\r\n    return () => {\r\n      active = false;\r\n    };\r\n    // eslint-disable-next-line react-hooks/exhaustive-deps\r\n  }, [profile?.user]);\r\n\r\n  const expSource = detail?.experience ?? profile.experience;\r\n  const eduSource = detail?.education ?? profile.education;\r\n  const projSource = detail?.projects ?? profile.projects;
+export default function DirectoryCard({ profile }) {
+  const [downloading, setDownloading] = useState(false);
+  const [detail, setDetail] = useState(null);
+  const location = [profile.city, profile.country].filter(Boolean).join(", ");
+  const needsDetailFetch = () => {
+    const expList = normalizeList(profile.experience);
+    const eduList = normalizeList(profile.education);
+    const projList = normalizeList(profile.projects);
+    const expMissingDates = expList.some((row) => row && (!row.startDate || !row.endDate));
+    const eduMissingDates = eduList.some((row) => row && (!row.startDate || !row.endDate));
+    const noProjects = projList.length === 0;
+    return expMissingDates || eduMissingDates || noProjects;
+  };
+
+  useEffect(() => {
+    let active = true;
+    if (!profile?.user || !needsDetailFetch()) return undefined;
+    axiosInstance
+      .get(`/profile/getonid/${encodeURIComponent(profile.user)}`)
+      .then((res) => {
+        if (active) setDetail(res?.data || null);
+      })
+      .catch(() => {});
+    return () => {
+      active = false;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [profile?.user]);
+
+  const expSource = detail?.experience ?? profile.experience;
+  const eduSource = detail?.education ?? profile.education;
+  const projSource = detail?.projects ?? profile.projects;
   const experiences = sortLatest(expSource);
   const projects = sortLatest(projSource);
   const educations = sortLatest(eduSource);
@@ -195,6 +225,7 @@ export default function DirectoryCard({ profile }) {\r\n  const [downloading, se
     </Card>
   );
 }
+
 
 
 
