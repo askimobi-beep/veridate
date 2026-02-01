@@ -1,4 +1,4 @@
-﻿import React, { useState } from "react";
+﻿import React, { useEffect, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Link } from "react-router-dom";
@@ -30,14 +30,18 @@ async function toDataUrl(url) {
   }
 }
 
-const yearOf = (value) => {
+const fmtDate = (value) => {
   if (!value) return "N/A";
   const dt = new Date(value);
   if (Number.isNaN(dt.getTime())) return "N/A";
-  return String(dt.getFullYear());
+  return dt.toLocaleDateString("en-GB", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  });
 };
 
-const formatRange = (start, end) => `${yearOf(start)} - ${yearOf(end)}`;
+const formatRange = (start, end) => `${fmtDate(start)} - ${fmtDate(end)}`;
 
 const normalizeList = (value) => {
   if (Array.isArray(value)) return value;
@@ -54,12 +58,11 @@ const sortLatest = (list = []) => {
   return copy.slice(0, 3);
 };
 
-export default function DirectoryCard({ profile }) {
-  const [downloading, setDownloading] = useState(false);
-  const location = [profile.city, profile.country].filter(Boolean).join(", ");
-  const experiences = sortLatest(profile.experience);
-  const projects = sortLatest(profile.projects);
-  const educations = sortLatest(profile.education);
+export default function DirectoryCard({ profile }) {\r\n  const [downloading, setDownloading] = useState(false);\r\n  const [detail, setDetail] = useState(null);
+  const location = [profile.city, profile.country].filter(Boolean).join(", ");\r\n  const needsDetailFetch = () => {\r\n    const expList = normalizeList(profile.experience);\r\n    const eduList = normalizeList(profile.education);\r\n    const projList = normalizeList(profile.projects);\r\n    const expMissingDates = expList.some((row) => row && (!row.startDate || !row.endDate));\r\n    const eduMissingDates = eduList.some((row) => row && (!row.startDate || !row.endDate));\r\n    const noProjects = projList.length === 0;\r\n    return expMissingDates || eduMissingDates || noProjects;\r\n  };\r\n\r\n  useEffect(() => {\r\n    let active = true;\r\n    if (!profile?.user || !needsDetailFetch()) return undefined;\r\n    axiosInstance\r\n      .get(`/profile/getonid/${encodeURIComponent(profile.user)}`)\r\n      .then((res) => {\r\n        if (active) setDetail(res?.data || null);\r\n      })\r\n      .catch(() => {});\r\n    return () => {\r\n      active = false;\r\n    };\r\n    // eslint-disable-next-line react-hooks/exhaustive-deps\r\n  }, [profile?.user]);\r\n\r\n  const expSource = detail?.experience ?? profile.experience;\r\n  const eduSource = detail?.education ?? profile.education;\r\n  const projSource = detail?.projects ?? profile.projects;
+  const experiences = sortLatest(expSource);
+  const projects = sortLatest(projSource);
+  const educations = sortLatest(eduSource);
 
   const handleDownload = async () => {
     if (downloading) return;
@@ -85,7 +88,7 @@ export default function DirectoryCard({ profile }) {
 
   return (
     <Card className="hover:shadow-xl transition rounded-2xl border border-gray-200">
-      <CardContent className="p-5">
+      <CardContent className="p-5 text-left">
         <div className="flex items-start justify-between gap-4">
           <div className="flex items-start gap-3">
             <Avatar className="h-12 w-12 ring-2 ring-orange-200">
@@ -139,7 +142,7 @@ export default function DirectoryCard({ profile }) {
           </div>
         </div>
 
-        <div className="mt-4 space-y-3 text-sm text-slate-700">
+        <div className="mt-4 space-y-3 text-sm text-slate-700 text-left">
           <div>
             <div className="font-semibold text-slate-700">Experience</div>
             <div className="mt-1 space-y-1">
@@ -192,6 +195,8 @@ export default function DirectoryCard({ profile }) {
     </Card>
   );
 }
+
+
 
 
 
