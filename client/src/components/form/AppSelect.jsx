@@ -14,7 +14,7 @@ const AppSelect = ({
   disabled = false,
 }) => {
   return (
-    <div className={cn("space-y-1", className)}>
+    <div className={cn("space-y-1 w-full", className)}>
       {label && (
         <Label
           htmlFor={name}

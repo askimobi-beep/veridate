@@ -1,14 +1,17 @@
 // components/profile/ExperienceForm.jsx
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import AppInput from "@/components/form/AppInput";
 import AppSelect from "@/components/form/AppSelect";
 import FileUploader from "@/components/form/FileUploader";
-import CheckboxGroup from "@/components/form/CheckboxGroup";
 import { Button } from "@/components/ui/button";
-import { Save } from "lucide-react";
+import { Save, UploadCloud } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import BlockSwitch from "@/components/form/Switch";
 import CreditText from "../creditshow/CreditBadge";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import axiosInstance from "@/utils/axiosInstance";
 import {
   Dialog,
   DialogContent,
@@ -48,12 +51,33 @@ const jobFunctionOptions = [
   "Other",
 ];
 
+const skillOptions = [
+  "JavaScript",
+  "TypeScript",
+  "React",
+  "Node.js",
+  "Python",
+  "Django",
+  "Java",
+  "Spring",
+  "SQL",
+  "MongoDB",
+  "AWS",
+  "Azure",
+  "Docker",
+  "Kubernetes",
+  "CI/CD",
+  "UI/UX",
+  "Data Analysis",
+];
+
 // fields editable even when row is locked
 const EXPERIENCE_UNLOCKED = new Set([
   "endDate",
   "companyWebsite",
   "experienceLetterFile",
   "jobFunctions",
+  "skills",
   "hiddenFields",
 ]);
 
@@ -87,11 +111,217 @@ export default function ExperienceForm({
   onAskConfirm, // (value, title, actionFn)
   isRowSaving, // (index) => boolean
 }) {
+  const [jobTitleQuery, setJobTitleQuery] = useState("");
+  const [jobTitleOptions, setJobTitleOptions] = useState(jobTitles);
+  const [jobTitleLoading, setJobTitleLoading] = useState(false);
+
+  useEffect(() => {
+    let active = true;
+    const fetchTitles = async () => {
+      try {
+        setJobTitleLoading(true);
+        const res = await axiosInstance.get("/job-titles", {
+          params: { q: jobTitleQuery, limit: 25 },
+        });
+        const data = Array.isArray(res?.data?.data) ? res.data.data : [];
+        if (active && data.length) {
+          setJobTitleOptions(data);
+        } else if (active && !jobTitleQuery) {
+          setJobTitleOptions(jobTitles);
+        }
+      } catch {
+        if (active) setJobTitleOptions(jobTitles);
+      } finally {
+        if (active) setJobTitleLoading(false);
+      }
+    };
+
+    fetchTitles();
+    return () => {
+      active = false;
+    };
+  }, [jobTitleQuery]);
+
+  const SearchableMultiSelect = ({
+    label,
+    options,
+    value,
+    onChange,
+    placeholder,
+    disabled,
+  }) => {
+    const [open, setOpen] = useState(false);
+    const [query, setQuery] = useState("");
+    const selected = Array.isArray(value) ? value : [];
+    const filtered = (options || []).filter((opt) =>
+      String(opt).toLowerCase().includes(query.trim().toLowerCase())
+    );
+
+    const toggle = (opt) => {
+      if (disabled) return;
+      const next = selected.includes(opt)
+        ? selected.filter((v) => v !== opt)
+        : [...selected, opt];
+      onChange(next);
+    };
+
+    return (
+      <div className="space-y-1 w-full">
+        {label ? (
+          <Label className="text-sm font-medium text-gray-700 text-left w-full inline-flex items-center gap-2">
+            {label}
+          </Label>
+        ) : null}
+        <Popover open={open} onOpenChange={setOpen}>
+          <PopoverTrigger asChild>
+            <button
+              type="button"
+              disabled={disabled}
+              className={`h-10 w-full rounded-md border border-gray-200 bg-white/90 px-3 text-left text-sm text-gray-900 ${
+                disabled ? "bg-gray-100 text-gray-500 cursor-not-allowed" : ""
+              }`}
+            >
+              {selected.length ? selected.join(", ") : placeholder}
+            </button>
+          </PopoverTrigger>
+          <PopoverContent className="w-[--radix-popover-trigger-width] bg-white p-2">
+            <Input
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Search..."
+              className="h-9"
+            />
+            <div className="mt-2 max-h-48 overflow-y-auto space-y-1">
+              {filtered.length ? (
+                filtered.map((opt) => {
+                  const active = selected.includes(opt);
+                  return (
+                    <button
+                      key={opt}
+                      type="button"
+                      onClick={() => toggle(opt)}
+                      className={`flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm ${
+                        active ? "bg-orange-50 text-orange-700" : "text-gray-700"
+                      }`}
+                    >
+                      <span
+                        className={`inline-flex h-4 w-4 items-center justify-center rounded border ${
+                          active
+                            ? "border-orange-500 bg-orange-500 text-white"
+                            : "border-gray-300"
+                        }`}
+                      >
+                        {active ? "✓" : ""}
+                      </span>
+                      <span>{opt}</span>
+                    </button>
+                  );
+                })
+              ) : (
+                <div className="px-2 py-2 text-xs text-gray-500">
+                  No matches
+                </div>
+              )}
+            </div>
+          </PopoverContent>
+        </Popover>
+      </div>
+    );
+  };
+
+  const SearchableSelect = ({
+    label,
+    options,
+    value,
+    onChange,
+    placeholder,
+    disabled,
+    onSearch,
+    loading,
+  }) => {
+    const [open, setOpen] = useState(false);
+    const [query, setQuery] = useState("");
+    const filtered = (options || []).filter((opt) =>
+      String(opt).toLowerCase().includes(query.trim().toLowerCase())
+    );
+
+    useEffect(() => {
+      onSearch?.(query);
+    }, [query, onSearch]);
+
+    return (
+      <div className="space-y-1 w-full">
+        {label ? (
+          <Label className="text-sm font-medium text-gray-700 text-left w-full inline-flex items-center gap-2">
+            {label}
+          </Label>
+        ) : null}
+        <Popover open={open} onOpenChange={setOpen}>
+          <PopoverTrigger asChild>
+            <button
+              type="button"
+              disabled={disabled}
+              className={`h-10 w-full rounded-md border border-gray-200 bg-white/90 px-3 text-left text-sm text-gray-900 ${
+                disabled ? "bg-gray-100 text-gray-500 cursor-not-allowed" : ""
+              }`}
+            >
+              {value || placeholder}
+            </button>
+          </PopoverTrigger>
+          <PopoverContent className="w-[--radix-popover-trigger-width] bg-white p-2">
+            <Input
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Search..."
+              className="h-9"
+            />
+            <div className="mt-2 max-h-48 overflow-y-auto space-y-1">
+              {loading ? (
+                <div className="px-2 py-2 text-xs text-gray-500">
+                  Loading...
+                </div>
+              ) : null}
+              {filtered.length ? (
+                filtered.map((opt) => (
+                  <button
+                    key={opt}
+                    type="button"
+                    onClick={() => {
+                      onChange(opt);
+                      setOpen(false);
+                    }}
+                    className={`flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm ${
+                      value === opt
+                        ? "bg-orange-50 text-orange-700"
+                        : "text-gray-700"
+                    }`}
+                  >
+                    {opt}
+                  </button>
+                ))
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (!query.trim()) return;
+                    onChange(query.trim());
+                    setOpen(false);
+                  }}
+                  className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm text-gray-700"
+                >
+                  Use "{query.trim()}"
+                </button>
+              )}
+            </div>
+          </PopoverContent>
+        </Popover>
+      </div>
+    );
+  };
   const norm = (s) => (s || "").trim().toLowerCase().replace(/\s+/g, " ");
   const [creditInfoOpen, setCreditInfoOpen] = useState(false);
 
   // derive "Other" mode for selects
-  const isOtherSelected = (list, value) => !!value && !list.includes(value);
 
   return (
     <>
@@ -115,10 +345,6 @@ export default function ExperienceForm({
             typeof isRowSaving === "function" ? isRowSaving(index) : false;
 
           // dropdown glue for "Other"
-          const jobTitleOther = isOtherSelected(jobTitles, exp.jobTitle);
-          const jobTitleSelectValue = jobTitleOther
-            ? "Other"
-            : exp.jobTitle || "";
           const baseCompanies = Array.isArray(companyOptions)
             ? companyOptions
             : [];
@@ -200,37 +426,17 @@ export default function ExperienceForm({
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
-                {/* Job Title (dropdown + optional "Other" input) */}
                 <div className="flex flex-col gap-2">
-                  <AppSelect
-                    name={`jobTitle-${index}`}
+                  <SearchableSelect
                     label="Job Title"
-                    value={jobTitleSelectValue}
-                    onChange={(e) => {
-                      const val = e.target.value;
-                      if (val === "Other") {
-                        if (!jobTitleOther) {
-                          updateExperience(index, "jobTitle", "");
-                        }
-                      } else {
-                        updateExperience(index, "jobTitle", val);
-                      }
-                    }}
-                    options={jobTitles}
+                    options={jobTitleOptions}
+                    value={exp.jobTitle}
+                    onChange={(val) => updateExperience(index, "jobTitle", val)}
+                    placeholder="Select job title"
                     disabled={isExpDisabled(rowLocked, "jobTitle")}
+                    onSearch={(q) => setJobTitleQuery(q)}
+                    loading={jobTitleLoading}
                   />
-                  {jobTitleOther && (
-                    <AppInput
-                      name={`jobTitleOther-${index}`}
-                      label="Custom Job Title"
-                      value={exp.jobTitle || ""}
-                      onChange={(e) =>
-                        updateExperience(index, "jobTitle", e.target.value)
-                      }
-                      placeholder="Type your job title"
-                      disabled={isExpDisabled(rowLocked, "jobTitle")}
-                    />
-                  )}
                 </div>
 
                 {/* Company (dropdown + optional "Other" input) */}
@@ -262,14 +468,45 @@ export default function ExperienceForm({
 
                 <AppInput
                   name={`endDate-${index}`}
-                  label="End Date"
+                  label={
+                    <div className="flex items-center justify-between w-full">
+                      <span>End Date</span>
+                      <span className="inline-flex items-center gap-2">
+                        <label className="relative inline-flex items-center cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={!!exp.isPresent}
+                            onChange={(e) => {
+                              const checked = e.target.checked;
+                              updateExperience(index, "isPresent", checked);
+                              if (checked) updateExperience(index, "endDate", "");
+                            }}
+                            disabled={rowLocked}
+                            className="h-4 w-4 rounded-md border border-gray-300 appearance-none transition-colors duration-200 shrink-0 bg-white checked:bg-gray-800 checked:border-gray-800 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-1"
+                          />
+                          {exp.isPresent ? (
+                            <span className="pointer-events-none absolute inset-0 flex items-center justify-center text-xs text-white">
+                              ✓
+                            </span>
+                          ) : null}
+                        </label>
+                        <span
+                          className={`select-none text-xs ${
+                            exp.isPresent ? "text-gray-800 font-medium" : "text-gray-500"
+                          }`}
+                        >
+                          Present
+                        </span>
+                      </span>
+                    </div>
+                  }
                   type="date"
                   value={exp.endDate}
                   onChange={(e) =>
                     updateExperience(index, "endDate", e.target.value)
                   }
                   placeholder="End date"
-                  disabled={isExpDisabled(rowLocked, "endDate")}
+                  disabled={isExpDisabled(rowLocked, "endDate") || !!exp.isPresent}
                 />
 
                 <AppInput
@@ -304,42 +541,32 @@ export default function ExperienceForm({
                   disabled={isExpDisabled(rowLocked, "industry")}
                 />
 
-                <div className="md:col-span-2">
-                  <CheckboxGroup
-                    title="Job Functions"
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:col-span-2">
+                  <SearchableMultiSelect
+                    label="Job Functions"
                     options={jobFunctionOptions}
-                    selected={exp.jobFunctions || []}
+                    value={exp.jobFunctions || []}
                     onChange={(updated) =>
                       updateExperience(index, "jobFunctions", updated)
                     }
+                    placeholder="Select job functions"
                     disabled={isExpDisabled(rowLocked, "jobFunctions")}
-                    gridClassName="gap-6"
-                    extraAfter="Other"
-                    extraItem={
-                      (exp.jobFunctions || []).includes("Other") ? (
-                        <AppInput
-                          name={`jobFunctionsOther-${index}`}
-                          label="Other Job Function"
-                          value={exp.jobFunctionsOther || ""}
-                          onChange={(e) =>
-                            updateExperience(
-                              index,
-                              "jobFunctionsOther",
-                              e.target.value
-                            )
-                          }
-                          placeholder="Enter job function"
-                          disabled={isExpDisabled(rowLocked, "jobFunctions")}
-                        />
-                      ) : null
-                    }
+                  />
+
+                  <SearchableMultiSelect
+                    label="Skills"
+                    options={skillOptions}
+                    value={exp.skills || []}
+                    onChange={(updated) => updateExperience(index, "skills", updated)}
+                    placeholder="Select skills"
+                    disabled={isExpDisabled(rowLocked, "skills")}
                   />
                 </div>
 
                 <div>
                   <div className="mb-2 flex flex-wrap items-center justify-between gap-3">
                     <label className="text-sm font-medium text-gray-700">
-                      Upload Experience Letter (PDF)
+                      Upload Experience Letter
                     </label>
                     <div className="flex items-center gap-2">
                       <BlockSwitch
@@ -365,8 +592,8 @@ export default function ExperienceForm({
                       if (letterRefs?.current) letterRefs.current[index] = el;
                     }}
                     name={`experienceLetterFile-${index}`}
-                    accept="Application/Pdf"
-                    icon={null}
+                    accept="application/pdf"
+                    icon={UploadCloud}
                     onChange={(file) =>
                       updateExperience(index, "experienceLetterFile", file)
                     }

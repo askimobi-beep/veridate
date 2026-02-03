@@ -1,21 +1,22 @@
-import React, { useState, useEffect } from "react";
+import React, { useMemo, useState, useEffect } from "react";
 import AppInput from "@/components/form/AppInput";
 import AppSelect from "@/components/form/AppSelect";
-import CheckboxGroup from "@/components/form/CheckboxGroup";
-import { Loader2, CircleCheck, CircleHelp, Save } from "lucide-react";
+import { CircleCheck, CircleHelp, Save } from "lucide-react";
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   genders,
   residentStatuses,
   shiftOptions,
   workAuthorizationOptions,
 } from "@/components/form/Dropdowndata";
-import BlockSwitch from "../form/Switch";
 
 const PERSONAL_UNLOCKED = new Set([
   "email",
@@ -26,6 +27,7 @@ const PERSONAL_UNLOCKED = new Set([
   "street",
   "city",
   "country",
+  "zip",
   "residentStatus",
   "nationality",
   "shiftPreferences",
@@ -76,51 +78,18 @@ export default function PersonalDetailsForm({
   const [dobFocused, setDobFocused] = useState(false);
 
   const [countriesList, setCountriesList] = useState([]);
-  const [cityOptions, setCityOptions] = useState([]);
-  const [cityLoading, setCityLoading] = useState(false);
 
   const emailValid =
     !!formData.email && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email);
 
-  // ----- privacy helpers -----
-  const hiddenSet = new Set(
-    (formData.personalHiddenFields || []).filter(
-      (field) => field !== "email" && field !== "mobile"
-    )
+  const preferenceOptions = useMemo(
+    () => (Array.isArray(shiftOptions) ? shiftOptions : []),
+    []
   );
-  const isHidden = (field) => hiddenSet.has(field);
-
-  const setVisibility = (field, visible) => {
-    let updated = [...(formData.personalHiddenFields || [])].filter(
-      (key) => key !== "email" && key !== "mobile"
-    );
-    const idx = updated.indexOf(field);
-    if (visible) {
-      if (idx !== -1) updated.splice(idx, 1);
-    } else {
-      if (idx === -1) updated.push(field);
-    }
-    handleCustomChange("personalHiddenFields", updated);
-  };
-
-  const withPrivacy = (labelText, fieldKey, leftExtra = null) => (
-    <div className="flex items-center justify-between gap-3 w-full">
-      <span className="flex items-center gap-2">
-        {leftExtra}
-        {labelText}
-      </span>
-      <div className="flex items-center gap-2 text-xs text-gray-500">
-        {/* <span className="min-w-[44px] text-right">
-          {isHidden(fieldKey) ? "Hidden" : "Visible"}
-        </span> */}
-        <BlockSwitch
-          checked={!isHidden(fieldKey)}
-          onChange={(checked) => setVisibility(fieldKey, checked)}
-        />
-      </div>
-    </div>
+  const workAuthOptions = useMemo(
+    () => (Array.isArray(workAuthorizationOptions) ? workAuthorizationOptions : []),
+    []
   );
-  // ----------------------------
 
   // fetch country list (names only)
   useEffect(() => {
@@ -146,50 +115,171 @@ export default function PersonalDetailsForm({
     };
   }, []);
 
-  // fetch cities when country changes
-  useEffect(() => {
-    const selected = (formData.country || "").trim();
-    if (!selected) {
-      setCityOptions([]);
-      setCityLoading(false);
-      return;
-    }
+  const MultiSelectDropdown = ({
+    label,
+    options,
+    value,
+    onChange,
+    placeholder,
+    disabled,
+  }) => {
+    const [open, setOpen] = useState(false);
+    const [query, setQuery] = useState("");
+    const selected = Array.isArray(value) ? value : [];
+    const filtered = useMemo(() => {
+      const q = query.trim().toLowerCase();
+      return (options || []).filter((opt) =>
+        String(opt).toLowerCase().includes(q)
+      );
+    }, [options, query]);
 
-    let cancelled = false;
-    const loadCities = async () => {
-      try {
-        setCityLoading(true);
-        const res = await fetch(
-          "https://countriesnow.space/api/v0.1/countries/cities",
-          {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ country: selected }),
-          }
-        );
-        const json = await res.json();
-        const cities = Array.isArray(json?.data) ? json.data : [];
-        cities.sort((a, b) => a.localeCompare(b));
-        if (!cancelled) {
-          setCityOptions(cities);
-          if (formData.city && !cities.includes(formData.city)) {
-            handleCustomChange("city", "");
-          }
-        }
-      } catch (e) {
-        console.error("Failed to fetch cities", e);
-        if (!cancelled) setCityOptions([]);
-      } finally {
-        if (!cancelled) setCityLoading(false);
-      }
+    const toggle = (opt) => {
+      if (disabled) return;
+      const next = selected.includes(opt)
+        ? selected.filter((v) => v !== opt)
+        : [...selected, opt];
+      onChange(next);
     };
 
-    loadCities();
-    return () => {
-      cancelled = true;
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [formData.country]);
+    const labelText = selected.length ? selected.join(", ") : placeholder;
+
+    return (
+      <div className="space-y-1 w-full">
+        {label ? (
+          <Label className="text-sm font-medium text-gray-700 text-left w-full inline-flex items-center gap-2">
+            {label}
+          </Label>
+        ) : null}
+        <Popover open={open} onOpenChange={setOpen}>
+          <PopoverTrigger asChild>
+            <button
+              type="button"
+              disabled={disabled}
+              className={`h-10 w-full rounded-md border border-gray-200 bg-white/90 px-3 text-left text-sm text-gray-900 ${
+                disabled ? "bg-gray-100 text-gray-500 cursor-not-allowed" : ""
+              }`}
+            >
+              {labelText || "Select options"}
+            </button>
+          </PopoverTrigger>
+          <PopoverContent className="w-[--radix-popover-trigger-width] bg-white p-2">
+            <Input
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Search..."
+              className="h-9"
+            />
+            <div className="mt-2 max-h-48 overflow-y-auto space-y-1">
+              {filtered.length ? (
+                filtered.map((opt) => {
+                  const active = selected.includes(opt);
+                  return (
+                    <button
+                      key={opt}
+                      type="button"
+                      onClick={() => toggle(opt)}
+                      className={`flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm ${
+                        active ? "bg-orange-50 text-orange-700" : "text-gray-700"
+                      }`}
+                    >
+                      <span
+                        className={`inline-flex h-4 w-4 items-center justify-center rounded border ${
+                          active
+                            ? "border-orange-500 bg-orange-500 text-white"
+                            : "border-gray-300"
+                        }`}
+                      >
+                        {active ? "✓" : ""}
+                      </span>
+                      <span>{opt}</span>
+                    </button>
+                  );
+                })
+              ) : (
+                <div className="px-2 py-2 text-xs text-gray-500">
+                  No matches
+                </div>
+              )}
+            </div>
+          </PopoverContent>
+        </Popover>
+      </div>
+    );
+  };
+
+  const SearchableSelect = ({
+    label,
+    options,
+    value,
+    onChange,
+    placeholder,
+    disabled,
+  }) => {
+    const [open, setOpen] = useState(false);
+    const [query, setQuery] = useState("");
+    const filtered = useMemo(() => {
+      const q = query.trim().toLowerCase();
+      return (options || []).filter((opt) =>
+        String(opt).toLowerCase().includes(q)
+      );
+    }, [options, query]);
+
+    return (
+      <div className="space-y-1 w-full">
+        {label ? (
+          <Label className="text-sm font-medium text-gray-700 text-left w-full inline-flex items-center gap-2">
+            {label}
+          </Label>
+        ) : null}
+        <Popover open={open} onOpenChange={setOpen}>
+          <PopoverTrigger asChild>
+            <button
+              type="button"
+              disabled={disabled}
+              className={`h-10 w-full rounded-md border border-gray-200 bg-white/90 px-3 text-left text-sm text-gray-900 ${
+                disabled ? "bg-gray-100 text-gray-500 cursor-not-allowed" : ""
+              }`}
+            >
+              {value || placeholder || "Select option"}
+            </button>
+          </PopoverTrigger>
+          <PopoverContent className="w-[--radix-popover-trigger-width] bg-white p-2">
+            <Input
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Search..."
+              className="h-9"
+            />
+            <div className="mt-2 max-h-48 overflow-y-auto space-y-1">
+              {filtered.length ? (
+                filtered.map((opt) => (
+                  <button
+                    key={opt}
+                    type="button"
+                    onClick={() => {
+                      onChange(opt);
+                      setOpen(false);
+                    }}
+                    className={`flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm ${
+                      value === opt
+                        ? "bg-orange-50 text-orange-700"
+                        : "text-gray-700"
+                    }`}
+                  >
+                    {opt}
+                  </button>
+                ))
+              ) : (
+                <div className="px-2 py-2 text-xs text-gray-500">
+                  No matches
+                </div>
+              )}
+            </div>
+          </PopoverContent>
+        </Popover>
+      </div>
+    );
+  };
 
   return (
     <>
@@ -197,7 +287,7 @@ export default function PersonalDetailsForm({
       {/* Form */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-5">
         <AppInput
-          label={<span>Legal Name</span>}
+          label={<span>Full Name</span>}
           name="name"
           value={formData.name}
           onChange={handleChange}
@@ -310,28 +400,8 @@ export default function PersonalDetailsForm({
         />
 
 
-        <AppSelect
-          label="Resident Status"
-          name="residentStatus"
-          value={formData.residentStatus}
-          onChange={handleChange}
-          options={residentStatuses}
-          placeholder="Select Resident Status"
-          disabled={isDisabled(locked, "residentStatus")}
-        />
-
-        <AppSelect
-          label="Nationality"
-          name="nationality"
-          value={formData.nationality}
-          onChange={handleChange}
-          options={countriesList}
-          placeholder="Select your Nationality"
-          disabled={isDisabled(locked, "nationality")}
-        />
-
         <AppInput
-          label={withPrivacy("Date of Birth", "dob")}
+          label="Date of Birth"
           type={dobFocused ? "month" : "text"}
           name="dob"
           value={formData.dob}
@@ -340,6 +410,15 @@ export default function PersonalDetailsForm({
           disabled={isDisabled(locked, "dob")}
           onFocus={() => setDobFocused(true)}
           onBlur={() => setDobFocused(false)}
+        />
+
+        <MultiSelectDropdown
+          label="Shift Preference"
+          options={preferenceOptions}
+          value={formData.shiftPreferences}
+          onChange={(updated) => handleCustomChange("shiftPreferences", updated)}
+          placeholder="Select preferences"
+          disabled={isDisabled(locked, "shiftPreferences")}
         />
       </div>
 
@@ -354,69 +433,71 @@ export default function PersonalDetailsForm({
               name="street"
               value={formData.street}
               onChange={handleChange}
-              placeholder="Street / Area"
+              placeholder=""
               disabled={isDisabled(locked, "street")}
             />
 
-            <AppSelect
+            <AppInput
               label="City"
               name="city"
               value={formData.city}
               onChange={handleChange}
-              options={cityOptions}
-              placeholder={
-                !formData.country
-                  ? "Select country first"
-                  : cityLoading
-                  ? "Loading cities..."
-                  : cityOptions.length
-                  ? "Select city"
-                  : "No cities found"
-              }
-              disabled={
-                isDisabled(locked, "city") || !formData.country || cityLoading
-              }
-              endAdornment={
-                cityLoading ? (
-                  <Loader2 className="h-4 w-4 animate-spin text-gray-500" />
-                ) : null
-              }
+              placeholder=""
+              disabled={isDisabled(locked, "city")}
             />
 
-            <AppSelect
+            <AppInput
               label="Country"
               name="country"
               value={formData.country}
               onChange={handleChange}
-              options={countriesList}
-              placeholder="Select your country"
+              placeholder=""
               disabled={isDisabled(locked, "country")}
+            />
+
+            <AppInput
+              label="Zip Code"
+              name="zip"
+              value={formData.zip || ""}
+              onChange={handleChange}
+              placeholder=""
+              disabled={isDisabled(locked, "zip")}
             />
           </div>
         </div>
 
-        <div className="grid grid-cols-1 gap-6">
-        <CheckboxGroup
-          title="Shift Preferences"
-          options={shiftOptions}
-          selected={formData.shiftPreferences}
-          onChange={(updated) =>
-            handleCustomChange("shiftPreferences", updated)
-          }
-          disabled={isDisabled(locked, "shiftPreferences")}
-          gridClassName="gap-6"
-        />
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div>
+            <SearchableSelect
+              label="Nationality"
+              options={countriesList}
+              value={formData.nationality}
+              onChange={(val) => handleCustomChange("nationality", val)}
+              placeholder="Select your Nationality"
+              disabled={isDisabled(locked, "nationality")}
+            />
+          </div>
 
-        <CheckboxGroup
-          title="Work Authorization"
-          options={workAuthorizationOptions}
-          selected={formData.workAuthorization}
-          onChange={(updated) =>
-            handleCustomChange("workAuthorization", updated)
-          }
-          disabled={isDisabled(locked, "workAuthorization")}
-          gridClassName="gap-6"
-        />
+          <MultiSelectDropdown
+            label="Work Authorization"
+            options={workAuthOptions}
+            value={formData.workAuthorization}
+            onChange={(updated) =>
+              handleCustomChange("workAuthorization", updated)
+            }
+            placeholder="Select work authorization"
+            disabled={isDisabled(locked, "workAuthorization")}
+          />
+
+          <AppSelect
+            label="Resident Status"
+            name="residentStatus"
+            value={formData.residentStatus}
+            onChange={handleChange}
+            options={residentStatuses}
+            placeholder="Select Resident Status"
+            disabled={isDisabled(locked, "residentStatus")}
+          />
         </div>
       </div>
 

@@ -4,7 +4,7 @@ import AppInput from "@/components/form/AppInput";
 import AppSelect from "@/components/form/AppSelect";
 import FileUploader from "@/components/form/FileUploader";
 import { Button } from "@/components/ui/button";
-import { Save } from "lucide-react";
+import { Save, UploadCloud } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import BlockSwitch from "@/components/form/Switch";
 import CreditBadge from "../creditshow/CreditBadge";
@@ -191,14 +191,45 @@ export default function EducationForm({
 
                 <AppInput
                   name={`endDate-${index}`}
-                  label="End Date"
+                  label={
+                    <div className="flex items-center justify-between w-full">
+                      <span>End Date</span>
+                      <span className="inline-flex items-center gap-2">
+                        <label className="relative inline-flex items-center cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={!!edu.isPresent}
+                            onChange={(e) => {
+                              const checked = e.target.checked;
+                              updateEducation(index, "isPresent", checked);
+                              if (checked) updateEducation(index, "endDate", "");
+                            }}
+                            disabled={rowLocked}
+                            className="h-4 w-4 rounded-md border border-gray-300 appearance-none transition-colors duration-200 shrink-0 bg-white checked:bg-gray-800 checked:border-gray-800 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-1"
+                          />
+                          {edu.isPresent ? (
+                            <span className="pointer-events-none absolute inset-0 flex items-center justify-center text-xs text-white">
+                              ✓
+                            </span>
+                          ) : null}
+                        </label>
+                        <span
+                          className={`select-none text-xs ${
+                            edu.isPresent ? "text-gray-800 font-medium" : "text-gray-500"
+                          }`}
+                        >
+                          Currently enrolled
+                        </span>
+                      </span>
+                    </div>
+                  }
                   type="date"
                   value={edu.endDate}
                   onChange={(e) =>
                     updateEducation(index, "endDate", e.target.value)
                   }
                   placeholder="End date"
-                  disabled={isEduDisabled(rowLocked, "endDate")}
+                  disabled={isEduDisabled(rowLocked, "endDate") || !!edu.isPresent}
                 />
 
                 <AppInput
@@ -226,7 +257,7 @@ export default function EducationForm({
                 <div>
                   <div className="flex items-center justify-between mb-2">
                     <label className="text-sm font-medium text-gray-700">
-                      Upload Degree (PDF)
+                      Upload Degree
                     </label>
 
                     <div className="flex items-center gap-2">
@@ -253,13 +284,14 @@ export default function EducationForm({
                         : null
                     }
                     name={`degreeFile-${index}`}
-                    accept="Application/Pdf"
-                    icon={null}
+                    accept="application/pdf"
+                    icon={UploadCloud}
                     onChange={(file) =>
                       updateEducation(index, "degreeFile", file)
                     }
                     disabled={isEduDisabled(rowLocked, "degreeFile")}
                     className="w-full"
+                    dropzoneClassName="h-10 p-2"
                   />
                 </div>
               </div>

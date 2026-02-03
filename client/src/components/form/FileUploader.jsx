@@ -27,6 +27,7 @@ export default forwardRef(function FileUploader(
     accept,
     onChange, // (file|null) => void
     className,
+    dropzoneClassName,
     error,
     disabled = false,
     defaultPreviewUrl, // optional: show an existing image url
@@ -110,7 +111,8 @@ export default forwardRef(function FileUploader(
             : "bg-white/90 hover:border-orange-500 border-gray-300",
           isDragging && !disabled
             ? "border-orange-500 ring-2 ring-orange-200"
-            : ""
+            : "",
+          dropzoneClassName
         )}
         onDrop={handleDrop}
         onDragOver={handleDragOver}
@@ -127,10 +129,10 @@ export default forwardRef(function FileUploader(
           className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
         />
 
-        <div className="flex items-center justify-center text-center pointer-events-none min-h-[70px]">
+        <div className="flex items-center justify-center text-center pointer-events-none h-full min-h-0">
           {!file && !previewUrl && (
-            <div className="flex flex-col items-center gap-1">
-              {Icon ? <Icon className="w-6 h-6 text-orange-500" /> : null}
+            <div className="flex items-center gap-2">
+              {Icon ? <Icon className="w-4 h-4 text-orange-500" /> : null}
               <p className="text-xs text-gray-500 group-hover:text-orange-600 transition">
                 {disabled
                   ? "Upload disabled"
@@ -138,7 +140,7 @@ export default forwardRef(function FileUploader(
                   ? "Drop it..."
                   : "Click or drag to upload"}
               </p>
-              {accept && <p className="text-xs text-gray-400">{accept}</p>}
+              {/* accept text hidden by request */}
             </div>
           )}
 

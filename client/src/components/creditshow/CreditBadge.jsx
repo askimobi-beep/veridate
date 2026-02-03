@@ -1,5 +1,5 @@
 import React from "react";
-import { Gauge, CheckCircle, Clock, ChevronRight } from "lucide-react";
+import { Gauge, CheckCircle, Clock, MoveRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 /**
@@ -95,7 +95,7 @@ const BadgePill = ({ icon: Icon, label, value, className }) => {
       <span className="inline-flex items-center gap-1.5">
         {value}
         {showArrow ? (
-          <ChevronRight className="h-3.5 w-3.5 opacity-80" strokeWidth={3} />
+          <MoveRight className="h-4 w-4 opacity-80" />
         ) : null}
       </span>
     </div>

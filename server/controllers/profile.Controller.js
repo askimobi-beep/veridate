@@ -109,7 +109,8 @@ function normalizeProjectRow(p) {
     company: typeof p?.company === "string" ? p.company : "",
     projectUrl: typeof p?.projectUrl === "string" ? p.projectUrl : "",
     startDate: p?.startDate || "",
-    endDate: p?.endDate || "",
+    endDate: p?.isPresent ? "" : p?.endDate || "",
+    isPresent: Boolean(p?.isPresent),
     department: typeof p?.department === "string" ? p.department : "",
     projectMember: normalizeProjectMembers(p?.projectMember),
     role: typeof p?.role === "string" ? p.role : "",
@@ -141,6 +142,7 @@ exports.savePersonalInfo = async (req, res) => {
       "street",
       "city",
       "country",
+      "zip",
       "residentStatus",
       "nationality",
       "shiftPreferences",
@@ -184,6 +186,7 @@ exports.savePersonalInfo = async (req, res) => {
       "mobileCountryCode", // ?? allow code to come through when locked`r`n      "dob"`r`n      "street",
       "city",
       "country",
+      "zip",
       "gender",
       "residentStatus",
       "nationality",
@@ -415,6 +418,7 @@ exports.saveEducation = async (req, res) => {
     const ALLOWED_WHEN_LOCKED = new Set([
       "degreeTitle",
       "endDate",
+      "isPresent",
       "instituteWebsite",
       "degreeFile",
       "hiddenFields",
@@ -479,7 +483,8 @@ exports.saveEducation = async (req, res) => {
       const cleaned = incoming.map((e) => ({
         degreeTitle: e?.degreeTitle || "",
         startDate: e?.startDate || "",
-        endDate: e?.endDate || "",
+        endDate: e?.isPresent ? "" : e?.endDate || "",
+        isPresent: Boolean(e?.isPresent),
         institute: e?.institute || "",
         instituteWebsite: e?.instituteWebsite || "",
         degreeFile: e?.degreeFile || null,
@@ -534,6 +539,9 @@ exports.saveEducation = async (req, res) => {
             next.hiddenFields = Array.isArray(v) ? v : [];
           } else if (k === "projects") {
             next.projects = normalizeProjects(v);
+          } else if (k === "isPresent") {
+            next.isPresent = Boolean(v);
+            if (next.isPresent) next.endDate = "";
           } else {
             next[k] = v ?? next[k];
           }
@@ -543,7 +551,8 @@ exports.saveEducation = async (req, res) => {
         patched.push({
           degreeTitle: inc?.degreeTitle || "",
           startDate: inc?.startDate || "",
-          endDate: inc?.endDate || "",
+          endDate: inc?.isPresent ? "" : inc?.endDate || "",
+          isPresent: Boolean(inc?.isPresent),
           institute: inc?.institute || "",
           instituteWebsite: inc?.instituteWebsite || "",
           degreeFile: inc?.degreeFile || null,
@@ -665,9 +674,11 @@ exports.saveExperience = async (req, res) => {
 
     const ALLOWED_WHEN_LOCKED = new Set([
       "endDate",
+      "isPresent",
       "companyWebsite",
       "experienceLetterFile",
       "jobFunctions",
+      "skills",
       "hiddenFields",
       "projects",
     ]);
@@ -730,11 +741,13 @@ exports.saveExperience = async (req, res) => {
       const cleaned = incoming.map((e) => ({
         jobTitle: e?.jobTitle || "",
         startDate: e?.startDate || "",
-        endDate: e?.endDate || "",
+        endDate: e?.isPresent ? "" : e?.endDate || "",
+        isPresent: Boolean(e?.isPresent),
         company: e?.company || "",
         companyWebsite: e?.companyWebsite || "",
         experienceLetterFile: e?.experienceLetterFile || null,
         jobFunctions: Array.isArray(e?.jobFunctions) ? e.jobFunctions : [],
+        skills: Array.isArray(e?.skills) ? e.skills : [],
         industry: e?.industry || "",
         hiddenFields: Array.isArray(e?.hiddenFields) ? e.hiddenFields : [],
         // 👇 add normalized key so verifyExperience can match buckets
@@ -797,8 +810,13 @@ exports.saveExperience = async (req, res) => {
             next.hiddenFields = Array.isArray(v) ? v : [];
           } else if (k === "jobFunctions") {
             next.jobFunctions = Array.isArray(v) ? v : [];
+          } else if (k === "skills") {
+            next.skills = Array.isArray(v) ? v : [];
           } else if (k === "projects") {
             next.projects = normalizeProjects(v);
+          } else if (k === "isPresent") {
+            next.isPresent = Boolean(v);
+            if (next.isPresent) next.endDate = "";
           } else {
             next[k] = v ?? next[k];
           }
@@ -811,13 +829,15 @@ exports.saveExperience = async (req, res) => {
         patched.push({
           jobTitle: inc?.jobTitle || "",
           startDate: inc?.startDate || "",
-          endDate: inc?.endDate || "",
+          endDate: inc?.isPresent ? "" : inc?.endDate || "",
+          isPresent: Boolean(inc?.isPresent),
           company: inc?.company || "",
           companyWebsite: inc?.companyWebsite || "",
           experienceLetterFile: inc?.experienceLetterFile || null,
           jobFunctions: Array.isArray(inc?.jobFunctions)
             ? inc.jobFunctions
             : [],
+          skills: Array.isArray(inc?.skills) ? inc.skills : [],
           industry: inc?.industry || "",
           hiddenFields: Array.isArray(inc?.hiddenFields)
             ? inc.hiddenFields
@@ -856,6 +876,7 @@ exports.saveProject = async (req, res) => {
       "projectTitle",
       "projectUrl",
       "endDate",
+      "isPresent",
       "department",
       "projectMember",
       "role",
@@ -913,6 +934,9 @@ exports.saveProject = async (req, res) => {
           if (k === "projectMember") {
             next.projectMember = normalizeProjectRow({ projectMember: v })
               .projectMember;
+          } else if (k === "isPresent") {
+            next.isPresent = Boolean(v);
+            if (next.isPresent) next.endDate = "";
           } else {
             next[k] = v ?? next[k];
           }

@@ -24,25 +24,28 @@
 
 import Footer from "@/components/footer/Footer";
 import Navbar from "@/components/navbar/Navbar";
-import { Outlet } from "react-router-dom";
+import { Outlet, useLocation } from "react-router-dom";
 
 export default function ProfilePage() {
+  const location = useLocation();
+  const params = new URLSearchParams(location.search || "");
+  const isEmbed = params.get("embed") === "1";
+
   return (
     <div className="min-h-screen flex flex-col">
-      {/* Navbar */}
-      <nav className="w-full bg-white shadow-md px-6 py-3 flex items-center justify-between sticky top-0 z-50">
-       <Navbar/>
-      </nav>
+      {!isEmbed ? (
+        <nav className="w-full bg-white shadow-md px-6 py-3 flex items-center justify-between sticky top-0 z-50">
+          <Navbar />
+        </nav>
+      ) : null}
 
-      {/* Page Content */}
-      <main className="flex-1 p-6">
-        <div className="text-gray-500 text-center rounded-lg">
+      <main className={isEmbed ? "flex-1 p-0" : "flex-1 p-6"}>
+        <div className={isEmbed ? "text-gray-500 text-center" : "text-gray-500 text-center rounded-lg"}>
           <Outlet />
         </div>
       </main>
-      
 
-      <Footer/>
+      {!isEmbed ? <Footer /> : null}
     </div>
   );
 }

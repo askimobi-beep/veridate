@@ -169,14 +169,45 @@ export default function ProjectForm({
 
                 <AppInput
                   name={`endDate-${index}`}
-                  label="End Date"
+                  label={
+                    <div className="flex items-center justify-between w-full">
+                      <span>End Date</span>
+                      <span className="inline-flex items-center gap-2">
+                        <label className="relative inline-flex items-center cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={!!project.isPresent}
+                            onChange={(e) => {
+                              const checked = e.target.checked;
+                              updateProject(index, "isPresent", checked);
+                              if (checked) updateProject(index, "endDate", "");
+                            }}
+                            disabled={rowLocked}
+                            className="h-4 w-4 rounded-md border border-gray-300 appearance-none transition-colors duration-200 shrink-0 bg-white checked:bg-gray-800 checked:border-gray-800 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-1"
+                          />
+                          {project.isPresent ? (
+                            <span className="pointer-events-none absolute inset-0 flex items-center justify-center text-xs text-white">
+                              ✓
+                            </span>
+                          ) : null}
+                        </label>
+                        <span
+                          className={`select-none text-xs ${
+                            project.isPresent ? "text-gray-800 font-medium" : "text-gray-500"
+                          }`}
+                        >
+                          Present
+                        </span>
+                      </span>
+                    </div>
+                  }
                   type="date"
                   value={project.endDate}
                   onChange={(e) =>
                     updateProject(index, "endDate", e.target.value)
                   }
                   placeholder="End date"
-                  disabled={isProjectDisabled(rowLocked, "endDate")}
+                  disabled={isProjectDisabled(rowLocked, "endDate") || !!project.isPresent}
                 />
 
                 <AppInput

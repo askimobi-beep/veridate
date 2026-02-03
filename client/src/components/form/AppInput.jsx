@@ -7,6 +7,7 @@ export default function AppInput({
   name,
   className,
   inputClassName,
+  inputRef,
   disabled = false,
   endAdornment = null,
   startAdornment = null,          // 👈 NEW
@@ -32,6 +33,7 @@ export default function AppInput({
         <Input
           id={name}
           name={name}
+          ref={inputRef}
           disabled={disabled}
           className={cn(
             "bg-white/90 border border-gray-200 text-gray-900 placeholder:text-gray-400",

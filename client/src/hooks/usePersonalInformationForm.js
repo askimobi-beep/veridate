@@ -10,6 +10,7 @@ const getEmptyForm = () => ({
   street: "",
   city: "",
   country: "",
+  zip: "",
   gender: "",
   residentStatus: "",
   nationality: "",
@@ -34,6 +35,7 @@ const getEmptyForm = () => ({
       institute: "",
       instituteWebsite: "",
       degreeFile: null,
+      isPresent: false,
       hiddenFields: [],
     },
   ],
@@ -47,6 +49,8 @@ const getEmptyForm = () => ({
       company: "",
       companyWebsite: "",
       experienceLetterFile: null,
+      skills: [],
+      isPresent: false,
       jobFunctions: [],
       industry: "",
       hiddenFields: [],
@@ -61,6 +65,7 @@ const getEmptyForm = () => ({
       projectUrl: "",
       startDate: "",
       endDate: "",
+      isPresent: false,
       department: "",
       projectMember: [],
       role: "",
@@ -266,6 +271,7 @@ export default function usePersonalInformationForm() {
       fd.append("street", formData.street || "");
       fd.append("city", formData.city || "");
       fd.append("country", formData.country || "");
+      fd.append("zip", formData.zip || "");
       fd.append("gender", formData.gender || "");
       fd.append("residentStatus", formData.residentStatus || "");
       fd.append("nationality", formData.nationality || "");

@@ -26,6 +26,32 @@ export default function Directory() {
   const [loading, setLoading] = useState(false);
   const [hasSearched, setHasSearched] = useState(false);
   const [activeFilters, setActiveFilters] = useState(null);
+  const [panelOpen, setPanelOpen] = useState(false);
+  const [panelMode, setPanelMode] = useState("profile");
+  const [panelUserId, setPanelUserId] = useState("");
+
+  const panelUrl = useMemo(() => {
+    const fallbackId = "68d94b0c5a62659a0126e800";
+    const userId = panelUserId || fallbackId;
+    const base = window.location.origin;
+    const url = `${base}/dashboard/profiles/${userId}`;
+    const params = new URLSearchParams();
+    params.set("embed", "1");
+    if (panelMode === "summary") {
+      params.set("section", "summary");
+    }
+    return `${url}?${params.toString()}`;
+  }, [panelMode, panelUserId]);
+
+  const openPanel = (profile, mode) => {
+    setPanelUserId(profile?.user || "");
+    setPanelMode(mode);
+    setPanelOpen(true);
+  };
+
+  const closePanel = () => {
+    setPanelOpen(false);
+  };
 
   const currentFilters = useMemo(
     () => ({
@@ -186,7 +212,7 @@ export default function Directory() {
             <div className="border-b border-white/60 px-4 py-3 text-left">
               <h2 className="text-sm font-semibold text-slate-800">Filters</h2>
             </div>
-            <div className="p-4 max-h-[calc(100vh-180px)] overflow-y-auto">
+            <div className="px-4 pt-2 pb-4 max-h-[calc(100vh-180px)] overflow-y-auto">
               <SearchFilters
                 q={q}
                 setQ={setQ}
@@ -229,7 +255,12 @@ export default function Directory() {
             <>
               <div className="grid grid-cols-1 gap-5">
                 {items.map((p) => (
-                  <DirectoryCard key={p._id} profile={p} />
+                  <DirectoryCard
+                    key={p._id}
+                    profile={p}
+                    onViewProfile={(profile) => openPanel(profile, "profile")}
+                    onViewSummary={(profile) => openPanel(profile, "summary")}
+                  />
                 ))}
               </div>
 
@@ -265,6 +296,42 @@ export default function Directory() {
             </div>
           )}
         </section>
+      </div>
+
+      <div
+        className={`fixed inset-0 z-50 transition ${
+          panelOpen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
+        }`}
+        aria-hidden={!panelOpen}
+      >
+        <div
+          className="absolute inset-0 bg-black/20"
+          onClick={closePanel}
+          role="presentation"
+        />
+        <div
+          className={`absolute right-0 top-0 h-full w-full bg-white shadow-2xl transition-transform duration-300 ease-out sm:w-[70vw] ${
+            panelOpen ? "translate-x-0" : "translate-x-full"
+          }`}
+        >
+          <button
+            type="button"
+            onClick={closePanel}
+            className="absolute right-4 top-4 inline-flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-600 transition hover:border-orange-300 hover:text-orange-600"
+            title="Close"
+          >
+            ×
+          </button>
+          <div className="h-full w-full p-6">
+            <div className="h-full w-full overflow-hidden rounded-2xl border border-slate-200">
+              <iframe
+                title="Candidate profile"
+                src={panelUrl}
+                className="h-full w-full border-0"
+              />
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );

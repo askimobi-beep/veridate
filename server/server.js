@@ -10,6 +10,8 @@ const adminRoutes = require("./router/admin.Routes");
 const organizationRoutes = require("./router/organization.Routes");
 const profileRoutes = require("./router/profile.Routes");
 const verify = require("./router/verify.routes");
+const degreeRoutes = require("./router/degree.Routes");
+const jobTitleRoutes = require("./router/jobTitle.Routes");
 const corsOptions = require("./config/corsOptions");
 
 
@@ -32,6 +34,8 @@ app.use("/api/v1/admin", adminRoutes);
 app.use("/api/v1/organizations", organizationRoutes);
 app.use("/api/v1/profile", profileRoutes);
 app.use("/api/v1/verify", verify);
+app.use("/api/v1/degrees", degreeRoutes);
+app.use("/api/v1/job-titles", jobTitleRoutes);
 
 app.listen(PORT, () => {
   DatabaseConnection();

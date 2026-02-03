@@ -1,7 +1,7 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 // src/pages/directory/DetailPage.jsx
 import React, { useEffect, useMemo, useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
 import axiosInstance from "@/utils/axiosInstance";
 import {
   ArrowLeft,
@@ -608,6 +608,7 @@ function SectionCard({ id, title, icon: Icon, children }) {
 
 export default function DetailPage() {
   const { userId } = useParams();
+  const location = useLocation();
   const { enqueueSnackbar } = useSnackbar();
   const { user: authUser } = useAuth();
 
@@ -636,6 +637,10 @@ export default function DetailPage() {
   const [reviewSort, setReviewSort] = useState("newest");
   const [expandedReviews, setExpandedReviews] = useState({});
   const [copied, setCopied] = useState(false);
+  const sectionKeys = useMemo(
+    () => ["summary", "personal", "education", "experience", "projects", "audio", "video"],
+    []
+  );
 
   const sectionItems = [
     { key: "summary", label: "AI Profile Summary", icon: Star },
@@ -746,6 +751,18 @@ export default function DetailPage() {
       off = true;
     };
   }, [userId]);
+
+  useEffect(() => {
+    const params = new URLSearchParams(location.search || "");
+    const target = params.get("section");
+    if (target && sectionKeys.includes(target)) {
+      setActiveSection(target);
+      const el = document.getElementById(`section-${target}`);
+      if (el) {
+        el.scrollIntoView({ behavior: "smooth", block: "start" });
+      }
+    }
+  }, [location.search, sectionKeys]);
 
   // Credit Maps
   const eduCreditMap = useMemo(() => {
@@ -1125,7 +1142,7 @@ export default function DetailPage() {
   const meId = authUser?._id;
   const fullName = profile?.name || "Unnamed";
   const overallRating = overallProfileRating(profile);
-  const location = [profile?.city, profile?.country].filter(Boolean).join(", ");
+  const locationLabel = [profile?.city, profile?.country].filter(Boolean).join(", ");
   const avatarUrl =
     profile?.profilePicUrl ||
     (profile?.profilePic ? fileUrl("profile", profile.profilePic) : undefined);
@@ -1413,23 +1430,6 @@ export default function DetailPage() {
 
       {/* <ProfileChatBox userId={userId} profile={profile} /> */}
       <div className="mx-auto max-w-5xl p-4 md:p-6">
-        <div className="mb-4">
-          <Button
-            variant="ghost"
-            size="sm"
-            className="flex items-center gap-2 text-slate-700 hover:text-slate-900"
-            onClick={() => {
-              if (window.history.length > 1) {
-                navigate(-1);
-              } else {
-                navigate("/dashboard/directory");
-              }
-            }}
-          >
-            <ArrowLeft className="h-4 w-4" />
-            Back
-          </Button>
-        </div>
 
         {/* Header */}
         <Card className="mb-6 overflow-hidden border border-orange-200/70 bg-[#f3f4f6] shadow-[0_18px_40px_-28px_rgba(15,23,42,0.35)]">
@@ -1449,19 +1449,14 @@ export default function DetailPage() {
                     </Avatar>
                   </div>
                 </div>
-                <div className="flex flex-1 flex-col gap-4">
-                  <div className="flex flex-wrap items-center justify-center gap-2 text-center md:justify-start md:text-left">
+                <div className="flex flex-1 flex-col gap-3">
+                  <div className="flex flex-wrap items-center justify-start gap-2 text-left">
                     <h1 className="text-2xl font-semibold tracking-tight md:text-3xl">
                       {fullName}
                     </h1>
                   </div>
-                  <div className="w-full max-w-[320px] rounded-xl border border-orange-200 bg-white/80 px-3 py-2 text-left shadow-sm">
-                    <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-                      Over All Profile Rating
-                    </div>
-                    <div className="mt-1 text-sm font-semibold text-slate-800">
-                      ⭐ {overallRating.average.toFixed(1)} / 5
-                    </div>
+                  <div className="text-sm font-semibold text-slate-800 text-left">
+                    Profile Rating: ⭐ {overallRating.average.toFixed(1)}/5
                   </div>
                   <div />
                 </div>
