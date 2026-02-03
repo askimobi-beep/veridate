@@ -1,5 +1,5 @@
 // components/profile/ExperienceForm.jsx
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import AppInput from "@/components/form/AppInput";
 import AppSelect from "@/components/form/AppSelect";
 import FileUploader from "@/components/form/FileUploader";
@@ -121,7 +121,7 @@ export default function ExperienceForm({
       try {
         setJobTitleLoading(true);
         const res = await axiosInstance.get("/job-titles", {
-          params: { q: jobTitleQuery, limit: 25 },
+          params: { q: jobTitleQuery, limit: 100 },
         });
         const data = Array.isArray(res?.data?.data) ? res.data.data : [];
         if (active && data.length) {
@@ -172,7 +172,7 @@ export default function ExperienceForm({
             {label}
           </Label>
         ) : null}
-        <Popover open={open} onOpenChange={setOpen}>
+        <Popover modal={false} open={open} onOpenChange={setOpen}>
           <PopoverTrigger asChild>
             <button
               type="button"
@@ -241,6 +241,7 @@ export default function ExperienceForm({
   }) => {
     const [open, setOpen] = useState(false);
     const [query, setQuery] = useState("");
+    const inputRef = useRef(null);
     const filtered = (options || []).filter((opt) =>
       String(opt).toLowerCase().includes(query.trim().toLowerCase())
     );
@@ -248,6 +249,14 @@ export default function ExperienceForm({
     useEffect(() => {
       onSearch?.(query);
     }, [query, onSearch]);
+
+    useEffect(() => {
+      if (open && inputRef.current) {
+        setTimeout(() => {
+          inputRef.current?.focus?.();
+        }, 0);
+      }
+    }, [open]);
 
     return (
       <div className="space-y-1 w-full">
@@ -268,8 +277,17 @@ export default function ExperienceForm({
               {value || placeholder}
             </button>
           </PopoverTrigger>
-          <PopoverContent className="w-[--radix-popover-trigger-width] bg-white p-2">
+          <PopoverContent
+            className="w-[--radix-popover-trigger-width] bg-white p-2"
+            onOpenAutoFocus={(e) => e.preventDefault()}
+            onInteractOutside={(e) => {
+              if (e.target && e.currentTarget.contains(e.target)) {
+                e.preventDefault();
+              }
+            }}
+          >
             <Input
+              ref={inputRef}
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Search..."
@@ -320,6 +338,7 @@ export default function ExperienceForm({
   };
   const norm = (s) => (s || "").trim().toLowerCase().replace(/\s+/g, " ");
   const [creditInfoOpen, setCreditInfoOpen] = useState(false);
+  const [editingRow, setEditingRow] = useState(null);
 
   // derive "Other" mode for selects
 
@@ -341,6 +360,7 @@ export default function ExperienceForm({
         {experienceList.map((exp, index) => {
           // ✅ instant row lock (local) OR section lock when server-locked
           const rowLocked = !!exp?.rowLocked || (!!exp?._id && locked);
+          const allowEdit = rowLocked && editingRow === index;
           const savingThis =
             typeof isRowSaving === "function" ? isRowSaving(index) : false;
 
@@ -433,7 +453,7 @@ export default function ExperienceForm({
                     value={exp.jobTitle}
                     onChange={(val) => updateExperience(index, "jobTitle", val)}
                     placeholder="Select job title"
-                    disabled={isExpDisabled(rowLocked, "jobTitle")}
+                    disabled={rowLocked}
                     onSearch={(q) => setJobTitleQuery(q)}
                     loading={jobTitleLoading}
                   />
@@ -450,7 +470,7 @@ export default function ExperienceForm({
                       updateExperience(index, "company", val);
                     }}
                     options={companyChoices}
-                    disabled={isExpDisabled(rowLocked, "company")}
+                    disabled={rowLocked}
                   />
                 </div>
 
@@ -481,7 +501,7 @@ export default function ExperienceForm({
                               updateExperience(index, "isPresent", checked);
                               if (checked) updateExperience(index, "endDate", "");
                             }}
-                            disabled={rowLocked}
+                            disabled={rowLocked && !allowEdit}
                             className="h-4 w-4 rounded-md border border-gray-300 appearance-none transition-colors duration-200 shrink-0 bg-white checked:bg-gray-800 checked:border-gray-800 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-1"
                           />
                           {exp.isPresent ? (
@@ -506,7 +526,7 @@ export default function ExperienceForm({
                     updateExperience(index, "endDate", e.target.value)
                   }
                   placeholder="End date"
-                  disabled={isExpDisabled(rowLocked, "endDate") || !!exp.isPresent}
+                  disabled={(rowLocked && !allowEdit) || !!exp.isPresent}
                 />
 
                 <AppInput
@@ -526,7 +546,7 @@ export default function ExperienceForm({
                     );
                   }}
                   placeholder="https://company.com"
-                  disabled={isExpDisabled(rowLocked, "companyWebsite")}
+                  disabled={rowLocked && !allowEdit}
                   error={exp.error_companyWebsite}
                 />
 
@@ -538,7 +558,7 @@ export default function ExperienceForm({
                     updateExperience(index, "industry", e.target.value)
                   }
                   options={industries}
-                  disabled={isExpDisabled(rowLocked, "industry")}
+                  disabled={rowLocked}
                 />
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:col-span-2">
@@ -550,7 +570,7 @@ export default function ExperienceForm({
                       updateExperience(index, "jobFunctions", updated)
                     }
                     placeholder="Select job functions"
-                    disabled={isExpDisabled(rowLocked, "jobFunctions")}
+                    disabled={rowLocked && !allowEdit}
                   />
 
                   <SearchableMultiSelect
@@ -559,7 +579,7 @@ export default function ExperienceForm({
                     value={exp.skills || []}
                     onChange={(updated) => updateExperience(index, "skills", updated)}
                     placeholder="Select skills"
-                    disabled={isExpDisabled(rowLocked, "skills")}
+                    disabled={rowLocked && !allowEdit}
                   />
                 </div>
 
@@ -597,8 +617,14 @@ export default function ExperienceForm({
                     onChange={(file) =>
                       updateExperience(index, "experienceLetterFile", file)
                     }
-                    disabled={isExpDisabled(rowLocked, "experienceLetterFile")}
+                    onClear={() => updateExperience(index, "experienceLetterFile", "")}
+                    disabled={rowLocked && !allowEdit}
                     className="w-full"
+                    defaultFileName={
+                      typeof exp?.experienceLetterFile === "string"
+                        ? exp.experienceLetterFile
+                        : ""
+                    }
                   />
                 </div>
 
@@ -638,34 +664,53 @@ export default function ExperienceForm({
                     </Button>
                   )}
 
-                  <Button
-                    type="button"
-                    disabled={savingThis || !isCompanyWebsiteValid}
-                    onClick={(e) => {
-                      e.stopPropagation(); // don't toggle accordion
+                  {rowLocked && !allowEdit ? (
+                    <>
+                      <Button type="button" disabled>
+                        Saved
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setEditingRow(index);
+                        }}
+                      >
+                        Edit
+                      </Button>
+                    </>
+                  ) : (
+                    <Button
+                      type="button"
+                      disabled={savingThis || !isCompanyWebsiteValid}
+                      onClick={(e) => {
+                        e.stopPropagation(); // don't toggle accordion
 
-                      const val = (exp.companyWebsite || "").trim();
-                      if (!companyWebsiteRegex.test(val)) {
-                        updateExperience(
-                          index,
-                          "error_companyWebsite",
-                          "Only valid website URLs allowed (e.g. https://company.com/)"
+                        const val = (exp.companyWebsite || "").trim();
+                        if (!companyWebsiteRegex.test(val)) {
+                          updateExperience(
+                            index,
+                            "error_companyWebsite",
+                            "Only valid website URLs allowed (e.g. https://company.com/)"
+                          );
+                          return;
+                        }
+                        updateExperience(index, "error_companyWebsite", "");
+
+                        onAskConfirm?.(
+                          `experience:${index}`,
+                          `Experience ${index + 1}`,
+                          () => saveExperience(index, experienceList[index])
                         );
-                        return;
-                      }
-                      updateExperience(index, "error_companyWebsite", "");
-
-                      onAskConfirm?.(
-                        `experience:${index}`,
-                        `Experience ${index + 1}`,
-                        () => saveExperience(index, experienceList[index])
-                      );
-                    }}
-                    className="inline-flex items-center gap-2 bg-orange-600 hover:bg-orange-700 text-white"
-                  >
-                    <Save className="h-4 w-4" />
-                    {savingThis ? "Saving..." : "Save"}
-                  </Button>
+                        setEditingRow(null);
+                      }}
+                      className="inline-flex items-center gap-2 bg-orange-600 hover:bg-orange-700 text-white"
+                    >
+                      <Save className="h-4 w-4" />
+                      {savingThis ? "Saving..." : "Save"}
+                    </Button>
+                  )}
                 </div>
               </div>
             </motion.div>

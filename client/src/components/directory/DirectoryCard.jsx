@@ -198,7 +198,7 @@ export default function DirectoryCard({ profile, onViewProfile, onViewSummary })
                 <span>{location || "N/A"}</span>
               </div>
               <div className="mt-1 flex items-center gap-1 text-sm font-semibold text-orange-600">
-                <Star className="h-4 w-4" />
+                <Star className="h-4 w-4 text-orange-500 fill-orange-500" />
                 <span>{Number.isFinite(ratingValue) ? ratingValue.toFixed(1) : "0.0"}</span>
               </div>
             </div>

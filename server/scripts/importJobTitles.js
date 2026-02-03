@@ -7,6 +7,8 @@ const { normalizeJobTitle } = require("../controllers/jobTitle.Controller");
 const url = process.env.JOB_TITLES_URL || "";
 const filePath = process.env.JOB_TITLES_FILE || "";
 const hfDataset = process.env.JOB_TITLES_HF_DATASET || "gpriday/job-titles";
+const hfSample = Number(process.env.JOB_TITLES_HF_SAMPLE || 0);
+const hfDelayMs = Number(process.env.JOB_TITLES_HF_DELAY_MS || 0);
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
@@ -60,16 +62,21 @@ const loadFromHfRows = async (datasetName) => {
   const config = first.config || "default";
   const split = first.split || "train";
 
-  const sizeUrl = `https://datasets-server.huggingface.co/size?dataset=${encodeURIComponent(
-    datasetName
-  )}&config=${encodeURIComponent(config)}&split=${encodeURIComponent(split)}`;
-  const sizeJson = await fetchJson(sizeUrl);
-  const numRows =
-    sizeJson?.size?.splits?.[0]?.num_rows ||
-    sizeJson?.size?.dataset?.num_rows ||
-    0;
-  if (!numRows) {
-    throw new Error("Failed to determine dataset size.");
+  let numRows = 0;
+  if (hfSample > 0) {
+    numRows = hfSample;
+  } else {
+    const sizeUrl = `https://datasets-server.huggingface.co/size?dataset=${encodeURIComponent(
+      datasetName
+    )}&config=${encodeURIComponent(config)}&split=${encodeURIComponent(split)}`;
+    const sizeJson = await fetchJson(sizeUrl);
+    numRows =
+      sizeJson?.size?.splits?.[0]?.num_rows ||
+      sizeJson?.size?.dataset?.num_rows ||
+      0;
+    if (!numRows) {
+      throw new Error("Failed to determine dataset size.");
+    }
   }
 
   const titles = [];
@@ -90,6 +97,9 @@ const loadFromHfRows = async (datasetName) => {
         "";
       if (title) titles.push(String(title));
     });
+    if (hfDelayMs > 0) {
+      await sleep(hfDelayMs);
+    }
   }
   return titles;
 };

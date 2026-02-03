@@ -36,6 +36,7 @@ export default function ProjectForm({
   onAskConfirm,
 }) {
   const [creditInfoOpen, setCreditInfoOpen] = useState(false);
+  const [editingRow, setEditingRow] = useState(null);
 
   return (
     <>
@@ -54,6 +55,7 @@ export default function ProjectForm({
       <AnimatePresence initial={false}>
         {(Array.isArray(projectList) ? projectList : []).map((project, index) => {
           const rowLocked = !!project?.rowLocked || (!!project?._id && locked);
+          const allowEdit = rowLocked && editingRow === index;
           const savingThis =
             typeof isRowSaving === "function" ? isRowSaving(index) : false;
 
@@ -129,7 +131,7 @@ export default function ProjectForm({
                     updateProject(index, "projectTitle", e.target.value)
                   }
                   placeholder="Project title"
-                  disabled={isProjectDisabled(rowLocked, "projectTitle")}
+                  disabled={rowLocked && !allowEdit}
                 />
 
                 <AppSelect
@@ -152,7 +154,7 @@ export default function ProjectForm({
                     updateProject(index, "projectUrl", e.target.value)
                   }
                   placeholder="https://project.example.com"
-                  disabled={isProjectDisabled(rowLocked, "projectUrl")}
+                  disabled={rowLocked && !allowEdit}
                 />
 
                 <AppInput
@@ -182,7 +184,7 @@ export default function ProjectForm({
                               updateProject(index, "isPresent", checked);
                               if (checked) updateProject(index, "endDate", "");
                             }}
-                            disabled={rowLocked}
+                            disabled={rowLocked && !allowEdit}
                             className="h-4 w-4 rounded-md border border-gray-300 appearance-none transition-colors duration-200 shrink-0 bg-white checked:bg-gray-800 checked:border-gray-800 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-1"
                           />
                           {project.isPresent ? (
@@ -207,7 +209,7 @@ export default function ProjectForm({
                     updateProject(index, "endDate", e.target.value)
                   }
                   placeholder="End date"
-                  disabled={isProjectDisabled(rowLocked, "endDate") || !!project.isPresent}
+                  disabled={(rowLocked && !allowEdit) || !!project.isPresent}
                 />
 
                 <AppInput
@@ -218,7 +220,7 @@ export default function ProjectForm({
                     updateProject(index, "department", e.target.value)
                   }
                   placeholder="Department"
-                  disabled={isProjectDisabled(rowLocked, "department")}
+                  disabled={rowLocked && !allowEdit}
                 />
 
                 <AppInput
@@ -240,7 +242,7 @@ export default function ProjectForm({
                     )
                   }
                   placeholder="e.g. Alice, Bob"
-                  disabled={isProjectDisabled(rowLocked, "projectMember")}
+                  disabled={rowLocked && !allowEdit}
                 />
 
                 <AppInput
@@ -249,7 +251,7 @@ export default function ProjectForm({
                   value={project.role}
                   onChange={(e) => updateProject(index, "role", e.target.value)}
                   placeholder="Role"
-                  disabled={isProjectDisabled(rowLocked, "role")}
+                  disabled={rowLocked && !allowEdit}
                 />
 
                 <div className="md:col-span-2 space-y-1">
@@ -267,11 +269,11 @@ export default function ProjectForm({
                     }
                     placeholder="Project description"
                     rows={4}
-                    disabled={isProjectDisabled(rowLocked, "description")}
+                    disabled={rowLocked && !allowEdit}
                     className={cn(
                       "bg-white/90 border border-gray-200 text-gray-900 placeholder:text-gray-400",
                       "focus-visible:ring-2 focus-visible:ring-black focus-visible:ring-offset-0",
-                      isProjectDisabled(rowLocked, "description") &&
+                      rowLocked && !allowEdit &&
                         "bg-gray-100 text-gray-500 cursor-not-allowed"
                     )}
                   />
@@ -310,21 +312,40 @@ export default function ProjectForm({
                     </Button>
                   )}
 
-                  <Button
-                    type="button"
-                    disabled={savingThis}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onAskConfirm?.(
-                        `projects:${index}`,
-                        `Project ${index + 1}`,
-                        () => saveProject(index, project)
-                      );
-                    }}
-                    className="inline-flex items-center gap-2 bg-orange-600 hover:bg-orange-700 text-white"
-                  >
-                    {savingThis ? "Saving..." : "Save"}
-                  </Button>
+                  {rowLocked && !allowEdit ? (
+                    <>
+                      <Button type="button" disabled>
+                        Saved
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setEditingRow(index);
+                        }}
+                      >
+                        Edit
+                      </Button>
+                    </>
+                  ) : (
+                    <Button
+                      type="button"
+                      disabled={savingThis}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onAskConfirm?.(
+                          `projects:${index}`,
+                          `Project ${index + 1}`,
+                          () => saveProject(index, project)
+                        );
+                        setEditingRow(null);
+                      }}
+                      className="inline-flex items-center gap-2 bg-orange-600 hover:bg-orange-700 text-white"
+                    >
+                      {savingThis ? "Saving..." : "Save"}
+                    </Button>
+                  )}
                 </div>
               </div>
             </motion.div>

@@ -63,8 +63,10 @@ export default function EducationForm({
   isRowSaving, // (index) => boolean
 }) {
   const norm = (s) => (s || "").trim().toLowerCase().replace(/\s+/g, " ");
-  const websiteRegex = /^https:\/\/[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+const websiteRegex = /^https:\/\/[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+const websitePattern = "https://[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$";
   const [creditInfoOpen, setCreditInfoOpen] = useState(false);
+  const [editingRow, setEditingRow] = useState(null);
 
   return (
     <>
@@ -83,6 +85,7 @@ export default function EducationForm({
       <AnimatePresence initial={false}>
         {educationList.map((edu, index) => {
           const rowLocked = !!edu?.rowLocked || (!!edu?._id && locked);
+          const allowEdit = rowLocked && editingRow === index;
           const savingThis =
             typeof isRowSaving === "function" ? isRowSaving(index) : false;
 
@@ -162,7 +165,7 @@ export default function EducationForm({
                     updateEducation(index, "degreeTitle", e.target.value)
                   }
                   options={degreeOptions}
-                  disabled={isEduDisabled(rowLocked, "degreeTitle")}
+                  disabled={rowLocked}
                 />
 
                 <AppSelect
@@ -174,7 +177,7 @@ export default function EducationForm({
                     updateEducation(index, "institute", e.target.value)
                   }
                   options={instituteChoices}
-                  disabled={isEduDisabled(rowLocked, "institute")}
+                  disabled={rowLocked}
                 />
 
                 <AppInput
@@ -204,7 +207,7 @@ export default function EducationForm({
                               updateEducation(index, "isPresent", checked);
                               if (checked) updateEducation(index, "endDate", "");
                             }}
-                            disabled={rowLocked}
+                            disabled={rowLocked || !allowEdit}
                             className="h-4 w-4 rounded-md border border-gray-300 appearance-none transition-colors duration-200 shrink-0 bg-white checked:bg-gray-800 checked:border-gray-800 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-1"
                           />
                           {edu.isPresent ? (
@@ -229,7 +232,7 @@ export default function EducationForm({
                     updateEducation(index, "endDate", e.target.value)
                   }
                   placeholder="End date"
-                  disabled={isEduDisabled(rowLocked, "endDate") || !!edu.isPresent}
+                  disabled={(rowLocked && !allowEdit) || !!edu.isPresent}
                 />
 
                 <AppInput
@@ -249,9 +252,9 @@ export default function EducationForm({
                     );
                   }}
                   placeholder="https://university.com"
-                  disabled={isEduDisabled(rowLocked, "instituteWebsite")}
+                  disabled={rowLocked && !allowEdit}
                   error={edu.error_instituteWebsite}
-                  pattern={websiteRegex}
+                  pattern={websitePattern}
                 />
 
                 <div>
@@ -289,9 +292,13 @@ export default function EducationForm({
                     onChange={(file) =>
                       updateEducation(index, "degreeFile", file)
                     }
-                    disabled={isEduDisabled(rowLocked, "degreeFile")}
+                    onClear={() => updateEducation(index, "degreeFile", "")}
+                    disabled={rowLocked && !allowEdit}
                     className="w-full"
                     dropzoneClassName="h-10 p-2"
+                    defaultFileName={
+                      typeof edu?.degreeFile === "string" ? edu.degreeFile : ""
+                    }
                   />
                 </div>
               </div>
@@ -330,32 +337,51 @@ export default function EducationForm({
                     </Button>
                   )}
 
-                  <Button
-                    type="button"
-                    disabled={savingThis || !isWebsiteValid}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      const val = (edu.instituteWebsite || "").trim();
-                      if (!websiteRegex.test(val)) {
-                        updateEducation(
-                          index,
-                          "error_instituteWebsite",
-                          "Only valid website URLs allowed (e.g. https://ucp.edu.pk/)"
+                  {rowLocked && editingRow !== index ? (
+                    <>
+                      <Button type="button" disabled>
+                        Saved
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setEditingRow(index);
+                        }}
+                      >
+                        Edit
+                      </Button>
+                    </>
+                  ) : (
+                    <Button
+                      type="button"
+                      disabled={savingThis || !isWebsiteValid}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        const val = (edu.instituteWebsite || "").trim();
+                        if (!websiteRegex.test(val)) {
+                          updateEducation(
+                            index,
+                            "error_instituteWebsite",
+                            "Only valid website URLs allowed (e.g. https://ucp.edu.pk/)"
+                          );
+                          return;
+                        }
+                        updateEducation(index, "error_instituteWebsite", "");
+                        onAskConfirm?.(
+                          `education:${index}`,
+                          `Education ${index + 1}`,
+                          () => saveEducation(index, educationList[index])
                         );
-                        return;
-                      }
-                      updateEducation(index, "error_instituteWebsite", "");
-                      onAskConfirm?.(
-                        `education:${index}`,
-                        `Education ${index + 1}`,
-                        () => saveEducation(index, educationList[index])
-                      );
-                    }}
-                    className="inline-flex items-center gap-2 bg-orange-600 hover:bg-orange-700 text-white"
-                  >
-                    <Save className="h-4 w-4" />
-                    {savingThis ? "Saving..." : "Save"}
-                  </Button>
+                        setEditingRow(null);
+                      }}
+                      className="inline-flex items-center gap-2 bg-orange-600 hover:bg-orange-700 text-white"
+                    >
+                      <Save className="h-4 w-4" />
+                      {savingThis ? "Saving..." : "Save"}
+                    </Button>
+                  )}
                 </div>
               </div>
             </motion.div>

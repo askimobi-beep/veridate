@@ -1455,8 +1455,10 @@ export default function DetailPage() {
                       {fullName}
                     </h1>
                   </div>
-                  <div className="text-sm font-semibold text-slate-800 text-left">
-                    Profile Rating: ⭐ {overallRating.average.toFixed(1)}/5
+                  <div className="text-sm font-semibold text-slate-800 text-left inline-flex items-center gap-2">
+                    Profile Rating:
+                    <Star className="h-4 w-4 text-orange-500 fill-orange-500" />
+                    <span>{overallRating.average.toFixed(1)}/5</span>
                   </div>
                   <div />
                 </div>

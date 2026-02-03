@@ -26,11 +26,13 @@ export default forwardRef(function FileUploader(
     icon,
     accept,
     onChange, // (file|null) => void
+    onClear,
     className,
     dropzoneClassName,
     error,
     disabled = false,
     defaultPreviewUrl, // optional: show an existing image url
+    defaultFileName,
   },
   ref
 ) {
@@ -86,6 +88,7 @@ export default forwardRef(function FileUploader(
     setPreviewUrl("");
     if (inputRef.current) inputRef.current.value = "";
     onChange && onChange(null);
+    onClear && onClear();
   };
 
   useImperativeHandle(ref, () => ({
@@ -126,23 +129,26 @@ export default forwardRef(function FileUploader(
           accept={accept}
           onChange={handleInputChange}
           disabled={disabled}
-          className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+          className={cn(
+            "absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10",
+            (disabled || (defaultFileName && !file)) && "hidden"
+          )}
         />
 
         <div className="flex items-center justify-center text-center pointer-events-none h-full min-h-0">
-          {!file && !previewUrl && (
+          {!file && !previewUrl && !defaultFileName ? (
             <div className="flex items-center gap-2">
               {Icon ? <Icon className="w-4 h-4 text-orange-500" /> : null}
               <p className="text-xs text-gray-500 group-hover:text-orange-600 transition">
                 {disabled
-                  ? "Upload disabled"
+                  ? ""
                   : isDragging
                   ? "Drop it..."
                   : "Click or drag to upload"}
               </p>
               {/* accept text hidden by request */}
             </div>
-          )}
+          ) : null}
 
           {(isImage(file) || (!!previewUrl && !file)) && (
             <div className="relative w-full pointer-events-none">
@@ -160,19 +166,30 @@ export default forwardRef(function FileUploader(
           )}
 
           {file && !isImage(file) && (
-            <div className="flex flex-col items-center gap-2">
-              <FileIcon className="w-8 h-8 text-orange-500" />
-              <div className="text-sm text-gray-700">{file.name}</div>
-              <div className="text-xs text-gray-500">
+            <div className="flex items-center gap-2 max-w-full px-2">
+              <FileIcon className="w-5 h-5 text-orange-500" />
+              <div className="text-sm text-gray-700 max-w-full truncate">
+                {file.name}
+              </div>
+              <div className="text-xs text-gray-500 whitespace-nowrap">
                 {humanFileSize(file.size)}
               </div>
             </div>
           )}
+
+          {!file && !previewUrl && defaultFileName ? (
+            <div className="flex items-center gap-2 max-w-full px-2">
+              <FileIcon className="w-5 h-5 text-orange-500" />
+              <div className="text-sm text-gray-700 max-w-full truncate">
+                {defaultFileName}
+              </div>
+            </div>
+          ) : null}
         </div>
       </div>
 
       {/* CLEAR BUTTON OUTSIDE the dropzone (so the overlay can't catch the click) */}
-      {(file || previewUrl) && !disabled && (
+      {(file || previewUrl || defaultFileName) && !disabled && (
         <div className="flex justify-end">
           <button
             type="button"
