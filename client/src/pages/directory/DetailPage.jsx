@@ -56,6 +56,37 @@ import {
 } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 
+const GeminiIcon = ({ className }) => (
+  <svg
+    className={className}
+    viewBox="0 0 24 24"
+    fill="none"
+    aria-hidden="true"
+  >
+    <path
+      d="M9 3l1.6 3.7L14.3 8l-3.7 1.6L9 13.3 7.4 9.6 3.7 8l3.7-1.3L9 3Z"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.6"
+      opacity="0.9"
+    />
+    <path
+      d="M19 11l1 2 2 1-2 1-1 2-1-2-2-1 2-1 1-2Z"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.6"
+      opacity="0.8"
+    />
+    <path
+      d="M19 3l.5 1 1 .5-1 .5-.5 1-.5-1-1-.5 1-.5.5-1Z"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.6"
+      opacity="0.7"
+    />
+  </svg>
+);
+
 const fmtDate = (d) => {
   if (!d) return "";
   const dt = new Date(d);
@@ -643,7 +674,7 @@ export default function DetailPage() {
   );
 
   const sectionItems = [
-    { key: "summary", label: "AI Profile Summary", icon: Star },
+    { key: "summary", label: "AI Profile Summary", icon: GeminiIcon },
     { key: "personal", label: "Personal Details", icon: UserRound },
     {
       key: "education",
