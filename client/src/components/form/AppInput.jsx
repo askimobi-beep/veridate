@@ -36,9 +36,9 @@ export default function AppInput({
           ref={inputRef}
           disabled={disabled}
           className={cn(
-            "bg-white/90 border border-gray-200 text-gray-900 placeholder:text-gray-400",
-            "focus-visible:ring-2 focus-visible:ring-black focus-visible:ring-offset-0",
-            disabled && "bg-gray-100 text-gray-500 cursor-not-allowed",
+            "bg-white border border-slate-200 text-slate-900 placeholder:text-slate-400 shadow-sm",
+            "focus-visible:ring-2 focus-visible:ring-[color:var(--brand-orange)] focus-visible:ring-offset-0 focus-visible:border-[color:var(--brand-orange)]",
+            disabled && "bg-slate-100 text-slate-500 cursor-not-allowed",
             hasEnd && "pr-10",
             hasStart && startPaddingClass, // 👈 add left padding when using startAdornment
             inputClassName

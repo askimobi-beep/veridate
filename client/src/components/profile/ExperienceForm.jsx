@@ -149,6 +149,8 @@ export default function ExperienceForm({
     onChange,
     placeholder,
     disabled,
+    showSelectedBox = false,
+    triggerText,
   }) => {
     const [open, setOpen] = useState(false);
     const [query, setQuery] = useState("");
@@ -165,10 +167,22 @@ export default function ExperienceForm({
       onChange(next);
     };
 
+    const remove = (opt) => {
+      if (disabled) return;
+      onChange(selected.filter((v) => v !== opt));
+    };
+
+    const displayText =
+      typeof triggerText === "string"
+        ? triggerText
+        : selected.length
+        ? selected.join(", ")
+        : placeholder;
+
     return (
       <div className="space-y-1 w-full">
         {label ? (
-          <Label className="text-sm font-medium text-gray-700 text-left w-full inline-flex items-center gap-2">
+          <Label className="text-sm font-medium text-slate-700 text-left w-full inline-flex items-center gap-2">
             {label}
           </Label>
         ) : null}
@@ -177,11 +191,11 @@ export default function ExperienceForm({
             <button
               type="button"
               disabled={disabled}
-              className={`h-10 w-full rounded-md border border-gray-200 bg-white/90 px-3 text-left text-sm text-gray-900 ${
-                disabled ? "bg-gray-100 text-gray-500 cursor-not-allowed" : ""
+              className={`h-12 w-full rounded-lg border border-slate-200 bg-white px-3 text-left text-sm text-slate-900 shadow-sm ${
+                disabled ? "bg-slate-100 text-slate-500 cursor-not-allowed" : ""
               }`}
             >
-              {selected.length ? selected.join(", ") : placeholder}
+              {displayText}
             </button>
           </PopoverTrigger>
           <PopoverContent className="w-[--radix-popover-trigger-width] bg-white p-2">
@@ -189,7 +203,7 @@ export default function ExperienceForm({
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Search..."
-              className="h-9"
+              className="h-10"
             />
             <div className="mt-2 max-h-48 overflow-y-auto space-y-1">
               {filtered.length ? (
@@ -201,13 +215,13 @@ export default function ExperienceForm({
                       type="button"
                       onClick={() => toggle(opt)}
                       className={`flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm ${
-                        active ? "bg-orange-50 text-orange-700" : "text-gray-700"
+                        active ? "brand-orange-soft brand-orange" : "text-slate-700"
                       }`}
                     >
                       <span
                         className={`inline-flex h-4 w-4 items-center justify-center rounded border ${
                           active
-                            ? "border-orange-500 bg-orange-500 text-white"
+                            ? "border-[color:var(--brand-orange)] bg-[color:var(--brand-orange)] text-white"
                             : "border-gray-300"
                         }`}
                       >
@@ -225,6 +239,33 @@ export default function ExperienceForm({
             </div>
           </PopoverContent>
         </Popover>
+        {showSelectedBox && (
+          <div className="mt-2 min-h-12 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 shadow-sm">
+            {selected.length ? (
+              <div className="flex flex-wrap gap-2">
+                {selected.map((item) => (
+                  <span
+                    key={item}
+                    className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-slate-50 px-2 py-1 text-xs text-slate-700"
+                  >
+                    {item}
+                    <button
+                      type="button"
+                      className="ml-1 text-slate-400 hover:text-slate-700"
+                      onClick={() => remove(item)}
+                      aria-label={`Remove ${item}`}
+                      disabled={disabled}
+                    >
+                      ×
+                    </button>
+                  </span>
+                ))}
+              </div>
+            ) : (
+              <span className="text-slate-400">No skills selected</span>
+            )}
+          </div>
+        )}
       </div>
     );
   };
@@ -261,7 +302,7 @@ export default function ExperienceForm({
     return (
       <div className="space-y-1 w-full">
         {label ? (
-          <Label className="text-sm font-medium text-gray-700 text-left w-full inline-flex items-center gap-2">
+          <Label className="text-sm font-medium text-slate-700 text-left w-full inline-flex items-center gap-2">
             {label}
           </Label>
         ) : null}
@@ -270,8 +311,8 @@ export default function ExperienceForm({
             <button
               type="button"
               disabled={disabled}
-              className={`h-10 w-full rounded-md border border-gray-200 bg-white/90 px-3 text-left text-sm text-gray-900 ${
-                disabled ? "bg-gray-100 text-gray-500 cursor-not-allowed" : ""
+              className={`h-10 w-full rounded-lg border border-slate-200 bg-white px-3 text-left text-sm text-slate-900 shadow-sm ${
+                disabled ? "bg-slate-100 text-slate-500 cursor-not-allowed" : ""
               }`}
             >
               {value || placeholder}
@@ -291,7 +332,7 @@ export default function ExperienceForm({
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Search..."
-              className="h-9"
+              className="h-10"
             />
             <div className="mt-2 max-h-48 overflow-y-auto space-y-1">
               {loading ? (
@@ -310,8 +351,8 @@ export default function ExperienceForm({
                     }}
                     className={`flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm ${
                       value === opt
-                        ? "bg-orange-50 text-orange-700"
-                        : "text-gray-700"
+                        ? "brand-orange-soft brand-orange"
+                        : "text-slate-700"
                     }`}
                   >
                     {opt}
@@ -325,7 +366,7 @@ export default function ExperienceForm({
                     onChange(query.trim());
                     setOpen(false);
                   }}
-                  className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm text-gray-700"
+                  className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm text-slate-700"
                 >
                   Use "{query.trim()}"
                 </button>
@@ -349,7 +390,7 @@ export default function ExperienceForm({
           <DialogHeader>
             <DialogTitle>Credits guide</DialogTitle>
           </DialogHeader>
-          <p className="text-sm text-gray-700">
+          <p className="text-sm text-slate-700">
             A short walkthrough on how experience verification credits work is
             coming soon.
           </p>
@@ -430,7 +471,7 @@ export default function ExperienceForm({
             >
               {/* Row header */}
               <div className="mb-1 text-left">
-                <div className="text-lg font-bold text-gray-900">
+                <div className="text-lg font-bold text-slate-900">
                   {exp?._id && (exp.jobTitle || "").trim()
                     ? exp.jobTitle
                     : `Experience ${index + 1}`}
@@ -515,7 +556,7 @@ export default function ExperienceForm({
                             exp.isPresent ? "text-gray-800 font-medium" : "text-gray-500"
                           }`}
                         >
-                          Present
+                          Currently working
                         </span>
                       </span>
                     </div>
@@ -570,6 +611,8 @@ export default function ExperienceForm({
                       updateExperience(index, "jobFunctions", updated)
                     }
                     placeholder="Select job functions"
+                    triggerText="Select job functions"
+                    showSelectedBox
                     disabled={rowLocked && !allowEdit}
                   />
 
@@ -579,13 +622,15 @@ export default function ExperienceForm({
                     value={exp.skills || []}
                     onChange={(updated) => updateExperience(index, "skills", updated)}
                     placeholder="Select skills"
+                    triggerText="Select skills"
+                    showSelectedBox
                     disabled={rowLocked && !allowEdit}
                   />
                 </div>
 
                 <div>
                   <div className="mb-2 flex flex-wrap items-center justify-between gap-3">
-                    <label className="text-sm font-medium text-gray-700">
+                    <label className="text-sm font-medium text-slate-700">
                       Upload Experience Letter
                     </label>
                     <div className="flex items-center gap-2">
@@ -620,6 +665,7 @@ export default function ExperienceForm({
                     onClear={() => updateExperience(index, "experienceLetterFile", "")}
                     disabled={rowLocked && !allowEdit}
                     className="w-full"
+                    dropzoneClassName="h-10 px-3 py-2 border border-dotted border-slate-200 rounded-lg"
                     defaultFileName={
                       typeof exp?.experienceLetterFile === "string"
                         ? exp.experienceLetterFile
@@ -631,6 +677,7 @@ export default function ExperienceForm({
               </div>
 
               <div className="rounded-xl p-0">
+                <div className="mb-3 h-px w-full bg-slate-200/80" />
                 <div className="flex w-full flex-wrap items-start justify-start gap-3">
                   {bucket ? (
                     <CreditText

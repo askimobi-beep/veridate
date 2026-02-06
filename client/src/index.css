@@ -1,2 +1,25 @@
 @import "tailwindcss";
 
+:root {
+  --brand-orange: #fb773b;
+  --brand-orange-12: rgba(251, 119, 59, 0.12);
+  --brand-orange-24: rgba(251, 119, 59, 0.24);
+  --brand-orange-40: rgba(251, 119, 59, 0.4);
+}
+
+.brand-orange {
+  color: var(--brand-orange);
+}
+
+.brand-orange-border {
+  border-color: var(--brand-orange);
+}
+
+.brand-orange-soft {
+  background-color: var(--brand-orange-12);
+}
+
+.brand-orange-soft-strong {
+  background-color: var(--brand-orange-24);
+}
+

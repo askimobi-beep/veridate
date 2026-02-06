@@ -146,7 +146,7 @@ export default function PersonalDetailsForm({
     return (
       <div className="space-y-1 w-full">
         {label ? (
-          <Label className="text-sm font-medium text-gray-700 text-left w-full inline-flex items-center gap-2">
+          <Label className="text-sm font-medium text-slate-700 text-left w-full inline-flex items-center gap-2">
             {label}
           </Label>
         ) : null}
@@ -155,8 +155,8 @@ export default function PersonalDetailsForm({
             <button
               type="button"
               disabled={disabled}
-              className={`h-10 w-full rounded-md border border-gray-200 bg-white/90 px-3 text-left text-sm text-gray-900 ${
-                disabled ? "bg-gray-100 text-gray-500 cursor-not-allowed" : ""
+              className={`h-10 w-full rounded-lg border border-slate-200 bg-white px-3 text-left text-sm text-slate-900 shadow-sm ${
+                disabled ? "bg-slate-100 text-slate-500 cursor-not-allowed" : ""
               }`}
             >
               {labelText || "Select options"}
@@ -167,7 +167,7 @@ export default function PersonalDetailsForm({
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Search..."
-              className="h-9"
+              className="h-10"
             />
             <div className="mt-2 max-h-48 overflow-y-auto space-y-1">
               {filtered.length ? (
@@ -179,13 +179,13 @@ export default function PersonalDetailsForm({
                       type="button"
                       onClick={() => toggle(opt)}
                       className={`flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm ${
-                        active ? "bg-orange-50 text-orange-700" : "text-gray-700"
+                        active ? "brand-orange-soft brand-orange" : "text-slate-700"
                       }`}
                     >
                       <span
                         className={`inline-flex h-4 w-4 items-center justify-center rounded border ${
                           active
-                            ? "border-orange-500 bg-orange-500 text-white"
+                            ? "border-[color:var(--brand-orange)] bg-[color:var(--brand-orange)] text-white"
                             : "border-gray-300"
                         }`}
                       >
@@ -227,7 +227,7 @@ export default function PersonalDetailsForm({
     return (
       <div className="space-y-1 w-full">
         {label ? (
-          <Label className="text-sm font-medium text-gray-700 text-left w-full inline-flex items-center gap-2">
+          <Label className="text-sm font-medium text-slate-700 text-left w-full inline-flex items-center gap-2">
             {label}
           </Label>
         ) : null}
@@ -236,8 +236,8 @@ export default function PersonalDetailsForm({
             <button
               type="button"
               disabled={disabled}
-              className={`h-10 w-full rounded-md border border-gray-200 bg-white/90 px-3 text-left text-sm text-gray-900 ${
-                disabled ? "bg-gray-100 text-gray-500 cursor-not-allowed" : ""
+              className={`h-10 w-full rounded-lg border border-slate-200 bg-white px-3 text-left text-sm text-slate-900 shadow-sm ${
+                disabled ? "bg-slate-100 text-slate-500 cursor-not-allowed" : ""
               }`}
             >
               {value || placeholder || "Select option"}
@@ -248,7 +248,7 @@ export default function PersonalDetailsForm({
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Search..."
-              className="h-9"
+              className="h-10"
             />
             <div className="mt-2 max-h-48 overflow-y-auto space-y-1">
               {filtered.length ? (
@@ -262,8 +262,8 @@ export default function PersonalDetailsForm({
                     }}
                     className={`flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm ${
                       value === opt
-                        ? "bg-orange-50 text-orange-700"
-                        : "text-gray-700"
+                        ? "brand-orange-soft brand-orange"
+                        : "text-slate-700"
                     }`}
                   >
                     {opt}
@@ -313,7 +313,7 @@ export default function PersonalDetailsForm({
                       align="center"
                       className="max-w-sm rounded-xl border border-gray-200 shadow-lg p-3 bg-white"
                     >
-                      <div className="text-sm font-semibold text-gray-900 mb-1">
+                      <div className="text-sm font-semibold text-slate-900 mb-1">
                         Verified
                       </div>
                      
@@ -344,7 +344,7 @@ export default function PersonalDetailsForm({
                     <button
                       type="button"
                       aria-label="Mobile number help"
-                      className="rounded-md p-1.5  text-gray-500 hover:text-gray-700"
+                      className="rounded-md p-1.5  text-gray-500 hover:text-slate-700"
                     >
                       <CircleHelp className="h-4 w-4" />
                     </button>
@@ -354,7 +354,7 @@ export default function PersonalDetailsForm({
                     align="center"
                     className="max-w-sm rounded-xl border border-gray-200 shadow-lg p-3 bg-white"
                   >
-                    <div className="text-sm font-semibold text-gray-900 mb-1">
+                    <div className="text-sm font-semibold text-slate-900 mb-1">
                       Unverified
                     </div>
                   </TooltipContent>
@@ -424,7 +424,7 @@ export default function PersonalDetailsForm({
 
       <div className="mt-6 space-y-6">
         <div className="space-y-3">
-          <h3 className="text-base font-semibold text-gray-900 flex items-center gap-2">
+          <h3 className="text-base font-semibold text-slate-900 flex items-center gap-2">
             Complete Address
           </h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

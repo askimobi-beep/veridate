@@ -1,4 +1,4 @@
-﻿import React, { useEffect, useState } from "react";
+import React, { useEffect, useId, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -7,7 +7,6 @@ import {
   MapPin,
   MessageSquare,
   MoveRight,
-  Star,
   Download,
   XCircle,
 } from "lucide-react";
@@ -65,10 +64,8 @@ const formatYears = (years) => {
 const formatDurationLabel = (years) => {
   if (!Number.isFinite(years)) return "N/A years";
   if (years < 1) {
-    const months = years * 12;
-    const rounded = Math.round(months * 10) / 10;
-    const value = Number.isInteger(rounded) ? String(rounded) : rounded.toFixed(1);
-    return `${value} months`;
+    const rounded = Math.round(years * 100) / 100;
+    return `${rounded.toFixed(2)} years`;
   }
   return `${formatYears(years)} years`;
 };
@@ -184,7 +181,7 @@ export default function DirectoryCard({ profile, onViewProfile, onViewSummary })
       <CardContent className="p-5 text-left">
         <div className="flex items-start justify-between gap-4">
           <div className="flex items-start gap-3">
-            <Avatar className="h-20 w-20 ring-2 ring-orange-200">
+            <Avatar className="h-20 w-20 ring-2 ring-[color:var(--brand-orange)]">
               <AvatarImage src={profile.profilePicUrl || ""} alt={profile.name} />
               <AvatarFallback>{initials(profile.name)}</AvatarFallback>
             </Avatar>
@@ -196,9 +193,11 @@ export default function DirectoryCard({ profile, onViewProfile, onViewSummary })
                 <MapPin className="h-3.5 w-3.5" />
                 <span>{location || "N/A"}</span>
               </div>
-              <div className="mt-1 flex items-center gap-1 text-sm font-semibold text-orange-600">
-                <Star className="h-4 w-4 text-orange-500 fill-orange-500" />
-                <span>{Number.isFinite(ratingValue) ? ratingValue.toFixed(1) : "0.0"}</span>
+              <div className="mt-1 flex items-center gap-2 text-sm font-semibold brand-orange">
+                <RatingStars value={ratingValue} />
+                <span>
+                  {Number.isFinite(ratingValue) ? ratingValue.toFixed(1) : "0.0"}
+                </span>
               </div>
             </div>
           </div>
@@ -207,17 +206,14 @@ export default function DirectoryCard({ profile, onViewProfile, onViewSummary })
             <button
               type="button"
               onClick={() => onViewSummary?.(profile)}
-              className="h-9 px-3 rounded-full border border-orange-200 bg-orange-50 text-orange-700 transition hover:border-orange-300 hover:text-orange-800"
+              className="h-9 w-9 rounded-full border border-slate-200 bg-white text-slate-600 transition hover:border-[color:var(--brand-orange)] hover:text-[color:var(--brand-orange)]"
               title="AI Profile Summary"
             >
-              <span className="inline-flex items-center gap-2 text-xs font-semibold">
-                <GeminiIcon className="h-4 w-4" />
-                AI Profile Summary
-              </span>
+              <GeminiIcon className="mx-auto h-4 w-4" />
             </button>
             <button
               type="button"
-              className="h-9 w-9 rounded-full border border-slate-200 bg-white text-slate-600 transition hover:border-orange-300 hover:text-orange-600"
+              className="h-9 w-9 rounded-full border border-slate-200 bg-white text-slate-600 transition hover:border-[color:var(--brand-orange)] hover:text-[color:var(--brand-orange)]"
               title="Add to Favorities"
             >
               <Heart className="mx-auto h-4 w-4" />
@@ -226,14 +222,14 @@ export default function DirectoryCard({ profile, onViewProfile, onViewSummary })
               type="button"
               onClick={handleDownload}
               disabled={downloading}
-              className="h-9 w-9 rounded-full border border-slate-200 bg-white text-slate-600 transition hover:border-orange-300 hover:text-orange-600 disabled:cursor-not-allowed disabled:opacity-60"
+              className="h-9 w-9 rounded-full border border-slate-200 bg-white text-slate-600 transition hover:border-[color:var(--brand-orange)] hover:text-[color:var(--brand-orange)] disabled:cursor-not-allowed disabled:opacity-60"
               title="Download profile"
             >
               <Download className="mx-auto h-4 w-4" />
             </button>
             <button
               type="button"
-              className="h-9 w-9 rounded-full border border-slate-200 bg-white text-slate-600 transition hover:border-orange-300 hover:text-orange-600"
+              className="h-9 w-9 rounded-full border border-slate-200 bg-white text-slate-600 transition hover:border-[color:var(--brand-orange)] hover:text-[color:var(--brand-orange)]"
               title="Message"
             >
               <MessageSquare className="mx-auto h-4 w-4" />
@@ -241,7 +237,7 @@ export default function DirectoryCard({ profile, onViewProfile, onViewSummary })
             <button
               type="button"
               onClick={() => onViewProfile?.(profile)}
-              className="inline-flex items-center gap-2 text-sm font-semibold text-orange-600 transition hover:text-orange-700"
+              className="ml-2 inline-flex items-center gap-2 text-sm font-semibold brand-orange transition"
             >
               View Profile
               <MoveRight className="h-5 w-6" />
@@ -258,7 +254,8 @@ export default function DirectoryCard({ profile, onViewProfile, onViewSummary })
               {experiences.length ? (
                 experiences.map((row, idx) => (
                   <div key={`exp-${idx}`} className="text-left">
-                    {row.jobTitle || "N/A"} at {row.company || "N/A"} |{" "}
+                    {row.jobTitle || "N/A"} at {row.company || "N/A"}{" "}
+                    <span className="mx-2 text-slate-400">|</span>
                     {formatRange(row.startDate, row.endDate)}
                   </div>
                 ))
@@ -274,7 +271,8 @@ export default function DirectoryCard({ profile, onViewProfile, onViewSummary })
               {projects.length ? (
                 projects.map((row, idx) => (
                   <div key={`proj-${idx}`} className="text-left">
-                    {row.projectTitle || "N/A"} at {row.company || "N/A"} |{" "}
+                    {row.projectTitle || "N/A"} at {row.company || "N/A"}{" "}
+                    <span className="mx-2 text-slate-400">|</span>
                     {formatRangeNoYears(row.startDate, row.endDate)}
                   </div>
                 ))
@@ -290,29 +288,33 @@ export default function DirectoryCard({ profile, onViewProfile, onViewSummary })
               {educations.length ? (
                 educations.map((row, idx) => (
                   <div key={`edu-${idx}`} className="text-left">
-                    {row.degreeTitle || "N/A"} at {row.institute || "N/A"} |{" "}
+                    {row.degreeTitle || "N/A"} at {row.institute || "N/A"}{" "}
+                    <span className="mx-2 text-slate-400">|</span>
                     {formatRangeNoYears(row.startDate, row.endDate)}
                   </div>
                 ))
               ) : (
                 <div className="text-xs text-slate-400 text-left">No education added.</div>
               )}
-              <div className="mt-2 flex flex-wrap items-center gap-4 text-left">
-                <div className="flex items-center gap-2 text-sm text-slate-700">
-                  {hasAudio ? (
-                    <CheckCircle2 className="h-4 w-4 text-green-600" />
-                  ) : (
-                    <XCircle className="h-4 w-4 text-red-600" />
-                  )}
-                  <span>Audio Profile</span>
-                </div>
-                <div className="flex items-center gap-2 text-sm text-slate-700">
-                  {hasVideo ? (
-                    <CheckCircle2 className="h-4 w-4 text-green-600" />
-                  ) : (
-                    <XCircle className="h-4 w-4 text-red-600" />
-                  )}
-                  <span>Video Profile</span>
+              <div className="mt-4 text-left">
+                <div className="mb-2 h-px w-full bg-slate-200/80" />
+                <div className="flex flex-wrap items-center gap-6 text-sm text-slate-700">
+                  <div className="flex items-center gap-2">
+                    {hasAudio ? (
+                      <CheckCircle2 className="h-4 w-4 text-green-600" />
+                    ) : (
+                      <XCircle className="h-4 w-4 text-red-600" />
+                    )}
+                    <span>Audio Profile</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {hasVideo ? (
+                      <CheckCircle2 className="h-4 w-4 text-green-600" />
+                    ) : (
+                      <XCircle className="h-4 w-4 text-red-600" />
+                    )}
+                    <span>Video Profile</span>
+                  </div>
                 </div>
               </div>
             </div>
@@ -322,6 +324,55 @@ export default function DirectoryCard({ profile, onViewProfile, onViewSummary })
     </Card>
   );
 }
+
+
+const RatingStars = ({ value = 0 }) => {
+  const rating = Number.isFinite(value) ? Math.max(0, Math.min(5, value)) : 0;
+  return (
+    <div className="flex items-center gap-1 brand-orange">
+      {Array.from({ length: 5 }).map((_, index) => {
+        const starIndex = index + 1;
+        const fill =
+          rating >= starIndex
+            ? "full"
+            : rating >= starIndex - 0.5
+            ? "half"
+            : "empty";
+        return <StarGlyph key={`star-${starIndex}`} fill={fill} />;
+      })}
+    </div>
+  );
+};
+
+const StarGlyph = ({ fill }) => {
+  const clipId = useId();
+  const pct = fill === "full" ? 100 : fill === "half" ? 50 : 0;
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      className="h-4 w-4"
+      aria-hidden="true"
+      fill="none"
+    >
+      <defs>
+        <clipPath id={clipId}>
+          <rect width={`${pct}%`} height="100%" x="0" y="0" />
+        </clipPath>
+      </defs>
+      <path
+        d="M12 2l2.9 6.1 6.7.6-5 4.3 1.5 6.5L12 16.9 5.9 19.5 7.4 13 2.4 8.7l6.7-.6L12 2z"
+        fill="currentColor"
+        clipPath={`url(#${clipId})`}
+      />
+      <path
+        d="M12 2l2.9 6.1 6.7.6-5 4.3 1.5 6.5L12 16.9 5.9 19.5 7.4 13 2.4 8.7l6.7-.6L12 2z"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.5"
+      />
+    </svg>
+  );
+};
 
 const GeminiIcon = ({ className }) => (
   <svg
@@ -353,6 +404,9 @@ const GeminiIcon = ({ className }) => (
     />
   </svg>
 );
+
+
+
 
 
 

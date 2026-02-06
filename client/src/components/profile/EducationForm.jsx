@@ -295,7 +295,7 @@ const websitePattern = "https://[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$";
                     onClear={() => updateEducation(index, "degreeFile", "")}
                     disabled={rowLocked && !allowEdit}
                     className="w-full"
-                    dropzoneClassName="h-10 p-2"
+                    dropzoneClassName="h-10 px-3 py-2 border border-dotted border-slate-200 rounded-lg"
                     defaultFileName={
                       typeof edu?.degreeFile === "string" ? edu.degreeFile : ""
                     }
@@ -304,6 +304,7 @@ const websitePattern = "https://[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$";
               </div>
 
               <div className="rounded-xl p-0">
+                <div className="mb-3 h-px w-full bg-slate-200/80" />
                 <div className="flex w-full flex-wrap items-start justify-start gap-3">
                   {bucket ? (
                     <CreditBadge

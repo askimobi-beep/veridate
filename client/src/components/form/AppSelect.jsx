@@ -30,9 +30,9 @@ const AppSelect = ({
         onChange={onChange}
         disabled={disabled}
         className={cn(
-          "h-10 w-full px-3 rounded-md border border-gray-200 bg-white/90 text-gray-900 placeholder:text-gray-400",
-          "focus-visible:ring-2 focus-visible:ring-orange-500 focus-visible:ring-offset-0",
-          disabled && "bg-gray-100 text-gray-500 cursor-not-allowed",
+          "h-10 w-full px-3 rounded-lg border border-slate-200 bg-white text-slate-900 placeholder:text-slate-400 shadow-sm",
+          "focus-visible:ring-2 focus-visible:ring-[color:var(--brand-orange)] focus-visible:ring-offset-0 focus-visible:border-[color:var(--brand-orange)]",
+          disabled && "bg-slate-100 text-slate-500 cursor-not-allowed",
           selectClassName
         )}
       >
