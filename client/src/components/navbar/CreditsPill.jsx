@@ -8,9 +8,9 @@ export default function CreditsPill({ credit }) {
   return (
     <div className="hidden md:flex items-center gap-3 rounded-full px-3 py-1.5 bg-white/70 backdrop-blur ring-1 ring-black/5 shadow-sm">
       <div className="flex items-center gap-1.5 text-sm text-gray-800">
-        <GraduationCap className="h-4 w-4 text-orange-600" />
+        <GraduationCap className="h-4 w-4 text-[color:var(--brand-orange)]" />
         <span className="font-medium">Edu</span>
-        <span className="ml-1 inline-flex h-5 min-w-[1.4rem] items-center justify-center rounded-full bg-orange-600/10 text-orange-700 text-xs px-2 font-semibold">
+        <span className="ml-1 inline-flex h-5 min-w-[1.4rem] items-center justify-center rounded-full bg-[color:var(--brand-orange)]/10 text-[color:var(--brand-orange)] text-xs px-2 font-semibold">
           {education}
         </span>
       </div>

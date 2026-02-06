@@ -344,7 +344,7 @@ export default function PersonalDetailsForm({
                     <button
                       type="button"
                       aria-label="Mobile number help"
-                      className="rounded-md p-1.5  text-gray-500 hover:text-slate-700"
+                      className="rounded-md p-1.5 text-gray-500 hover:text-slate-700"
                     >
                       <CircleHelp className="h-4 w-4" />
                     </button>
@@ -370,7 +370,7 @@ export default function PersonalDetailsForm({
           startAdornment={
             <div className="flex items-center">
               <select
-                className="h-8 rounded-md text-gray-800 border px-2 pr-6 border-none"
+                className="h-10 rounded-lg text-slate-900 bg-transparent px-2 pr-6 border-none focus:outline-none text-sm"
                 value={formData.mobileCountryCode || "+92"}
                 onChange={(e) =>
                   handleCustomChange("mobileCountryCode", e.target.value)
@@ -383,10 +383,10 @@ export default function PersonalDetailsForm({
                   </option>
                 ))}
               </select>
-              <span className="mx-2 h-5 w-px bg-gray-300" />
+              <span className="mx-2 h-5 w-px bg-slate-300" />
             </div>
           }
-          startPaddingClass="pl-28" // 👈 give the input enough left space for the select
+          startPaddingClass="pl-28"
         />
 
         <AppSelect
@@ -397,6 +397,7 @@ export default function PersonalDetailsForm({
           options={genders}
           placeholder="Select gender"
           disabled={isDisabled(locked, "gender")}
+          className="mb-[9px]"
         />
 
 
@@ -425,7 +426,7 @@ export default function PersonalDetailsForm({
       <div className="mt-6 space-y-6">
         <div className="space-y-3">
           <h3 className="text-base font-semibold text-slate-900 flex items-center gap-2">
-            Complete Address
+            Address
           </h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <AppInput
@@ -514,7 +515,7 @@ export default function PersonalDetailsForm({
             onAskConfirm?.("pi", "Personal Details", () => savePersonalInfo());
           }}
           disabled={!!saving}
-          className="inline-flex items-center gap-2 rounded-xl border border-orange-600 px-4 py-2 text-sm font-medium text-white bg-orange-600 hover:bg-orange-700 active:scale-[0.98] transition"
+          className="inline-flex items-center gap-2 rounded-xl border border-[color:var(--brand-orange)] px-4 py-2 text-sm font-medium text-white bg-[color:var(--brand-orange)] hover:bg-[color:var(--brand-orange)] active:scale-[0.98] transition"
         >
           <Save className="h-4 w-4" />
           {saving ? "Saving..." : "Save"}

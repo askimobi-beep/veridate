@@ -341,7 +341,7 @@ export default function ProjectForm({
                         );
                         setEditingRow(null);
                       }}
-                      className="inline-flex items-center gap-2 bg-orange-600 hover:bg-orange-700 text-white"
+                      className="inline-flex items-center gap-2 bg-[color:var(--brand-orange)] hover:bg-[color:var(--brand-orange)] text-white"
                     >
                       {savingThis ? "Saving..." : "Save"}
                     </Button>
@@ -356,7 +356,7 @@ export default function ProjectForm({
       <motion.div layout>
         <Button
           type="button"
-          className="bg-orange-100 text-orange-700 hover:bg-orange-200"
+          className="brand-orange-soft text-[color:var(--brand-orange)] hover:brand-orange-soft-strong"
           onClick={(e) => {
             e.stopPropagation();
             addProject();

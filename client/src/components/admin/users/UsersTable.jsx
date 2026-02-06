@@ -141,14 +141,14 @@ export default function UsersTable({ users, onPatch }) {
                       exit={{ opacity: 0 }}
                       transition={{ duration: 0.12 }}
                       className={`border-b last:border-0 ${
-                        hasPendingPhoto ? "bg-amber-50/70" : ""
+                        hasPendingPhoto ? "brand-orange-soft" : ""
                       }`}
                     >
                       <TableCell className="font-medium">
                         <div className="flex items-center gap-2">
                           <span>{userDisplayName(u)}</span>
                           {hasPendingPhoto ? (
-                            <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-semibold text-amber-800">
+                            <span className="rounded-full brand-orange-soft px-2 py-0.5 text-[11px] font-semibold text-[color:var(--brand-orange)]">
                               Photo pending
                             </span>
                           ) : null}

@@ -162,7 +162,7 @@ export default function RegisterPage() {
           <Button
             type="submit"
             disabled={submitting}
-            className="w-full bg-orange-600 hover:bg-orange-700 text-white font-semibold"
+            className="w-full bg-[color:var(--brand-orange)] hover:bg-[color:var(--brand-orange)] text-white font-semibold"
           >
             {submitting ? (
               <span className="inline-flex items-center gap-2">
@@ -218,7 +218,7 @@ export default function RegisterPage() {
           Already have an account?{" "}
           <span
             onClick={() => (window.location.href = "/")}
-            className="text-orange-600 font-medium hover:underline cursor-pointer"
+            className="text-[color:var(--brand-orange)] font-medium hover:underline cursor-pointer"
           >
             Login
           </span>

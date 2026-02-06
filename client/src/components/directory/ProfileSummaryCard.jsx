@@ -140,14 +140,14 @@ function highlightSummaryText(text, phrases) {
 
 function SummaryLoadingState() {
   return (
-    <div className="relative overflow-hidden rounded-2xl border border-orange-200/70 bg-gradient-to-br from-orange-50/80 via-white to-orange-50/60 p-6 shadow-sm">
+    <div className="relative overflow-hidden rounded-2xl border border-[color:var(--brand-orange)]/70 bg-gradient-to-br from-[color:var(--brand-orange)]/80 via-white to-[color:var(--brand-orange)]/60 p-6 shadow-sm">
       <div className="absolute inset-0 opacity-80 bg-[radial-gradient(circle_at_top_right,_rgba(249,115,22,0.18),_transparent_55%)]" />
       <div className="relative space-y-3 text-left">
-        <span className="inline-flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.35em] text-orange-500/80">
-          <Loader2 className="h-4 w-4 animate-spin text-orange-500/90" />
+        <span className="inline-flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.35em] text-[color:var(--brand-orange)]/80">
+          <Loader2 className="h-4 w-4 animate-spin text-[color:var(--brand-orange)]/90" />
           Weaving Insights
         </span>
-        <p className="text-lg font-semibold leading-snug text-transparent bg-clip-text bg-gradient-to-r from-orange-600 via-orange-600 to-orange-600">
+        <p className="text-lg font-semibold leading-snug text-transparent bg-clip-text bg-gradient-to-r from-[color:var(--brand-orange)] via-[color:var(--brand-orange)] to-[color:var(--brand-orange)]">
           Crafting an AI narrative for this candidate...
         </p>
       </div>
@@ -222,7 +222,7 @@ export default function ProfileSummaryCard({ profile, userId }) {
   return (
     <Card className="mb-6 rounded-2xl border border-white/60 bg-white shadow-[0_18px_40px_-28px_rgba(15,23,42,0.35)]">
       <div className="flex items-center gap-2 border-b border-white/60 px-4 py-3">
-        <GeminiIcon className="h-4 w-4 text-orange-600" />
+        <GeminiIcon className="h-4 w-4 text-[color:var(--brand-orange)]" />
         <h3 className="text-sm font-semibold text-slate-800">
           AI Profile Summary
         </h3>
@@ -242,7 +242,7 @@ export default function ProfileSummaryCard({ profile, userId }) {
             </div>
           )}
           {summaryErr ? (
-            <p className="mt-2 text-xs text-orange-600">{summaryErr}</p>
+            <p className="mt-2 text-xs text-[color:var(--brand-orange)]">{summaryErr}</p>
           ) : null}
           <p className="mt-2 text-[11px] text-muted-foreground">
             Powered by OpenAI

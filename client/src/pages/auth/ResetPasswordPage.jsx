@@ -104,7 +104,7 @@ export default function ResetPasswordPage() {
               {message ? (
                 <div className="w-full max-w-[400px]">
                   <p className="text-center text-sm text-green-600 mb-4">{message}</p>
-                  <Link to="/" className="block text-center text-orange-600 hover:underline">
+                  <Link to="/" className="block text-center text-[color:var(--brand-orange)] hover:underline">
                     Go to login
                   </Link>
                 </div>
@@ -112,7 +112,7 @@ export default function ResetPasswordPage() {
                 <form onSubmit={handleSubmit} className="w-full max-w-[400px] space-y-4">
                   <div className="flex flex-col space-y-1">
                     <label className="text-sm font-medium text-gray-700 flex items-center gap-2">
-                      <Lock className="w-4 h-4 text-orange-600" />
+                      <Lock className="w-4 h-4 text-[color:var(--brand-orange)]" />
                       New Password
                     </label>
                     <AppInput
@@ -127,7 +127,7 @@ export default function ResetPasswordPage() {
 
                   <div className="flex flex-col space-y-1">
                     <label className="text-sm font-medium text-gray-700 flex items-center gap-2">
-                      <Lock className="w-4 h-4 text-orange-600" />
+                      <Lock className="w-4 h-4 text-[color:var(--brand-orange)]" />
                       Confirm Password
                     </label>
                     <AppInput
@@ -148,7 +148,7 @@ export default function ResetPasswordPage() {
                     type="submit"
                     disabled={submitting}
                     aria-busy={submitting ? "true" : "false"}
-                    className="w-full bg-orange-600 hover:bg-orange-700 disabled:opacity-70 text-white font-semibold"
+                    className="w-full bg-[color:var(--brand-orange)] hover:bg-[color:var(--brand-orange)] disabled:opacity-70 text-white font-semibold"
                   >
                     {submitting ? "Saving…" : "Reset Password"}
                   </Button>
@@ -163,7 +163,7 @@ export default function ResetPasswordPage() {
               <p className="text-sm text-gray-600 mb-6 text-center">
                 Please request a new reset link.
               </p>
-              <Link to="/forgot-password" className="text-orange-600 hover:underline">
+              <Link to="/forgot-password" className="text-[color:var(--brand-orange)] hover:underline">
                 Request a new link
               </Link>
             </>

@@ -48,7 +48,7 @@ export default function Navbar() {
                 type="button"
                 variant="outline"
                 onClick={goDirectory}
-                className="rounded-full border-orange-200 text-orange-700 hover:bg-orange-50 gap-2"
+                className="rounded-full border-[color:var(--brand-orange)] text-[color:var(--brand-orange)] hover:brand-orange-soft gap-2"
               >
                 <Search className="h-4 w-4" />
                 <span>Search Candidates</span>
@@ -63,7 +63,7 @@ export default function Navbar() {
             ) : (
               !authLoading && (
                 <Link to="/login">
-                  <Button className="rounded-full bg-orange-600 hover:bg-orange-700 text-white px-4">
+                  <Button className="rounded-full bg-[color:var(--brand-orange)] hover:bg-[color:var(--brand-orange)] text-white px-4">
                     Login
                   </Button>
                 </Link>

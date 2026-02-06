@@ -377,7 +377,7 @@ const websitePattern = "https://[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$";
                         );
                         setEditingRow(null);
                       }}
-                      className="inline-flex items-center gap-2 bg-orange-600 hover:bg-orange-700 text-white"
+                      className="inline-flex items-center gap-2 bg-[color:var(--brand-orange)] hover:bg-[color:var(--brand-orange)] text-white"
                     >
                       <Save className="h-4 w-4" />
                       {savingThis ? "Saving..." : "Save"}
@@ -393,7 +393,7 @@ const websitePattern = "https://[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$";
       <motion.div layout>
         <Button
           type="button"
-          className="bg-orange-100 text-orange-700 hover:bg-orange-200"
+          className="brand-orange-soft text-[color:var(--brand-orange)] hover:brand-orange-soft-strong"
           onClick={(e) => {
             e.stopPropagation();
             addEducation();

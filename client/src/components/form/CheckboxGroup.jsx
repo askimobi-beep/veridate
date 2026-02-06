@@ -35,7 +35,7 @@ export default function CheckboxGroup({
                 "flex items-center gap-2 rounded border px-3 py-2 text-gray-800",
                 disabled
                   ? "bg-gray-100 border-gray-200 cursor-not-allowed opacity-60"
-                  : "bg-white border-gray-300 cursor-pointer hover:border-orange-500"
+                  : "bg-white border-gray-300 cursor-pointer hover:border-[color:var(--brand-orange)]"
               )}
             >
               <input
@@ -43,7 +43,7 @@ export default function CheckboxGroup({
                 checked={selected.includes(opt)}
                 onChange={() => handleToggle(opt)}
                 disabled={disabled}
-                className="accent-orange-600"
+                className="accent-[color:var(--brand-orange)]"
               />
               <span>{opt}</span>
             </label>

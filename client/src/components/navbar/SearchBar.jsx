@@ -120,7 +120,7 @@ export default function SearchBar({
         value={query}
         onChange={handleChange}
         placeholder={placeholder}
-        className={`w-full border rounded-xl border-gray-300 bg-white/80 px-4 py-2 text-sm outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-200 transition ${inputClassName}`}
+        className={`w-full border rounded-xl border-gray-300 bg-white/80 px-4 py-2 text-sm outline-none focus:border-[color:var(--brand-orange)] focus:ring-2 focus:ring-[color:var(--brand-orange)] transition ${inputClassName}`}
         onFocus={() => setShowResults(query.trim().length > 0)}
         onBlur={() => setTimeout(() => setShowResults(false), 150)}
       />
@@ -146,7 +146,7 @@ export default function SearchBar({
                 key={item._id}
                 onMouseDown={(e) => e.preventDefault()}
                 onClick={() => handleSelect(item)}
-                className="flex items-center gap-3 px-4 py-2 cursor-pointer hover:bg-orange-50"
+                className="flex items-center gap-3 px-4 py-2 cursor-pointer hover:brand-orange-soft"
               >
                 <img
                   src={
@@ -181,7 +181,7 @@ export default function SearchBar({
               onClick={() =>
                 navigate(`/dashboard/directory?q=${encodeURIComponent(query.trim())}`)
               }
-              className="px-4 py-2 text-sm text-orange-700 hover:bg-orange-100 border-t border-gray-100 cursor-pointer"
+              className="px-4 py-2 text-sm text-[color:var(--brand-orange)] hover:brand-orange-soft border-t border-gray-100 cursor-pointer"
             >
               Open full directory
             </div>

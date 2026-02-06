@@ -317,7 +317,7 @@ export default function Directory() {
           <button
             type="button"
             onClick={closePanel}
-            className="absolute right-4 top-4 inline-flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-600 transition hover:border-orange-300 hover:text-orange-600"
+            className="absolute right-4 top-4 inline-flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-600 transition hover:border-[color:var(--brand-orange)] hover:text-[color:var(--brand-orange)]"
             title="Close"
           >
             ×

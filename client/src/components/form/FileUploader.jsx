@@ -96,11 +96,15 @@ export default forwardRef(function FileUploader(
     getFile: () => file,
   }));
 
+  const borderStyle = dropzoneClassName?.includes("border-dotted")
+    ? "border-dotted"
+    : "border-dashed";
+
   return (
     <div className={cn("space-y-2", className)}>
       {label && (
         <Label className="inline-flex items-center gap-2 text-gray-700 text-sm font-medium">
-          {Icon ? <Icon className="h-4 w-4 text-orange-600" /> : null}
+          {Icon ? <Icon className="h-4 w-4 text-[color:var(--brand-orange)]" /> : null}
           {label}
         </Label>
       )}
@@ -108,12 +112,12 @@ export default forwardRef(function FileUploader(
       {/* DROPZONE (the file input overlay only covers this box) */}
       <div
         className={cn(
-          "relative border-2 border-dashed rounded-xl p-4 shadow-sm group transition",
+          `relative border-2 ${borderStyle} rounded-xl p-4 shadow-sm group transition`,
           disabled
             ? "bg-gray-100 opacity-60 cursor-not-allowed"
-            : "bg-white/90 hover:border-orange-500 border-gray-300",
+            : "bg-white/90 hover:border-[color:var(--brand-orange)] border-gray-300",
           isDragging && !disabled
-            ? "border-orange-500 ring-2 ring-orange-200"
+            ? "border-[color:var(--brand-orange)] ring-2 ring-[color:var(--brand-orange)]"
             : "",
           dropzoneClassName
         )}
@@ -138,8 +142,8 @@ export default forwardRef(function FileUploader(
         <div className="flex items-center justify-center text-center pointer-events-none h-full min-h-0">
           {!file && !previewUrl && !defaultFileName ? (
             <div className="flex items-center gap-2">
-              {Icon ? <Icon className="w-4 h-4 text-orange-500" /> : null}
-              <p className="text-xs text-gray-500 group-hover:text-orange-600 transition">
+              {Icon ? <Icon className="w-4 h-4 text-[color:var(--brand-orange)]" /> : null}
+              <p className="text-xs text-gray-500 group-hover:text-[color:var(--brand-orange)] transition">
                 {disabled
                   ? ""
                   : isDragging
@@ -167,7 +171,7 @@ export default forwardRef(function FileUploader(
 
           {file && !isImage(file) && (
             <div className="flex items-center gap-2 max-w-full px-2">
-              <FileIcon className="w-5 h-5 text-orange-500" />
+              <FileIcon className="w-5 h-5 text-[color:var(--brand-orange)]" />
               <div className="text-sm text-gray-700 max-w-full truncate">
                 {file.name}
               </div>
@@ -179,7 +183,7 @@ export default forwardRef(function FileUploader(
 
           {!file && !previewUrl && defaultFileName ? (
             <div className="flex items-center gap-2 max-w-full px-2">
-              <FileIcon className="w-5 h-5 text-orange-500" />
+              <FileIcon className="w-5 h-5 text-[color:var(--brand-orange)]" />
               <div className="text-sm text-gray-700 max-w-full truncate">
                 {defaultFileName}
               </div>

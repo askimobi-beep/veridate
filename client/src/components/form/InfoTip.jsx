@@ -29,7 +29,7 @@ export default function InfoTip({
               "inline-flex h-6 w-6 items-center justify-center rounded-full",
               "bg-white/80 backdrop-blur-[1px] ring-1 ring-black/10 shadow-sm",
               "text-gray-600 hover:text-gray-800 hover:ring-black/20",
-              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500",
+              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--brand-orange)]",
               className
             )}
           >

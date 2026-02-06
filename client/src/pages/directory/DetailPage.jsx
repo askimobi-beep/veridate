@@ -223,9 +223,9 @@ const statusIconByStatus = (status) => {
 const statusIconColor = (status) => {
   switch (status) {
     case "already-verified":
-      return "text-orange-600";
+      return "text-[color:var(--brand-orange)]";
     case "eligible":
-      return "text-orange-600";
+      return "text-[color:var(--brand-orange)]";
     case "no-credits":
       return "text-red-600";
     case "ineligible":
@@ -278,7 +278,11 @@ function ReviewStars({ value = 5, onChange, readOnly = false, size = "lg", class
           return (
             <Star
               key={`star-static-${star}`}
-              className={`${iconSize} ${isActive ? "text-yellow-500" : "text-gray-300"}`}
+              className={`${iconSize} ${
+                isActive
+                  ? "text-[color:var(--brand-orange)]"
+                  : "text-gray-300"
+              }`}
               fill={isActive ? "currentColor" : "none"}
               strokeWidth={1.5}
             />
@@ -301,7 +305,11 @@ function ReviewStars({ value = 5, onChange, readOnly = false, size = "lg", class
             aria-label={`${star} star${star > 1 ? "s" : ""}`}
           >
             <Star
-              className={`${iconSize} ${isActive ? "text-yellow-500" : "text-gray-300"}`}
+              className={`${iconSize} ${
+                isActive
+                  ? "text-[color:var(--brand-orange)]"
+                  : "text-gray-300"
+              }`}
               fill={isActive ? "currentColor" : "none"}
               strokeWidth={1.5}
             />
@@ -360,7 +368,7 @@ function VerificationPreview({ verifications = [], onOpen }) {
     <button
       type="button"
       onClick={onOpen}
-      className="mt-2 w-full sm:w-auto sm:min-w-[285px] rounded-lg border border-orange-300 bg-gradient-to-r from-orange-500 via-orange-400 to-amber-300 px-3 py-2 text-left text-white shadow transition hover:brightness-110 hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2"
+      className="mt-2 w-full sm:w-auto sm:min-w-[285px] rounded-lg border border-[color:var(--brand-orange)] bg-gradient-to-r from-[color:var(--brand-orange)] via-[color:var(--brand-orange)] to-[color:var(--brand-orange)] px-3 py-2 text-left text-white shadow transition hover:brightness-110 hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-[color:var(--brand-orange)] focus:ring-offset-2"
     >
       <div className="flex flex-col items-start gap-1">
         <div className="flex items-center gap-2">
@@ -629,7 +637,7 @@ function SectionCard({ id, title, icon: Icon, children }) {
       className="rounded-2xl border border-white/60 bg-white/60 shadow-[0_18px_40px_-28px_rgba(15,23,42,0.35)] backdrop-blur-md"
     >
       <div className="flex items-center gap-2 border-b border-white/60 px-4 py-3">
-        {Icon ? <Icon className="h-4 w-4 text-orange-600" /> : null}
+        {Icon ? <Icon className="h-4 w-4 text-[color:var(--brand-orange)]" /> : null}
         <h3 className="text-sm font-semibold text-slate-800">{title}</h3>
       </div>
       <div className="p-4">{children}</div>
@@ -1356,7 +1364,7 @@ export default function DetailPage() {
                       variant={reviewSort === option.id ? "default" : "outline"}
                       className={`rounded-full border ${
                         reviewSort === option.id
-                          ? "bg-orange-500 text-white hover:bg-orange-500"
+                          ? "bg-[color:var(--brand-orange)] text-white hover:bg-[color:var(--brand-orange)]"
                           : "bg-white text-slate-700"
                       }`}
                       onClick={() => setReviewSort(option.id)}
@@ -1400,7 +1408,7 @@ export default function DetailPage() {
                           {avatarUrl ? (
                             <AvatarImage src={avatarUrl} alt={reviewer} />
                           ) : null}
-                          <AvatarFallback className="bg-orange-100 text-sm font-semibold text-orange-700">
+                          <AvatarFallback className="brand-orange-soft text-sm font-semibold text-[color:var(--brand-orange)]">
                             {initials(reviewer)}
                           </AvatarFallback>
                         </Avatar>
@@ -1463,18 +1471,18 @@ export default function DetailPage() {
       <div className="mx-auto max-w-5xl p-4 md:p-6">
 
         {/* Header */}
-        <Card className="mb-6 overflow-hidden border border-orange-200/70 bg-[#f3f4f6] shadow-[0_18px_40px_-28px_rgba(15,23,42,0.35)]">
+        <Card className="mb-6 overflow-hidden border border-[color:var(--brand-orange)] bg-[#f3f4f6] shadow-[0_18px_40px_-28px_rgba(15,23,42,0.35)]">
           <div className="relative">
             <CardContent className="relative flex flex-col gap-6 p-6 text-slate-900 md:flex-row md:items-center md:justify-between">
               <div className="flex items-center gap-5 md:gap-7">
                 <div className="relative">
                   <div className="absolute inset-0 rounded-full bg-white/80 blur-xl" />
-                  <div className="relative rounded-full bg-orange-200 p-1.5 shadow-sm backdrop-blur-sm">
-                    <Avatar className="h-20 w-20 rounded-full border border-orange-100 shadow-md">
+                  <div className="relative rounded-full brand-orange-soft-strong p-1.5 shadow-sm backdrop-blur-sm">
+                    <Avatar className="h-20 w-20 rounded-full border border-[color:var(--brand-orange)] shadow-md">
                       {avatarUrl ? (
                         <AvatarImage src={avatarUrl} alt={fullName} />
                       ) : null}
-                      <AvatarFallback className="rounded-full bg-orange-100 text-lg font-semibold text-orange-600">
+                      <AvatarFallback className="rounded-full brand-orange-soft text-lg font-semibold text-[color:var(--brand-orange)]">
                         {initials(fullName)}
                       </AvatarFallback>
                     </Avatar>
@@ -1488,7 +1496,7 @@ export default function DetailPage() {
                   </div>
                   <div className="text-sm font-semibold text-slate-800 text-left inline-flex items-center gap-2">
                     Profile Rating:
-                    <Star className="h-4 w-4 text-orange-500 fill-orange-500" />
+                    <Star className="h-4 w-4 text-[color:var(--brand-orange)] fill-[color:var(--brand-orange)]" />
                     <span>{overallRating.average.toFixed(1)}/5</span>
                   </div>
                   <div />
@@ -1500,7 +1508,7 @@ export default function DetailPage() {
                   <Button
                     type="button"
                     variant="outline"
-                    className="rounded-xl border-orange-200 bg-white/80 text-orange-700 hover:bg-slate-100"
+                    className="rounded-xl border-[color:var(--brand-orange)] bg-white text-[color:var(--brand-orange)] hover:bg-slate-100"
                     onClick={handleShare}
                   >
                     <Share2 className="h-4 w-4" />
@@ -1527,7 +1535,7 @@ export default function DetailPage() {
                       onClick={() => scrollToSection(item.key)}
                       className={`flex w-full items-center justify-between gap-3 rounded-xl px-3 py-2 text-left text-sm font-semibold transition ${
                         isActive
-                          ? "bg-orange-100/80 text-orange-600 shadow-[0_6px_16px_-10px_rgba(234,88,12,0.7)]"
+                          ? "brand-orange-soft text-[color:var(--brand-orange)] shadow-[0_6px_16px_-10px_rgba(251,119,59,0.7)]"
                           : "text-slate-500 hover:bg-white/70 hover:text-slate-700"
                       }`}
                     >
@@ -1539,7 +1547,7 @@ export default function DetailPage() {
                         <span
                           className={`flex h-6 w-6 items-center justify-center rounded-full text-xs font-bold ${
                             isActive
-                              ? "bg-orange-500 text-white"
+                              ? "bg-[color:var(--brand-orange)] text-white"
                               : "bg-slate-200 text-slate-700"
                           }`}
                         >
@@ -1565,7 +1573,7 @@ export default function DetailPage() {
         {isActiveSection("personal") ? (
           <SectionCard id="personal" title="Personal Details" icon={UserRound}>
             <SectionWrapper>
-              <SubSection className="border-orange-200/70 bg-slate-50 shadow-[0_18px_50px_-30px_rgba(15,23,42,0.35)]">
+              <SubSection className="border-[color:var(--brand-orange)] bg-slate-50 shadow-[0_18px_50px_-30px_rgba(15,23,42,0.35)]">
                 {visiblePersonalDetails.length ? (
                   <div className="grid grid-cols-1 gap-3 text-left md:grid-cols-2">
                     {visiblePersonalDetails.map((detail) => {
@@ -1617,7 +1625,7 @@ export default function DetailPage() {
                     return (
                       <SubSection
                         key={String(edu._id)}
-                        className="border-orange-200/70 bg-slate-50 shadow-[0_18px_50px_-30px_rgba(15,23,42,0.35)]"
+                        className="border-[color:var(--brand-orange)] bg-slate-50 shadow-[0_18px_50px_-30px_rgba(15,23,42,0.35)]"
                       >
                         <EducationDetails edu={edu} fileUrl={fileUrl} />
                         <div className="my-3 h-px bg-slate-200/40" />
@@ -1676,7 +1684,7 @@ export default function DetailPage() {
                     return (
                       <SubSection
                         key={String(exp._id)}
-                        className="border-orange-200/70 bg-slate-50 shadow-[0_18px_50px_-30px_rgba(15,23,42,0.35)]"
+                        className="border-[color:var(--brand-orange)] bg-slate-50 shadow-[0_18px_50px_-30px_rgba(15,23,42,0.35)]"
                       >
                         <ExperienceDetails exp={exp} fileUrl={fileUrl} />
                         <div className="my-3 h-px bg-slate-200/40" />
@@ -1735,7 +1743,7 @@ export default function DetailPage() {
                     return (
                       <SubSection
                         key={String(project._id)}
-                        className="border-orange-200/70 bg-slate-50 shadow-[0_18px_50px_-30px_rgba(15,23,42,0.35)]"
+                        className="border-[color:var(--brand-orange)] bg-slate-50 shadow-[0_18px_50px_-30px_rgba(15,23,42,0.35)]"
                       >
                         <ProjectDetails project={project} />
                         <div className="my-3 h-px bg-slate-200/40" />
@@ -1776,7 +1784,7 @@ export default function DetailPage() {
         {isActiveSection("audio") ? (
           <SectionCard id="audio" title="Audio Profile" icon={Mic}>
             <SectionWrapper>
-              <SubSection className="border-orange-200/70 bg-slate-50 shadow-[0_18px_50px_-30px_rgba(15,23,42,0.35)]">
+              <SubSection className="border-[color:var(--brand-orange)] bg-slate-50 shadow-[0_18px_50px_-30px_rgba(15,23,42,0.35)]">
                 {audioUrl ? (
                   <audio controls src={audioUrl} className="w-full" />
                 ) : (
@@ -1793,7 +1801,7 @@ export default function DetailPage() {
         {isActiveSection("video") ? (
           <SectionCard id="video" title="Video Profile" icon={Video}>
             <SectionWrapper>
-              <SubSection className="border-orange-200/70 bg-slate-50 shadow-[0_18px_50px_-30px_rgba(15,23,42,0.35)]">
+              <SubSection className="border-[color:var(--brand-orange)] bg-slate-50 shadow-[0_18px_50px_-30px_rgba(15,23,42,0.35)]">
                 {videoUrl ? (
                   <video controls src={videoUrl} className="w-full rounded-xl" />
                 ) : (
@@ -1821,7 +1829,7 @@ export default function DetailPage() {
             variant="default"
             onClick={goNext}
             disabled={safeIndex === sectionOrder.length - 1}
-            className="rounded-full border border-orange-200 bg-orange-50/80 px-4 py-2 text-sm font-semibold text-orange-600 transition hover:text-orange-700 disabled:cursor-not-allowed disabled:opacity-50"
+            className="rounded-full border border-[color:var(--brand-orange)] brand-orange-soft px-4 py-2 text-sm font-semibold text-[color:var(--brand-orange)] transition hover:text-[color:var(--brand-orange)] disabled:cursor-not-allowed disabled:opacity-50"
           >
             Next
           </Button>

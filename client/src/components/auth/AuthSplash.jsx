@@ -9,7 +9,7 @@ export default function AuthSplash() {
     <div className="fixed inset-0 z-[9999] grid place-items-center bg-white">
       <div className="relative flex items-center justify-center">
         {/* Word inside */}
-        <span className="z-10 text-5xl md:text-3xl font-extrabold tracking-[0.35em] text-orange-600">
+        <span className="z-10 text-5xl md:text-3xl font-extrabold tracking-[0.35em] text-[color:var(--brand-orange)]">
           VERIDATE
         </span>
 
@@ -25,7 +25,8 @@ export default function AuthSplash() {
             cy="50"
             r="35"
             fill="none"
-            stroke="#ffedd5" /* orange-100/200 */
+            stroke="#fb773b"
+            strokeOpacity="0.2"
             strokeWidth="2"
           />
 
@@ -35,7 +36,7 @@ export default function AuthSplash() {
             cy="50"
             r="42"
             fill="none"
-            stroke="#ea580c" /* orange-600 */
+            stroke="#fb773b"
             strokeWidth="4"
             strokeLinecap="round"
             strokeDasharray="70 220" /* arc length + gap */

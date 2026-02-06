@@ -173,7 +173,7 @@ export default function Organizations() {
 
           <Button
             type="submit"
-            className="w-full bg-orange-600 hover:bg-orange-700 text-white"
+            className="w-full bg-[color:var(--brand-orange)] hover:bg-[color:var(--brand-orange)] text-white"
             disabled={!canSubmit || submitting}
           >
             {submitting ? "Creating..." : "Create organization"}
@@ -232,7 +232,7 @@ export default function Organizations() {
                               href={org.website}
                               target="_blank"
                               rel="noreferrer"
-                              className="text-orange-700 hover:underline"
+                              className="text-[color:var(--brand-orange)] hover:underline"
                             >
                               {org.website}
                             </a>

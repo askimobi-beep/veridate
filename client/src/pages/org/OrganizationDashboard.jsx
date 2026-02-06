@@ -117,7 +117,7 @@ export default function OrganizationDashboard() {
               href={summary.website}
               target="_blank"
               rel="noreferrer"
-              className="text-sm font-medium text-orange-700 hover:underline"
+              className="text-sm font-medium text-[color:var(--brand-orange)] hover:underline"
             >
               {summary.website}
             </a>

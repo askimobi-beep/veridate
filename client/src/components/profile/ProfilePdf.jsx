@@ -106,7 +106,7 @@ export default function ProfilePdfDownload({
   const isDisabled = downloading || !data || loading || !!err;
   const buttonLabel = downloading ? "Building..." : label;
   const buttonClassName = [
-    "inline-flex items-center gap-2 rounded-xl text-white bg-orange-600 hover:bg-orange-700 active:scale-[0.98] shadow-sm transition",
+    "inline-flex items-center gap-2 rounded-xl text-white bg-[color:var(--brand-orange)] hover:bg-[color:var(--brand-orange)] active:scale-[0.98] shadow-sm transition",
     inline ? "px-4 py-2 text-sm font-semibold" : "px-6 py-3",
     className,
   ]

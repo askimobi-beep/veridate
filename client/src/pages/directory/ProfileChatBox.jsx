@@ -134,7 +134,7 @@ export default function ProfileChatBox({ userId, profile }) {
     <div className="fixed bottom-6 right-6 z-50 flex max-h-[90vh] flex-col items-end gap-3 max-sm:bottom-4 max-sm:right-4">
       {open ? (
         <Card className="flex w-[min(360px,calc(100vw-1.5rem))] max-h-[80vh] flex-col overflow-hidden rounded-3xl border border-slate-200 bg-white/90 shadow-[0_20px_60px_rgba(15,23,42,0.18)] backdrop-blur-xl transition-all duration-300">
-          <div className="bg-gradient-to-r from-orange-500 via-amber-500 to-orange-600 px-4 py-3 text-white">
+          <div className="bg-gradient-to-r from-[color:var(--brand-orange)] via-[color:var(--brand-orange)] to-[color:var(--brand-orange)] px-4 py-3 text-white">
             <div className="flex items-start justify-between gap-3">
               <div className="flex items-center gap-2">
                 <div className="flex h-9 w-9 items-center justify-center rounded-2xl bg-white/15">
@@ -176,7 +176,7 @@ export default function ProfileChatBox({ userId, profile }) {
                   type="button"
                   size="sm"
                   variant="outline"
-                  className="rounded-2xl border-slate-200 bg-white/70 text-slate-700 hover:bg-orange-50 hover:text-orange-600"
+                  className="rounded-2xl border-slate-200 bg-white/70 text-slate-700 hover:brand-orange-soft hover:text-[color:var(--brand-orange)]"
                   onClick={() => {
                     setInput(q);
                     setTimeout(() => {
@@ -200,7 +200,7 @@ export default function ProfileChatBox({ userId, profile }) {
                   key={i}
                   className={
                     m.role === "user"
-                      ? "ml-auto max-w-[85%] rounded-2xl bg-gradient-to-r from-orange-500 to-amber-500 px-4 py-2 text-sm font-medium text-white shadow-lg shadow-orange-500/30"
+                      ? "ml-auto max-w-[85%] rounded-2xl bg-gradient-to-r from-[color:var(--brand-orange)] to-[color:var(--brand-orange)] px-4 py-2 text-sm font-medium text-white shadow-lg shadow-[color:rgba(251,119,59,0.3)]"
                       : "mr-auto max-w-[85%] rounded-2xl border border-slate-100 bg-white px-4 py-2 text-sm text-slate-700 shadow-sm"
                   }
                 >
@@ -255,7 +255,7 @@ export default function ProfileChatBox({ userId, profile }) {
       <Button
         type="button"
         onClick={() => setOpen((prev) => !prev)}
-        className="flex h-14 items-center gap-3 rounded-full bg-gradient-to-r from-orange-500 to-amber-500 px-4 text-sm font-semibold shadow-lg shadow-orange-500/40 hover:from-orange-600 hover:to-amber-600"
+        className="flex h-14 items-center gap-3 rounded-full bg-gradient-to-r from-[color:var(--brand-orange)] to-[color:var(--brand-orange)] px-4 text-sm font-semibold shadow-lg shadow-[color:rgba(251,119,59,0.4)] hover:from-[color:var(--brand-orange)] hover:to-[color:var(--brand-orange)]"
       >
         <span className="flex h-10 w-10 items-center justify-center rounded-full bg-white/15">
           <MessageCircle className="h-5 w-5 text-white" />

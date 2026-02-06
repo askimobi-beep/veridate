@@ -101,7 +101,7 @@ export default function LoginPage() {
                 htmlFor="email"
                 className="text-sm font-medium text-gray-700 flex items-center gap-2"
               >
-                <Mail className="w-4 h-4 text-orange-600" />
+                <Mail className="w-4 h-4 text-[color:var(--brand-orange)]" />
                 Email
               </label>
               <AppInput
@@ -121,7 +121,7 @@ export default function LoginPage() {
                 htmlFor="password"
                 className="text-sm font-medium text-gray-700 flex items-center gap-2"
               >
-                <Lock className="w-4 h-4 text-orange-600" />
+                <Lock className="w-4 h-4 text-[color:var(--brand-orange)]" />
                 Password
               </label>
               <AppInput
@@ -142,13 +142,13 @@ export default function LoginPage() {
                   type="checkbox"
                   checked={remember}
                   onChange={() => setRemember(!remember)}
-                  className="accent-orange-600"
+                  className="accent-[color:var(--brand-orange)]"
                 />
                 Remember me
               </label>
               <Link
                 to="/forgot-password"
-                className="text-orange-600 hover:underline"
+                className="text-[color:var(--brand-orange)] hover:underline"
               >
                 Forgot Password?
               </Link>
@@ -159,7 +159,7 @@ export default function LoginPage() {
               type="submit"
               disabled={submitting}
               aria-busy={submitting ? "true" : "false"}
-              className="w-full bg-orange-600 hover:bg-orange-700 disabled:opacity-70 text-white font-semibold"
+              className="w-full bg-[color:var(--brand-orange)] hover:bg-[color:var(--brand-orange)] disabled:opacity-70 text-white font-semibold"
             >
               {submitting ? "Signing in…" : "Login"}
             </Button>
@@ -200,7 +200,7 @@ export default function LoginPage() {
             Don’t have an account?{" "}
             <Link
               to="/register-user"
-              className="text-orange-600 font-medium hover:underline"
+              className="text-[color:var(--brand-orange)] font-medium hover:underline"
             >
               Register
             </Link>

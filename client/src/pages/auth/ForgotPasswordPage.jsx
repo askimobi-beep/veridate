@@ -65,7 +65,7 @@ export default function ForgotPasswordPage() {
           <form onSubmit={handleSubmit} className="w-full max-w-[400px] space-y-4">
             <div className="flex flex-col space-y-1">
               <label className="text-sm font-medium text-gray-700 flex items-center gap-2">
-                <Mail className="w-4 h-4 text-orange-600" />
+                <Mail className="w-4 h-4 text-[color:var(--brand-orange)]" />
                 Email
               </label>
               <AppInput
@@ -82,7 +82,7 @@ export default function ForgotPasswordPage() {
               type="submit"
               disabled={submitting}
               aria-busy={submitting ? "true" : "false"}
-              className="w-full bg-orange-600 hover:bg-orange-700 disabled:opacity-70 text-white font-semibold"
+              className="w-full bg-[color:var(--brand-orange)] hover:bg-[color:var(--brand-orange)] disabled:opacity-70 text-white font-semibold"
             >
               {submitting ? "Sending…" : "Send reset link"}
             </Button>

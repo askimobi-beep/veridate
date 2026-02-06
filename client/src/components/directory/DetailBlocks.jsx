@@ -31,7 +31,7 @@ export function DLRow({ label, children }) {
 export function SubSection({ children, className = "" }) {
   return (
     <div
-      className={`rounded-lg border border-orange-400/70 bg-transparent text-card-foreground shadow-none ${className}`}
+      className={`rounded-lg border border-[color:var(--brand-orange)]/70 bg-transparent text-card-foreground shadow-none ${className}`}
     >
       <div className="p-4 md:p-5">{children}</div>
     </div>

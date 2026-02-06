@@ -122,7 +122,7 @@ export default function MediaProfileSection({
               className={`inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-5 py-2 text-xs font-semibold text-slate-700 shadow-sm transition ${
                 disabled
                   ? "opacity-60 cursor-not-allowed"
-                  : "cursor-pointer hover:border-orange-200 hover:text-orange-600"
+                  : "cursor-pointer hover:border-[color:var(--brand-orange)] hover:text-[color:var(--brand-orange)]"
               }`}
             >
               <UploadCloud className="h-4 w-4" />
@@ -162,7 +162,7 @@ export default function MediaProfileSection({
               type="button"
               onClick={handleUploadNew}
               disabled={disabled}
-              className="inline-flex h-10 items-center gap-2 rounded-xl border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700 hover:border-orange-200 hover:text-orange-600 disabled:cursor-not-allowed disabled:opacity-60"
+              className="inline-flex h-10 items-center gap-2 rounded-xl border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700 hover:border-[color:var(--brand-orange)] hover:text-[color:var(--brand-orange)] disabled:cursor-not-allowed disabled:opacity-60"
             >
               <UploadCloud className="h-4 w-4" />
               {uploadNewLabel}
@@ -171,7 +171,7 @@ export default function MediaProfileSection({
               type="button"
               onClick={handleDelete}
               disabled={disabled || !previewUrl}
-              className="inline-flex h-10 items-center gap-2 rounded-xl border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700 hover:border-orange-200 hover:text-orange-600 disabled:cursor-not-allowed disabled:opacity-60"
+              className="inline-flex h-10 items-center gap-2 rounded-xl border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700 hover:border-[color:var(--brand-orange)] hover:text-[color:var(--brand-orange)] disabled:cursor-not-allowed disabled:opacity-60"
             >
               <X className="h-4 w-4" />
               Delete
@@ -187,7 +187,7 @@ export default function MediaProfileSection({
               className={`inline-flex h-10 items-center gap-2 rounded-xl border px-4 py-2 text-sm font-medium transition disabled:cursor-not-allowed disabled:opacity-60 ${
                 saved && !saving
                   ? "border-slate-200 text-slate-600 bg-white"
-                  : "border-orange-600 text-white bg-orange-600 hover:bg-orange-700"
+                  : "border-[color:var(--brand-orange)] text-white bg-[color:var(--brand-orange)] hover:bg-[color:var(--brand-orange)]"
               }`}
             >
               <Save className="h-4 w-4" />

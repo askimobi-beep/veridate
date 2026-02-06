@@ -670,7 +670,7 @@ export default function PersonalInformation() {
                       onClick={() => scrollToSection(item.key)}
                       className={`flex w-full items-center gap-3 rounded-xl px-3 py-2 text-left text-sm font-semibold transition ${
                         isActive
-                          ? "bg-orange-100/80 text-orange-600 shadow-[0_6px_16px_-10px_rgba(234,88,12,0.7)]"
+                          ? "brand-orange-soft text-[color:var(--brand-orange)] shadow-[0_6px_16px_-10px_rgba(251,119,59,0.7)]"
                           : "text-slate-500 hover:bg-white/70 hover:text-slate-700"
                       }`}
                     >
@@ -689,12 +689,12 @@ export default function PersonalInformation() {
               <div className="rounded-3xl border border-white/60 bg-white/60 p-6 shadow-[0_22px_50px_-28px_rgba(15,23,42,0.4)] backdrop-blur-md">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
-                    {open === "pi" ? <UserRound className="h-5 w-5 text-orange-600" /> : null}
-                    {open === "education" ? <FileText className="h-5 w-5 text-orange-600" /> : null}
-                    {open === "experience" ? <Briefcase className="h-5 w-5 text-orange-600" /> : null}
-                    {open === "projects" ? <ClipboardList className="h-5 w-5 text-orange-600" /> : null}
-                    {open === "audio" ? <Mic className="h-5 w-5 text-orange-600" /> : null}
-                    {open === "video" ? <Video className="h-5 w-5 text-orange-600" /> : null}
+                    {open === "pi" ? <UserRound className="h-5 w-5 text-[color:var(--brand-orange)]" /> : null}
+                    {open === "education" ? <FileText className="h-5 w-5 text-[color:var(--brand-orange)]" /> : null}
+                    {open === "experience" ? <Briefcase className="h-5 w-5 text-[color:var(--brand-orange)]" /> : null}
+                    {open === "projects" ? <ClipboardList className="h-5 w-5 text-[color:var(--brand-orange)]" /> : null}
+                    {open === "audio" ? <Mic className="h-5 w-5 text-[color:var(--brand-orange)]" /> : null}
+                    {open === "video" ? <Video className="h-5 w-5 text-[color:var(--brand-orange)]" /> : null}
                     <h2 className="text-lg font-semibold text-slate-800">
                       {sectionItems[safeIndex]?.label}
                     </h2>
@@ -806,7 +806,7 @@ export default function PersonalInformation() {
                     type="button"
                     onClick={goNext}
                     disabled={safeIndex === sectionOrder.length - 1}
-                    className="rounded-full border border-orange-200 bg-orange-50/80 px-4 py-2 text-sm font-semibold text-orange-600 transition hover:text-orange-700 disabled:cursor-not-allowed disabled:opacity-50"
+                    className="rounded-full border border-[color:var(--brand-orange)] brand-orange-soft px-4 py-2 text-sm font-semibold text-[color:var(--brand-orange)] transition hover:text-[color:var(--brand-orange)] disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     Next
                   </button>

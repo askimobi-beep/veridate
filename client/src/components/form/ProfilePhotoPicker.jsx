@@ -348,7 +348,7 @@
             onClick={() => setOpen(true)}
             className={cn(
               "relative rounded-full overflow-hidden border-2 border-white shadow-md",
-              "ring-0 outline-none focus-visible:ring-2 focus-visible:ring-orange-500",
+              "ring-0 outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--brand-orange)]",
               "aspect-square object-cover",
               disabled ? "opacity-60 cursor-not-allowed" : "cursor-pointer",
               avatarClassName,

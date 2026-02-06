@@ -92,7 +92,7 @@ function FilterSelect({
           onChange(next);
         }}
       >
-      <SelectTrigger className="h-9 rounded-xl border border-slate-200/80 bg-white/70 text-left text-slate-700 shadow-[0_12px_30px_-20px_rgba(15,23,42,0.55)] backdrop-blur-md focus:ring-orange-200">
+      <SelectTrigger className="h-9 rounded-xl border border-slate-200/80 bg-white/70 text-left text-slate-700 shadow-[0_12px_30px_-20px_rgba(15,23,42,0.55)] backdrop-blur-md focus:ring-[color:var(--brand-orange)]">
         <SelectValue placeholder={placeholder} />
       </SelectTrigger>
         <SelectContent className="rounded-xl border-white/70 bg-white/95 backdrop-blur-md">
@@ -248,7 +248,7 @@ export default function SearchFilters({
       <div className="flex gap-2 pt-2">
         <Button
           type="submit"
-          className="flex-1 h-9 rounded-xl bg-orange-500 text-white hover:bg-orange-600"
+          className="flex-1 h-9 rounded-xl bg-[color:var(--brand-orange)] text-white hover:bg-[color:var(--brand-orange)]"
         >
           Search
         </Button>

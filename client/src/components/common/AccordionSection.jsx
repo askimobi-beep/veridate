@@ -91,8 +91,8 @@ export default function AccordionSection({
       {...sectionAnimation}
       className={`group relative mb-6 overflow-hidden rounded-3xl border backdrop-blur-xl transition-colors duration-300 ${
         isOpen
-          ? "border-orange-200/60 bg-gradient-to-br from-white/80 via-white/70 to-orange-100/60 text-gray-800"
-          : "border-white/15 bg-gradient-to-br from-orange-200/50 via-orange-100/40 to-white/35 text-gray-900/90"
+          ? "border-[color:var(--brand-orange)]/60 bg-gradient-to-br from-white/80 via-white/70 to-[color:var(--brand-orange)]/60 text-gray-800"
+          : "border-white/15 bg-gradient-to-br from-[color:var(--brand-orange)]/50 via-[color:var(--brand-orange)]/40 to-white/35 text-gray-900/90"
       } ${locked ? "opacity-90" : ""} ${className}`}
       style={staticShadow ? { boxShadow: staticShadow } : undefined}
       whileHover={
@@ -104,7 +104,7 @@ export default function AccordionSection({
     >
       <motion.span
         aria-hidden="true"
-        className="pointer-events-none absolute inset-0 -z-10 bg-gradient-to-br from-orange-200/25 via-transparent to-orange-500/15"
+        className="pointer-events-none absolute inset-0 -z-10 bg-gradient-to-br from-[color:var(--brand-orange)]/25 via-transparent to-[color:var(--brand-orange)]/15"
         initial={false}
         animate={
           prefersReducedMotion
@@ -118,7 +118,7 @@ export default function AccordionSection({
       <motion.button
         type="button"
         id={headerId}
-        className={`relative flex w-full items-center justify-between px-6 py-5 text-base font-semibold transition-colors duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-400/60 focus-visible:ring-offset-2 focus-visible:ring-offset-white md:text-lg ${headerClassName}`}
+        className={`relative flex w-full items-center justify-between px-6 py-5 text-base font-semibold transition-colors duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--brand-orange)]/60 focus-visible:ring-offset-2 focus-visible:ring-offset-white md:text-lg ${headerClassName}`}
         aria-expanded={isOpen}
         aria-controls={contentId}
         onClick={() => setOpenValue(isOpen ? null : value)}
@@ -130,8 +130,8 @@ export default function AccordionSection({
             <Icon
               className={`h-5 w-5 flex-shrink-0 transition-colors duration-300 ${
                 isOpen
-                  ? "text-orange-600 drop-shadow-[0_0_12px_rgba(249,115,22,0.45)]"
-                  : "text-orange-600"
+                  ? "text-[color:var(--brand-orange)] drop-shadow-[0_0_12px_rgba(249,115,22,0.45)]"
+                  : "text-[color:var(--brand-orange)]"
               }`}
             />
           ) : null}
@@ -142,7 +142,7 @@ export default function AccordionSection({
           initial={false}
           animate={{ rotate: isOpen ? 180 : 0 }}
           transition={CHEVRON_SPRING}
-          className={`text-xl font-bold ${isOpen ? "text-orange-700" : "text-orange-600"}`}
+          className={`text-xl font-bold ${isOpen ? "text-[color:var(--brand-orange)]" : "text-[color:var(--brand-orange)]"}`}
         >
           {isOpen ? "\u2212" : "+"}
         </motion.span>
