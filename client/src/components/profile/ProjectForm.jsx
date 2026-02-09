@@ -198,7 +198,7 @@ export default function ProjectForm({
                             project.isPresent ? "text-gray-800 font-medium" : "text-gray-500"
                           }`}
                         >
-                          Present
+                          Currently working
                         </span>
                       </span>
                     </div>

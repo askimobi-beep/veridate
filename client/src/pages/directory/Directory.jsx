@@ -4,9 +4,13 @@ import { Card } from "@/components/ui/card";
 import DirectoryCard from "@/components/directory/DirectoryCard";
 import SearchFilters from "@/components/directory/SearchFilters";
 import { fetchProfiles } from "@/services/profileService";
+import { useAuth } from "@/context/AuthContext";
+import { getProfileMe } from "@/lib/profileApi";
 
 export default function Directory() {
+  const { user: authUser } = useAuth();
   const [items, setItems] = useState([]);
+  const [meProfile, setMeProfile] = useState(null);
   const [q, setQ] = useState("");
   const [jobTitle, setJobTitle] = useState("");
   const [degreeTitle, setDegreeTitle] = useState("");
@@ -29,6 +33,7 @@ export default function Directory() {
   const [panelOpen, setPanelOpen] = useState(false);
   const [panelMode, setPanelMode] = useState("profile");
   const [panelUserId, setPanelUserId] = useState("");
+  const [panelSection, setPanelSection] = useState("");
 
   const panelUrl = useMemo(() => {
     const fallbackId = "68d94b0c5a62659a0126e800";
@@ -39,13 +44,16 @@ export default function Directory() {
     params.set("embed", "1");
     if (panelMode === "summary") {
       params.set("section", "summary");
+    } else if (panelSection) {
+      params.set("section", panelSection);
     }
     return `${url}?${params.toString()}`;
-  }, [panelMode, panelUserId]);
+  }, [panelMode, panelUserId, panelSection]);
 
-  const openPanel = (profile, mode) => {
+  const openPanel = (profile, mode, section) => {
     setPanelUserId(profile?.user || "");
     setPanelMode(mode);
+    setPanelSection(section || "");
     setPanelOpen(true);
   };
 
@@ -170,6 +178,25 @@ export default function Directory() {
     };
   }, []);
 
+  useEffect(() => {
+    let active = true;
+    if (!authUser) {
+      setMeProfile(null);
+      return undefined;
+    }
+    (async () => {
+      try {
+        const data = await getProfileMe();
+        if (active) setMeProfile(data || null);
+      } catch {
+        if (active) setMeProfile(null);
+      }
+    })();
+    return () => {
+      active = false;
+    };
+  }, [authUser]);
+
   const onSearch = (e) => {
     e.preventDefault();
     if (!hasFilters) {
@@ -258,8 +285,13 @@ export default function Directory() {
                   <DirectoryCard
                     key={p._id}
                     profile={p}
+                    meProfile={meProfile}
+                    authUser={authUser}
                     onViewProfile={(profile) => openPanel(profile, "profile")}
                     onViewSummary={(profile) => openPanel(profile, "summary")}
+                    onVerifySection={(profile, section) =>
+                      openPanel(profile, "profile", section)
+                    }
                   />
                 ))}
               </div>

@@ -8,14 +8,18 @@ import {
   ClipboardList,
   Mic,
   Video,
+  Building2,
+  PlusCircle,
 } from "lucide-react";
 
 import ProfileHeader from "@/components/profile/ProfileHeader";
+import { Button } from "@/components/ui/button";
 import PersonalDetailsForm from "@/components/profile/PersonalDetailsForm";
 import EducationForm from "@/components/profile/EducationForm";
 import ExperienceForm from "@/components/profile/ExperienceForm";
 import ProjectForm from "@/components/profile/ProjectForm";
 import MediaProfileSection from "@/components/profile/MediaProfileSection";
+import CompanyProfilesSection from "@/components/profile/CompanyProfilesSection";
 import ConfirmDialog from "@/components/common/ConfirmDialog";
 
 import usePersonalInformationForm from "@/hooks/usePersonalInformationForm";
@@ -24,6 +28,7 @@ import { getProfileMe } from "@/lib/profileApi";
 import { useAuth } from "@/context/AuthContext";
 import ProfilePdfDownload from "@/components/profile/ProfilePdf";
 import { fetchOrganizations } from "@/services/organizationService";
+import { fetchApprovedCompanies } from "@/services/companyService";
 
 export default function PersonalInformation() {
   const {
@@ -66,10 +71,12 @@ export default function PersonalInformation() {
   const { enqueueSnackbar } = useSnackbar();
   const [open, setOpen] = useState("pi");
   const [locked, setLocked] = useState({});
+  const [companyCreateOpen, setCompanyCreateOpen] = useState(false);
   const [orgOptions, setOrgOptions] = useState({
     companies: [],
     universities: [],
   });
+  const [companyHasExisting, setCompanyHasExisting] = useState(false);
 
   const { user, loading: authLoading } = useAuth();
 
@@ -341,10 +348,9 @@ export default function PersonalInformation() {
     const loadOrganizations = async () => {
       try {
         const rows = await fetchOrganizations();
+        const approvedCompanies = await fetchApprovedCompanies();
         if (!mounted) return;
-        const companies = rows
-          .filter((r) => r.role === "company")
-          .map((r) => r.name);
+        const companies = approvedCompanies.map((r) => r.name);
         const universities = rows
           .filter((r) => r.role === "university")
           .map((r) => r.name);
@@ -550,6 +556,7 @@ export default function PersonalInformation() {
     "projects",
     "audio",
     "video",
+    "company",
   ];
   const sectionItems = [
     {
@@ -593,6 +600,13 @@ export default function PersonalInformation() {
       icon: Video,
       done: hasVideo,
       hint: hasVideo ? "Completed" : "Add video",
+    },
+    {
+      key: "company",
+      label: "Company Profile",
+      icon: Building2,
+      done: false,
+      hint: "Create company",
     },
   ];
 
@@ -687,18 +701,29 @@ export default function PersonalInformation() {
 
             <form onSubmit={handleSubmit} className="space-y-6">
               <div className="rounded-3xl border border-white/60 bg-white/60 p-6 shadow-[0_22px_50px_-28px_rgba(15,23,42,0.4)] backdrop-blur-md">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
                     {open === "pi" ? <UserRound className="h-5 w-5 text-[color:var(--brand-orange)]" /> : null}
                     {open === "education" ? <FileText className="h-5 w-5 text-[color:var(--brand-orange)]" /> : null}
                     {open === "experience" ? <Briefcase className="h-5 w-5 text-[color:var(--brand-orange)]" /> : null}
                     {open === "projects" ? <ClipboardList className="h-5 w-5 text-[color:var(--brand-orange)]" /> : null}
                     {open === "audio" ? <Mic className="h-5 w-5 text-[color:var(--brand-orange)]" /> : null}
                     {open === "video" ? <Video className="h-5 w-5 text-[color:var(--brand-orange)]" /> : null}
+                    {open === "company" ? <Building2 className="h-5 w-5 text-[color:var(--brand-orange)]" /> : null}
                     <h2 className="text-lg font-semibold text-slate-800">
                       {sectionItems[safeIndex]?.label}
                     </h2>
                   </div>
+                  {open === "company" ? (
+                    <Button
+                      type="button"
+                      onClick={() => setCompanyCreateOpen(true)}
+                      className="rounded-xl bg-[color:var(--brand-orange)] text-white hover:brightness-110"
+                    >
+                      <PlusCircle className="h-4 w-4 mr-2" />
+                      {companyHasExisting ? "Create Another Company Profile" : "Create Company Profile"}
+                    </Button>
+                  ) : null}
                 </div>
 
                 <div className="mt-6">
@@ -789,6 +814,17 @@ export default function PersonalInformation() {
                       onAskConfirm={onAskConfirm}
                       savePersonalInfo={savePersonalInfo}
                       saving={saving}
+                    />
+                  ) : null}
+
+                  {open === "company" ? (
+                    <CompanyProfilesSection
+                      createOpen={companyCreateOpen}
+                      setCreateOpen={setCompanyCreateOpen}
+                      hideCreateButton
+                      onCompanyCountChange={(count) =>
+                        setCompanyHasExisting(count > 0)
+                      }
                     />
                   ) : null}
                 </div>

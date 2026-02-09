@@ -16,6 +16,7 @@ const groups = [
       { to: "/admin", icon: LayoutDashboard, label: "Dashboard" },
       { to: "/admin/users", icon: LayoutDashboard, label: "Users" },
       { to: "/admin/organizations", icon: Building2, label: "Organizations" },
+      { to: "/admin/company-verifications", icon: Building2, label: "Company Verifications" },
     ],
   },
 ];

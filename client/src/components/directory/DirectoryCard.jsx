@@ -1,4 +1,4 @@
-import React, { useEffect, useId, useState } from "react";
+import React, { useEffect, useId, useMemo, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -84,6 +84,96 @@ const normalizeList = (value) => {
   return value ? [value] : [];
 };
 
+const normalize = (s) => (s || "").trim().toLowerCase().replace(/\s+/g, " ");
+const normalizeInstitute = normalize;
+const normalizeCompany = normalize;
+
+const creditsToMap = (arr, keyField) => {
+  const out = new Map();
+  (arr || []).forEach((b) => {
+    const rawKey = b?.[keyField];
+    const k =
+      typeof rawKey === "string"
+        ? rawKey
+        : rawKey?.toString
+        ? rawKey.toString()
+        : "";
+    if (!k) return;
+    const prev = out.get(k) || { available: 0, used: 0 };
+    out.set(k, {
+      available: prev.available + Number(b.available || 0),
+      used: prev.used + Number(b.used || 0),
+    });
+  });
+  return out;
+};
+
+function eduStatus({ row, meId, meProfile, eduCreditMap }) {
+  const already =
+    Array.isArray(row?.verifiedBy) &&
+    row.verifiedBy.some((x) => String(x) === String(meId));
+  if (already) return "already-verified";
+
+  const key = row?.instituteKey || normalizeInstitute(row?.institute);
+  if (!key) return "ineligible";
+
+  const hasSame =
+    Array.isArray(meProfile?.education) &&
+    meProfile.education.some(
+      (e) => (e.instituteKey || normalizeInstitute(e.institute)) === key
+    );
+  if (!hasSame) return "ineligible";
+
+  const bucket = eduCreditMap.get(key);
+  if (!bucket || (bucket.available || 0) <= 0) return "no-credits";
+
+  return "eligible";
+}
+
+function expStatus({ row, meId, meProfile, expCreditMap }) {
+  const already =
+    Array.isArray(row?.verifiedBy) &&
+    row.verifiedBy.some((x) => String(x) === String(meId));
+  if (already) return "already-verified";
+
+  const key = row?.companyKey || normalizeCompany(row?.company);
+  if (!key) return "ineligible";
+
+  const hasSame =
+    Array.isArray(meProfile?.experience) &&
+    meProfile.experience.some(
+      (e) => (e.companyKey || normalizeCompany(e.company)) === key
+    );
+  if (!hasSame) return "ineligible";
+
+  const bucket = expCreditMap.get(key);
+  if (!bucket || (bucket.available || 0) <= 0) return "no-credits";
+
+  return "eligible";
+}
+
+function projectStatus({ row, meId, meProfile, projectCreditMap }) {
+  const already =
+    Array.isArray(row?.verifiedBy) &&
+    row.verifiedBy.some((x) => String(x) === String(meId));
+  if (already) return "already-verified";
+
+  const key = row?.companyKey || normalizeCompany(row?.company);
+  if (!key) return "ineligible";
+
+  const hasSame =
+    Array.isArray(meProfile?.experience) &&
+    meProfile.experience.some(
+      (e) => (e.companyKey || normalizeCompany(e.company)) === key
+    );
+  if (!hasSame) return "ineligible";
+
+  const bucket = projectCreditMap.get(key);
+  if (!bucket || (bucket.available || 0) <= 0) return "no-credits";
+
+  return "eligible";
+}
+
 const sortLatest = (list = []) => {
   const copy = [...normalizeList(list)];
   copy.sort((a, b) => {
@@ -122,10 +212,18 @@ const overallProfileRating = (profile) => {
   return totalRecords ? sumRatings / totalRecords : 0;
 };
 
-export default function DirectoryCard({ profile, onViewProfile, onViewSummary }) {
+export default function DirectoryCard({
+  profile,
+  meProfile,
+  authUser,
+  onViewProfile,
+  onViewSummary,
+  onVerifySection,
+}) {
   const [downloading, setDownloading] = useState(false);
   const [detail, setDetail] = useState(null);
   const location = [profile.city, profile.country].filter(Boolean).join(", ");
+  const meId = authUser?._id;
 
   useEffect(() => {
     let active = true;
@@ -148,11 +246,68 @@ export default function DirectoryCard({ profile, onViewProfile, onViewSummary })
   const experiences = sortLatest(expSource);
   const projects = sortLatest(projSource);
   const educations = sortLatest(eduSource);
+  const allExperiences = normalizeList(expSource);
+  const allProjects = normalizeList(projSource);
+  const allEducations = normalizeList(eduSource);
   const totalExpYears = sumYears(expSource);
   const totalExpLabel = formatDurationLabel(totalExpYears);
   const ratingValue = overallProfileRating(detail || profile);
   const hasAudio = Boolean(detail?.audioProfile);
   const hasVideo = Boolean(detail?.videoProfile);
+
+  const eduCreditMap = useMemo(() => {
+    const buckets = authUser?.verifyCredits?.education || [];
+    return creditsToMap(buckets, "instituteKey");
+  }, [authUser]);
+
+  const expCreditMap = useMemo(() => {
+    const buckets = authUser?.verifyCredits?.experience || [];
+    return creditsToMap(buckets, "companyKey");
+  }, [authUser]);
+
+  const projectCreditMap = useMemo(() => {
+    const buckets = authUser?.verifyCredits?.projects || [];
+    return creditsToMap(buckets, "companyKey");
+  }, [authUser]);
+
+  const canVerifyEducation =
+    Boolean(meId) &&
+    String(meId) !== String(profile?.user || profile?._id) &&
+    allEducations.some(
+      (row) =>
+        eduStatus({
+          row,
+          meId,
+          meProfile,
+          eduCreditMap,
+        }) === "eligible"
+    );
+
+  const canVerifyExperience =
+    Boolean(meId) &&
+    String(meId) !== String(profile?.user || profile?._id) &&
+    allExperiences.some(
+      (row) =>
+        expStatus({
+          row,
+          meId,
+          meProfile,
+          expCreditMap,
+        }) === "eligible"
+    );
+
+  const canVerifyProjects =
+    Boolean(meId) &&
+    String(meId) !== String(profile?.user || profile?._id) &&
+    allProjects.some(
+      (row) =>
+        projectStatus({
+          row,
+          meId,
+          meProfile,
+          projectCreditMap,
+        }) === "eligible"
+    );
 
   const handleDownload = async () => {
     if (downloading) return;
@@ -247,8 +402,19 @@ export default function DirectoryCard({ profile, onViewProfile, onViewSummary })
 
         <div className="mt-4 space-y-3 text-sm text-slate-700 text-left">
           <div className="text-left">
-            <div className="font-semibold text-slate-700 text-left">
-              Work Experience ({totalExpLabel})
+            <div className="flex items-center justify-between gap-2">
+              <div className="font-semibold text-slate-700 text-left">
+                Work Experience ({totalExpLabel})
+              </div>
+              {canVerifyExperience ? (
+                <button
+                  type="button"
+                  onClick={() => onVerifySection?.(profile, "experience")}
+                  className="text-xs font-semibold text-[color:var(--brand-orange)]"
+                >
+                  Verify
+                </button>
+              ) : null}
             </div>
             <div className="mt-1 space-y-1 text-left">
               {experiences.length ? (
@@ -266,7 +432,18 @@ export default function DirectoryCard({ profile, onViewProfile, onViewSummary })
           </div>
 
           <div className="text-left">
-            <div className="font-semibold text-slate-700 text-left">Projects</div>
+            <div className="flex items-center justify-between gap-2">
+              <div className="font-semibold text-slate-700 text-left">Projects</div>
+              {canVerifyProjects ? (
+                <button
+                  type="button"
+                  onClick={() => onVerifySection?.(profile, "projects")}
+                  className="text-xs font-semibold text-[color:var(--brand-orange)]"
+                >
+                  Verify
+                </button>
+              ) : null}
+            </div>
             <div className="mt-1 space-y-1 text-left">
               {projects.length ? (
                 projects.map((row, idx) => (
@@ -283,7 +460,18 @@ export default function DirectoryCard({ profile, onViewProfile, onViewSummary })
           </div>
 
           <div className="text-left">
-            <div className="font-semibold text-slate-700 text-left">Education</div>
+            <div className="flex items-center justify-between gap-2">
+              <div className="font-semibold text-slate-700 text-left">Education</div>
+              {canVerifyEducation ? (
+                <button
+                  type="button"
+                  onClick={() => onVerifySection?.(profile, "education")}
+                  className="text-xs font-semibold text-[color:var(--brand-orange)]"
+                >
+                  Verify
+                </button>
+              ) : null}
+            </div>
             <div className="mt-1 space-y-1 text-left">
               {educations.length ? (
                 educations.map((row, idx) => (

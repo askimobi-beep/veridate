@@ -8,6 +8,7 @@ import dashboardRoutes from "./dashboardRoutes";
 import orgRoutes from "./orgRoutes";
 import LoginPage from "@/pages/auth/Login";
 import AdminLayout from "../layouts/AdminLayout";
+import CompanyInvite from "@/pages/company/CompanyInvite";
 
 
 
@@ -16,6 +17,10 @@ const router = createBrowserRouter([
     path: paths.HOME,
     element: <App />,
     children: [...authRoutes],
+  },
+  {
+    path: "/company/:companyId/invite/:token",
+    element: <CompanyInvite />,
   },
   {
     path: '/dashboard',

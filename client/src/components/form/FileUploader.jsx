@@ -112,7 +112,7 @@ export default forwardRef(function FileUploader(
       {/* DROPZONE (the file input overlay only covers this box) */}
       <div
         className={cn(
-          `relative border-2 ${borderStyle} rounded-xl p-4 shadow-sm group transition`,
+          `relative border ${borderStyle} rounded-lg h-10 px-3 py-2 box-border shadow-sm group transition`,
           disabled
             ? "bg-gray-100 opacity-60 cursor-not-allowed"
             : "bg-white/90 hover:border-[color:var(--brand-orange)] border-gray-300",

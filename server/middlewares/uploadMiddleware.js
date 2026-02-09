@@ -26,6 +26,8 @@ const storage = multer.diskStorage({
     // CHANGED: support bracketed names like experienceFiles[0]
     } else if (file.fieldname === "experienceFiles" || file.fieldname.startsWith("experienceFiles[")) {
       folder = "uploads/experience";
+    } else if (file.fieldname === "companyDocs" || file.fieldname.startsWith("companyDocs[")) {
+      folder = "uploads/company-docs";
     } else {
       folder = "uploads/others";
     }

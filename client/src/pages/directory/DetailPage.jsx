@@ -323,7 +323,7 @@ function ReviewStars({ value = 5, onChange, readOnly = false, size = "lg", class
 function VerifyBadge({ count, type }) {
   return (
     <Badge className={`${badgeClass(count)} rounded-lg`}>
-      <CheckCircle2 className="h-3.5 w-3.5 mr-1" />
+      <CheckCircle2 className="h-3.5 w-3.5 mr-1 text-[color:var(--brand-orange)]" />
       {count} {verifyCountText(count, type)}
     </Badge>
   );
@@ -650,6 +650,7 @@ export default function DetailPage() {
   const location = useLocation();
   const { enqueueSnackbar } = useSnackbar();
   const { user: authUser } = useAuth();
+  const meId = authUser?._id;
 
   const [profile, setProfile] = useState(null);
   const [meProfile, setMeProfile] = useState(null);
@@ -818,6 +819,95 @@ export default function DetailPage() {
     const buckets = authUser?.verifyCredits?.projects || [];
     return creditsToMap(buckets, "companyKey");
   }, [authUser]);
+
+  const isSelfProfile =
+    Boolean(meId) && String(meId) === String(profile?.user || profile?._id);
+
+  const canVerifyEducation = useMemo(() => {
+    if (!meId || !meProfile || isSelfProfile) return false;
+    const list = Array.isArray(profile?.education) ? profile.education : [];
+    return list.some(
+      (row) =>
+        eduStatus({
+          row,
+          meId,
+          meProfile,
+          eduCreditMap,
+        }) === "eligible"
+    );
+  }, [eduCreditMap, isSelfProfile, meId, meProfile, profile?.education]);
+
+  const canVerifyExperience = useMemo(() => {
+    if (!meId || !meProfile || isSelfProfile) return false;
+    const list = Array.isArray(profile?.experience) ? profile.experience : [];
+    return list.some(
+      (row) =>
+        expStatus({
+          row,
+          meId,
+          meProfile,
+          expCreditMap,
+        }) === "eligible"
+    );
+  }, [expCreditMap, isSelfProfile, meId, meProfile, profile?.experience]);
+
+  const canVerifyProjects = useMemo(() => {
+    if (!meId || !meProfile || isSelfProfile) return false;
+    const list = Array.isArray(profile?.projects) ? profile.projects : [];
+    return list.some(
+      (row) =>
+        projectStatus({
+          row,
+          meId,
+          meProfile,
+          projectCreditMap,
+        }) === "eligible"
+    );
+  }, [meId, meProfile, isSelfProfile, profile?.projects, projectCreditMap]);
+
+  const scrollToRow = (prefix, id) => {
+    const el = document.getElementById(`${prefix}-${id}`);
+    if (el) {
+      el.scrollIntoView({ behavior: "smooth", block: "start" });
+      return true;
+    }
+    return false;
+  };
+
+  const scrollToFirstEligible = (type) => {
+    if (!profile || !meProfile || !meId) return;
+    const list =
+      type === "education"
+        ? profile.education || []
+        : type === "experience"
+        ? profile.experience || []
+        : profile.projects || [];
+
+    const statusFn =
+      type === "education"
+        ? (row) =>
+            eduStatus({ row, meId, meProfile, eduCreditMap }) === "eligible"
+        : type === "experience"
+        ? (row) =>
+            expStatus({ row, meId, meProfile, expCreditMap }) === "eligible"
+        : (row) =>
+            projectStatus({ row, meId, meProfile, projectCreditMap }) ===
+            "eligible";
+
+    const match = list.find((row) => statusFn(row));
+    if (match && match._id) {
+      const prefix =
+        type === "education"
+          ? "edu"
+          : type === "experience"
+          ? "exp"
+          : "proj";
+      const ok = scrollToRow(prefix, match._id);
+      if (!ok) scrollToSection(type);
+      return;
+    }
+    scrollToSection(type);
+  };
 
   const resetReviewState = () => {
     setReviewModal({ open: false, type: null, rowId: "" });
@@ -1178,7 +1268,6 @@ export default function DetailPage() {
       <div className="p-6 text-sm text-muted-foreground">No profile found.</div>
     );
 
-  const meId = authUser?._id;
   const fullName = profile?.name || "Unnamed";
   const overallRating = overallProfileRating(profile);
   const locationLabel = [profile?.city, profile?.country].filter(Boolean).join(", ");
@@ -1515,6 +1604,10 @@ export default function DetailPage() {
                     {copied ? "Copied" : "Share"}
                   </Button>
                 </div>
+                <div className="flex flex-wrap items-center gap-2">
+                  {/* Verify Education/Experience buttons removed as requested */}
+                  {/* Verify Projects button removed as requested */}
+                </div>
               </div>
             </CardContent>
           </div>
@@ -1625,6 +1718,7 @@ export default function DetailPage() {
                     return (
                       <SubSection
                         key={String(edu._id)}
+                        id={`edu-${edu._id}`}
                         className="border-[color:var(--brand-orange)] bg-slate-50 shadow-[0_18px_50px_-30px_rgba(15,23,42,0.35)]"
                       >
                         <EducationDetails edu={edu} fileUrl={fileUrl} />
@@ -1684,6 +1778,7 @@ export default function DetailPage() {
                     return (
                       <SubSection
                         key={String(exp._id)}
+                        id={`exp-${exp._id}`}
                         className="border-[color:var(--brand-orange)] bg-slate-50 shadow-[0_18px_50px_-30px_rgba(15,23,42,0.35)]"
                       >
                         <ExperienceDetails exp={exp} fileUrl={fileUrl} />
@@ -1743,6 +1838,7 @@ export default function DetailPage() {
                     return (
                       <SubSection
                         key={String(project._id)}
+                        id={`proj-${project._id}`}
                         className="border-[color:var(--brand-orange)] bg-slate-50 shadow-[0_18px_50px_-30px_rgba(15,23,42,0.35)]"
                       >
                         <ProjectDetails project={project} />

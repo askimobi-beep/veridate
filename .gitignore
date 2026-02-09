@@ -40,3 +40,6 @@ public/
 
 # Ignore uploads (don’t push server-side uploads)
 server/upload/
+server/uploads/
+server/uploads/**
+server/data/

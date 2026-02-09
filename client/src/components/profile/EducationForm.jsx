@@ -255,6 +255,7 @@ const websitePattern = "https://[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$";
                   disabled={rowLocked && !allowEdit}
                   error={edu.error_instituteWebsite}
                   pattern={websitePattern}
+                  inputClassName="h-11"
                 />
 
                 <div>
@@ -295,7 +296,7 @@ const websitePattern = "https://[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$";
                     onClear={() => updateEducation(index, "degreeFile", "")}
                     disabled={rowLocked && !allowEdit}
                     className="w-full"
-                    dropzoneClassName="h-10 px-3 py-2 border border-dotted border-slate-200 rounded-lg"
+                    dropzoneClassName="h-11 px-3 py-2 border border-dotted border-slate-200 rounded-lg"
                     defaultFileName={
                       typeof edu?.degreeFile === "string" ? edu.degreeFile : ""
                     }

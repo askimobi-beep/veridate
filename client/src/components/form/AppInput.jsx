@@ -29,7 +29,7 @@ export default function AppInput({
         </Label>
       )}
 
-      <div className="relative">
+      <div className="relative pt-px">
         <Input
           id={name}
           name={name}
