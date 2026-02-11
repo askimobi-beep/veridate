@@ -10,9 +10,6 @@ import {
   ClipboardList,
   UserRound,
   CheckCircle2,
-  BadgeCheck,
-  AlertTriangle,
-  XCircle,
   Heart,
   Share2,
   MoreVertical,
@@ -206,34 +203,6 @@ function projectStatus({ row, meId, meProfile, projectCreditMap }) {
   return "eligible";
 }
 
-const statusIconByStatus = (status) => {
-  switch (status) {
-    case "already-verified":
-      return CheckCircle2;
-    case "eligible":
-      return BadgeCheck;
-    case "no-credits":
-      return XCircle;
-    case "ineligible":
-    default:
-      return XCircle;
-  }
-};
-
-const statusIconColor = (status) => {
-  switch (status) {
-    case "already-verified":
-      return "text-[color:var(--brand-orange)]";
-    case "eligible":
-      return "text-[color:var(--brand-orange)]";
-    case "no-credits":
-      return "text-red-600";
-    case "ineligible":
-    default:
-      return "text-red-600";
-  }
-};
-
 // === shared helpers for labels/badges (keep brand wording) ===
 function verifyCountText(count, type) {
   const detail =
@@ -250,7 +219,13 @@ function verifyCountText(count, type) {
 function getVerifyLabel(type, status, isBusy) {
   if (status === "already-verified")
     return "You have already veridated this section";
-  if (status === "eligible") return isBusy ? "Verifying..." : "Veridate Now";
+  if (status === "eligible") {
+    if (isBusy) return "Verifying...";
+    if (type === "experience") return "Veridate This Experience";
+    if (type === "education") return "Veridate This Education";
+    if (type === "project") return "Veridate This Project";
+    return "Veridate";
+  }
   if (status === "no-credits")
     return "Unable to veridate: No credits available";
   // ineligible message depends on type
@@ -330,15 +305,18 @@ function VerifyBadge({ count, type }) {
 }
 
 function VerifyButton({ type, status, isBusy, id, onVerify }) {
-  const Icon = statusIconByStatus(status);
+  const isEligible = status === "eligible";
   return (
     <button
       type="button"
-      className="inline-flex items-center gap-2 rounded-md bg-transparent text-xs font-semibold text-slate-700 transition hover:text-slate-900 disabled:cursor-not-allowed disabled:opacity-70"
-      onClick={() => status === "eligible" && onVerify(String(id))}
-      disabled={status !== "eligible" || isBusy}
+      className={`inline-flex items-center rounded-md px-3 py-1.5 text-xs font-semibold transition disabled:cursor-not-allowed ${
+        isEligible
+          ? "bg-[color:var(--brand-orange)] text-white hover:brightness-110"
+          : "bg-transparent text-slate-600 hover:text-slate-800"
+      }`}
+      onClick={() => isEligible && onVerify(String(id))}
+      disabled={!isEligible || isBusy}
     >
-      <Icon className={`h-5 w-5 stroke-[2.5] ${statusIconColor(status)}`} />
       <span className="whitespace-nowrap">{getVerifyLabel(type, status, isBusy)}</span>
     </button>
   );
@@ -1719,7 +1697,7 @@ export default function DetailPage() {
                       <SubSection
                         key={String(edu._id)}
                         id={`edu-${edu._id}`}
-                        className="border-[color:var(--brand-orange)] bg-slate-50 shadow-[0_18px_50px_-30px_rgba(15,23,42,0.35)]"
+                        className="animated-verify-border border-[color:var(--brand-orange)] bg-slate-50 shadow-[0_18px_50px_-30px_rgba(15,23,42,0.35)]"
                       >
                         <EducationDetails edu={edu} fileUrl={fileUrl} />
                         <div className="my-3 h-px bg-slate-200/40" />
@@ -1779,7 +1757,7 @@ export default function DetailPage() {
                       <SubSection
                         key={String(exp._id)}
                         id={`exp-${exp._id}`}
-                        className="border-[color:var(--brand-orange)] bg-slate-50 shadow-[0_18px_50px_-30px_rgba(15,23,42,0.35)]"
+                        className="animated-verify-border border-[color:var(--brand-orange)] bg-slate-50 shadow-[0_18px_50px_-30px_rgba(15,23,42,0.35)]"
                       >
                         <ExperienceDetails exp={exp} fileUrl={fileUrl} />
                         <div className="my-3 h-px bg-slate-200/40" />
@@ -1839,7 +1817,7 @@ export default function DetailPage() {
                       <SubSection
                         key={String(project._id)}
                         id={`proj-${project._id}`}
-                        className="border-[color:var(--brand-orange)] bg-slate-50 shadow-[0_18px_50px_-30px_rgba(15,23,42,0.35)]"
+                        className="animated-verify-border border-[color:var(--brand-orange)] bg-slate-50 shadow-[0_18px_50px_-30px_rgba(15,23,42,0.35)]"
                       >
                         <ProjectDetails project={project} />
                         <div className="my-3 h-px bg-slate-200/40" />
