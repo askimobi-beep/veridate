@@ -1644,7 +1644,7 @@ export default function DetailPage() {
         {isActiveSection("personal") ? (
           <SectionCard id="personal" title="Personal Details" icon={UserRound}>
             <SectionWrapper>
-              <SubSection className="border-[color:var(--brand-orange)] bg-slate-50 shadow-[0_18px_50px_-30px_rgba(15,23,42,0.35)]">
+              <SubSection className="border-[color:var(--brand-orange)] bg-white shadow-[0_18px_50px_-30px_rgba(15,23,42,0.35)]">
                 {visiblePersonalDetails.length ? (
                   <div className="grid grid-cols-1 gap-3 text-left md:grid-cols-2">
                     {visiblePersonalDetails.map((detail) => {
@@ -1697,7 +1697,7 @@ export default function DetailPage() {
                       <SubSection
                         key={String(edu._id)}
                         id={`edu-${edu._id}`}
-                        className="animated-verify-border border-[color:var(--brand-orange)] bg-slate-50 shadow-[0_18px_50px_-30px_rgba(15,23,42,0.35)]"
+                        className="animated-verify-border border-[color:var(--brand-orange)] bg-white shadow-[0_18px_50px_-30px_rgba(15,23,42,0.35)]"
                       >
                         <EducationDetails edu={edu} fileUrl={fileUrl} />
                         <div className="my-3 h-px bg-slate-200/40" />
@@ -1757,7 +1757,7 @@ export default function DetailPage() {
                       <SubSection
                         key={String(exp._id)}
                         id={`exp-${exp._id}`}
-                        className="animated-verify-border border-[color:var(--brand-orange)] bg-slate-50 shadow-[0_18px_50px_-30px_rgba(15,23,42,0.35)]"
+                        className="animated-verify-border border-[color:var(--brand-orange)] bg-white shadow-[0_18px_50px_-30px_rgba(15,23,42,0.35)]"
                       >
                         <ExperienceDetails exp={exp} fileUrl={fileUrl} />
                         <div className="my-3 h-px bg-slate-200/40" />
@@ -1817,7 +1817,7 @@ export default function DetailPage() {
                       <SubSection
                         key={String(project._id)}
                         id={`proj-${project._id}`}
-                        className="animated-verify-border border-[color:var(--brand-orange)] bg-slate-50 shadow-[0_18px_50px_-30px_rgba(15,23,42,0.35)]"
+                        className="animated-verify-border border-[color:var(--brand-orange)] bg-white shadow-[0_18px_50px_-30px_rgba(15,23,42,0.35)]"
                       >
                         <ProjectDetails project={project} />
                         <div className="my-3 h-px bg-slate-200/40" />
@@ -1858,7 +1858,7 @@ export default function DetailPage() {
         {isActiveSection("audio") ? (
           <SectionCard id="audio" title="Audio Profile" icon={Mic}>
             <SectionWrapper>
-              <SubSection className="border-[color:var(--brand-orange)] bg-slate-50 shadow-[0_18px_50px_-30px_rgba(15,23,42,0.35)]">
+              <SubSection className="border-[color:var(--brand-orange)] bg-white shadow-[0_18px_50px_-30px_rgba(15,23,42,0.35)]">
                 {audioUrl ? (
                   <audio controls src={audioUrl} className="w-full" />
                 ) : (
@@ -1875,7 +1875,7 @@ export default function DetailPage() {
         {isActiveSection("video") ? (
           <SectionCard id="video" title="Video Profile" icon={Video}>
             <SectionWrapper>
-              <SubSection className="border-[color:var(--brand-orange)] bg-slate-50 shadow-[0_18px_50px_-30px_rgba(15,23,42,0.35)]">
+              <SubSection className="border-[color:var(--brand-orange)] bg-white shadow-[0_18px_50px_-30px_rgba(15,23,42,0.35)]">
                 {videoUrl ? (
                   <video controls src={videoUrl} className="w-full rounded-xl" />
                 ) : (

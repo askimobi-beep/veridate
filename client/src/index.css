@@ -37,7 +37,7 @@ select#gender {
   position: relative;
   border-color: transparent !important;
   background:
-    linear-gradient(#f8fafc, #f8fafc) padding-box,
+    linear-gradient(#ffffff, #ffffff) padding-box,
     conic-gradient(
       from var(--verify-angle, 0deg),
       rgba(251, 119, 59, 0.2),
