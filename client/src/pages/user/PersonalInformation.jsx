@@ -643,6 +643,7 @@ export default function PersonalInformation() {
   const scrollToSection = (key) => {
     setOpen(key);
     if (key !== "company") {
+      setCompanyCreateOpen(false);
       const next = new URLSearchParams(searchParams);
       next.delete("section");
       next.delete("companyId");
@@ -664,10 +665,10 @@ export default function PersonalInformation() {
   useEffect(() => {
     const section = String(searchParams.get("section") || "").trim();
     const allowed = ["pi", "education", "experience", "projects", "audio", "video", "company"];
-    if (section && allowed.includes(section) && section !== open) {
-      setOpen(section);
+    if (section && allowed.includes(section)) {
+      setOpen((prev) => (prev === section ? prev : section));
     }
-  }, [searchParams, open]);
+  }, [searchParams]);
 
   useEffect(() => {
     if (open !== "company" || companyCreateOpen || selectedCompanyId || !companyPages.length) {
@@ -681,15 +682,15 @@ export default function PersonalInformation() {
   const safeIndex = activeIndex === -1 ? 0 : activeIndex;
   const goPrev = () => {
     if (safeIndex <= 0) return;
-    setOpen(sectionOrder[safeIndex - 1]);
+    scrollToSection(sectionOrder[safeIndex - 1]);
   };
   const goNext = () => {
     if (open === "pi") {
-      setOpen("company");
+      scrollToSection("company");
       return;
     }
     if (safeIndex >= sectionOrder.length - 1) return;
-    setOpen(sectionOrder[safeIndex + 1]);
+    scrollToSection(sectionOrder[safeIndex + 1]);
   };
 
   return (

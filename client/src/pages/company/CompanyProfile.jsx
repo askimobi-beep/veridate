@@ -361,21 +361,21 @@ export default function CompanyProfile({
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
             <div>
-              <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">Website</div>
+              <div className="text-xs font-semibold text-slate-500">Website</div>
               <a href={company.website} target="_blank" rel="noreferrer" className="text-slate-700 hover:underline">
                 {company.website}
               </a>
             </div>
             <div>
-              <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">Address</div>
+              <div className="text-xs font-semibold text-slate-500">Address</div>
               <div className="text-slate-700">{company.address}</div>
             </div>
             <div>
-              <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">Phone</div>
+              <div className="text-xs font-semibold text-slate-500">Phone</div>
               <a href={`tel:${company.phone}`} className="text-slate-700 hover:underline">{company.phone}</a>
             </div>
             <div>
-              <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">Verification</div>
+              <div className="text-xs font-semibold text-slate-500">Verification</div>
               <div className="text-slate-700 capitalize">{company.status}</div>
             </div>
           </div>
