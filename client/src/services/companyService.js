@@ -57,6 +57,11 @@ export const removeCompanyMember = async (companyId, memberId) => {
   return res?.data;
 };
 
+export const updateCompanyAbout = async (companyId, about) => {
+  const res = await axiosInstance.patch(`/companies/${companyId}/about`, { about });
+  return res?.data?.data;
+};
+
 export const fetchInvitePreview = async (token) => {
   const res = await axiosInstance.get(`/companies/invite/${token}`);
   return res?.data?.data;

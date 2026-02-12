@@ -45,7 +45,10 @@ export default function CompanyInvite() {
       const res = await acceptInvite(token);
       const companyId = res?.companyId || invite?.companyId;
       if (companyId) {
-        navigate(`/dashboard/companies/${companyId}`, { replace: true });
+        navigate(
+          `/dashboard?section=company&companyId=${companyId}&companyTab=overview`,
+          { replace: true }
+        );
       }
     } catch (e) {
       setError(e?.response?.data?.message || "Failed to accept invite.");

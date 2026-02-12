@@ -1,5 +1,17 @@
-import React, { useEffect, useMemo, useState } from "react";
+﻿import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
+import {
+  ArrowLeft,
+  Building2,
+  Pencil,
+  Save,
+  Share2,
+  Globe,
+  MapPin,
+  Phone,
+  Search,
+  Users,
+} from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import {
   fetchCompanyPublic,
@@ -8,25 +20,52 @@ import {
   createCompanyInvite,
   fetchCompanyMembers,
   updateCompanyMemberRole,
+  updateCompanyAbout,
   removeCompanyMember,
 } from "@/services/companyService";
 import { Button } from "@/components/ui/button";
 import AppInput from "@/components/form/AppInput";
 import { Textarea } from "@/components/ui/textarea";
 
-export default function CompanyProfile() {
-  const { id } = useParams();
-  const { user } = useAuth();
+const statusClass = {
+  approved: "bg-emerald-50 text-emerald-700 border-emerald-200",
+  pending: "bg-amber-50 text-amber-700 border-amber-200",
+  rejected: "bg-red-50 text-red-700 border-red-200",
+};
+
+const toLogoUrl = (logoFile) => {
+  if (!logoFile) return "";
+  if (typeof logoFile === "string") return logoFile;
+  if (!logoFile.filename) return "";
+  const base = (import.meta.env.VITE_API_PIC_URL || "").replace(/\/$/, "");
+  if (!base) return `/uploads/company-logo/${logoFile.filename}`;
+  return `${base}/uploads/company-logo/${logoFile.filename}`;
+};
+
+export default function CompanyProfile({
+  companyId: companyIdProp,
+  embedded = false,
+  initialTab = "overview",
+  onBack,
+}) {
+  const { id: routeCompanyId } = useParams();
+  const id = companyIdProp || routeCompanyId;
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
-  const tab = searchParams.get("tab") || "overview";
+  const [embeddedTab, setEmbeddedTab] = useState(initialTab || "overview");
+  const tab = embedded ? embeddedTab : searchParams.get("tab") || "overview";
 
+  const { user } = useAuth();
   const [company, setCompany] = useState(null);
   const [myRole, setMyRole] = useState("");
   const [jobs, setJobs] = useState([]);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState({ title: "", description: "", location: "" });
+
+  const [jobTitleQuery, setJobTitleQuery] = useState("");
+  const [jobLocationQuery, setJobLocationQuery] = useState("");
+
   const [members, setMembers] = useState([]);
   const [membersLoading, setMembersLoading] = useState(false);
   const [inviteRole, setInviteRole] = useState("manager");
@@ -34,40 +73,62 @@ export default function CompanyProfile() {
   const [inviteLimit, setInviteLimit] = useState(1);
   const [inviteLink, setInviteLink] = useState("");
   const [inviteBusy, setInviteBusy] = useState(false);
+  const [editingAbout, setEditingAbout] = useState(false);
+  const [aboutDraft, setAboutDraft] = useState("");
+  const [aboutSaving, setAboutSaving] = useState(false);
 
   const canManageTeam = ["owner", "admin"].includes(myRole);
-  const canPost =
-    company?.status === "approved" &&
-    ["owner", "admin", "manager"].includes(myRole);
+  const canPost = company?.status === "approved" && ["owner", "admin", "manager"].includes(myRole);
+  const canEditCompanyPage = ["owner", "admin", "manager"].includes(myRole);
+
+  const changeTab = (nextTab) => {
+    if (embedded) {
+      setEmbeddedTab(nextTab);
+      return;
+    }
+    setSearchParams({ tab: nextTab });
+  };
+
+  useEffect(() => {
+    if (embedded) setEmbeddedTab(initialTab || "overview");
+  }, [embedded, initialTab]);
 
   const load = async () => {
+    if (!id) return;
     setLoading(true);
     try {
       const res = await fetchCompanyPublic(id);
       const data = res?.data;
-      setCompany(data);
+      setCompany(data || null);
       setMyRole(res?.myRole || "");
       if (data?._id) {
         const list = await fetchCompanyJobs(data._id);
-        setJobs(list);
+        setJobs(Array.isArray(list) ? list : []);
       }
     } catch {
       setCompany(null);
+      setMyRole("");
+      setJobs([]);
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    if (id) load();
+    load();
   }, [id]);
+
+  useEffect(() => {
+    setAboutDraft(company?.about || "");
+    setEditingAbout(false);
+  }, [company?._id, company?.about]);
 
   const loadMembers = async () => {
     if (!company?._id || !canManageTeam) return;
     setMembersLoading(true);
     try {
       const list = await fetchCompanyMembers(company._id);
-      setMembers(list);
+      setMembers(Array.isArray(list) ? list : []);
     } finally {
       setMembersLoading(false);
     }
@@ -75,23 +136,17 @@ export default function CompanyProfile() {
 
   useEffect(() => {
     if (tab === "team") loadMembers();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tab, company?._id, canManageTeam]);
 
-  const onChange = (e) => {
-    const { name, value } = e.target;
-    setForm((prev) => ({ ...prev, [name]: value }));
-  };
-
   const onCreateJob = async () => {
-    if (!form.title || !form.description) return;
+    if (!form.title || !form.description || !company?._id) return;
     setSaving(true);
     try {
       await createCompanyJob(company._id, form);
       setForm({ title: "", description: "", location: "" });
       const list = await fetchCompanyJobs(company._id);
-      setJobs(list);
-      setSearchParams({ tab: "jobs" });
+      setJobs(Array.isArray(list) ? list : []);
+      changeTab("jobs");
     } finally {
       setSaving(false);
     }
@@ -106,212 +161,301 @@ export default function CompanyProfile() {
         expiresInDays: Number(inviteExpiry) || 7,
         usageLimit: Number(inviteLimit) || 1,
       });
-      const link = `${window.location.origin}/company/${company._id}/invite/${invite.token}`;
-      setInviteLink(link);
+      setInviteLink(`${window.location.origin}/company/${company._id}/invite/${invite.token}`);
     } finally {
       setInviteBusy(false);
     }
   };
 
-  if (loading) {
-    return <div className="p-6 text-sm text-slate-600">Loading company...</div>;
-  }
+  const onSaveAbout = async () => {
+    if (!company?._id || !String(aboutDraft || "").trim()) return;
+    setAboutSaving(true);
+    try {
+      const updated = await updateCompanyAbout(company._id, aboutDraft);
+      setCompany((prev) => ({ ...(prev || {}), ...(updated || {}), about: updated?.about || aboutDraft }));
+      setEditingAbout(false);
+    } finally {
+      setAboutSaving(false);
+    }
+  };
 
-  if (!company) {
-    return <div className="p-6 text-sm text-slate-600">Company not found.</div>;
-  }
+  const filteredJobs = useMemo(() => {
+    const titleQ = jobTitleQuery.trim().toLowerCase();
+    const locationQ = jobLocationQuery.trim().toLowerCase();
+    return jobs.filter((job) => {
+      const titleOk = !titleQ || String(job.title || "").toLowerCase().includes(titleQ);
+      const locOk = !locationQ || String(job.location || "").toLowerCase().includes(locationQ);
+      return titleOk && locOk;
+    });
+  }, [jobs, jobTitleQuery, jobLocationQuery]);
+
+  if (loading) return <div className="p-4 text-sm text-slate-600">Loading company...</div>;
+  if (!company) return <div className="p-4 text-sm text-slate-600">Company not found.</div>;
+
+  const companyLogoUrl = toLogoUrl(company.logo);
+  const companyInitial = String(company.name || "C").charAt(0).toUpperCase();
+  const companyPublicUrl = `${window.location.origin}/dashboard/companies/${company._id}`;
+  const onShareCompany = async () => {
+    try {
+      if (navigator.share) {
+        await navigator.share({
+          title: company?.name || "Company Page",
+          text: "Check this company page",
+          url: companyPublicUrl,
+        });
+      } else {
+        await navigator.clipboard.writeText(companyPublicUrl);
+      }
+    } catch {
+      // no-op
+    }
+  };
 
   return (
-    <div className="max-w-5xl mx-auto p-6 space-y-4">
-      <div>
+    <div className={`${embedded ? "space-y-4" : "max-w-6xl mx-auto p-6 space-y-4"}`}>
+      {!embedded ? (
         <button
           type="button"
           onClick={() => navigate(-1)}
           className="inline-flex items-center gap-2 text-sm font-semibold text-slate-600 hover:text-slate-800"
         >
-          ← Back
+          <ArrowLeft className="h-4 w-4" /> Back
         </button>
-      </div>
-      <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-        <div className="flex items-start justify-between flex-wrap gap-3 text-left">
-          <div>
-            <div className="text-2xl font-bold text-[color:var(--brand-orange)]">
-              {company.name}
+      ) : onBack ? (
+        <button
+          type="button"
+          onClick={onBack}
+          className="inline-flex items-center gap-2 text-sm font-semibold text-slate-600 hover:text-slate-800"
+        >
+          <ArrowLeft className="h-4 w-4" /> Back to company list
+        </button>
+      ) : null}
+
+      <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div className="flex min-w-0 items-start gap-3 text-left">
+            <div className="h-14 w-14 overflow-hidden rounded-full border border-slate-200 bg-slate-100 flex items-center justify-center text-lg font-bold text-slate-600 shrink-0">
+              {companyLogoUrl ? (
+                <img src={companyLogoUrl} alt={company.name} className="h-full w-full object-cover" />
+              ) : (
+                companyInitial
+              )}
             </div>
-            <div className="mt-2 flex items-center gap-2 text-sm text-slate-700">
-              <span>📞</span>
-              <a href={`tel:${company.phone}`} className="hover:underline">
-                {company.phone}
-              </a>
-            </div>
-            <div className="mt-2 flex flex-wrap items-center gap-3 text-sm text-slate-700">
-              <span className="inline-flex items-center gap-2">
-                📍 {company.address}
-              </span>
-              <span className="text-slate-400">|</span>
-              <a
-                href={company.website}
-                target="_blank"
-                rel="noreferrer"
-                className="inline-flex items-center gap-2 text-[color:var(--brand-orange)] hover:underline"
-              >
-                🌐 Visit Website
-              </a>
+            <div className="min-w-0 text-left">
+              <div className="truncate text-left text-xl font-bold text-slate-900">{company.name}</div>
+              <div className="mt-1 flex flex-wrap items-center justify-start gap-x-4 gap-y-1 text-sm text-slate-600">
+                <span className="inline-flex items-center gap-1">
+                  <Phone className="h-4 w-4 text-[color:var(--brand-orange)]" />
+                  <a href={`tel:${company.phone}`} className="hover:underline">{company.phone}</a>
+                </span>
+                <span className="inline-flex items-center gap-1">
+                  <MapPin className="h-4 w-4 text-[color:var(--brand-orange)]" />
+                  {company.address}
+                </span>
+                <span className="inline-flex items-center gap-1">
+                  <Globe className="h-4 w-4 text-[color:var(--brand-orange)]" />
+                  <a href={company.website} target="_blank" rel="noreferrer" className="hover:underline">
+                    Visit Website
+                  </a>
+                </span>
+              </div>
             </div>
           </div>
+
           <span
-            className={`text-xs font-semibold ${
-              company.status === "approved"
-                ? "text-green-600"
-                : company.status === "rejected"
-                ? "text-red-600"
-                : "text-amber-600"
+            className={`inline-flex h-7 items-center rounded-full border px-2.5 text-xs font-semibold ${
+              statusClass[company.status] || statusClass.pending
             }`}
           >
             {String(company.status || "pending").toUpperCase()}
           </span>
         </div>
 
-        <div className="mt-4 flex flex-wrap gap-3">
+        <div className="mt-4 flex flex-wrap gap-2">
           <Button
             type="button"
             variant={tab === "overview" ? "default" : "outline"}
-            onClick={() => setSearchParams({ tab: "overview" })}
-            className={
-              tab === "overview"
-                ? "bg-[color:var(--brand-orange)] text-white hover:bg-[color:var(--brand-orange)]"
-                : ""
-            }
+            onClick={() => changeTab("overview")}
+            className={tab === "overview" ? "bg-[color:var(--brand-orange)] text-white hover:brightness-110" : ""}
           >
             Overview
           </Button>
           <Button
             type="button"
             variant={tab === "jobs" ? "default" : "outline"}
-            onClick={() => setSearchParams({ tab: "jobs" })}
-            className={
-              tab === "jobs"
-                ? "bg-[color:var(--brand-orange)] text-white hover:bg-[color:var(--brand-orange)]"
-                : ""
-            }
+            onClick={() => changeTab("jobs")}
+            className={tab === "jobs" ? "bg-[color:var(--brand-orange)] text-white hover:brightness-110" : ""}
           >
-            View Job Posts
+            Jobs
           </Button>
           {canPost ? (
             <Button
               type="button"
               variant={tab === "create" ? "default" : "outline"}
-              onClick={() => setSearchParams({ tab: "create" })}
-              className={
-                tab === "create"
-                  ? "bg-[color:var(--brand-orange)] text-white hover:bg-[color:var(--brand-orange)]"
-                  : ""
-              }
+              onClick={() => changeTab("create")}
+              className={tab === "create" ? "bg-[color:var(--brand-orange)] text-white hover:brightness-110" : ""}
             >
-              Create Job Post
+              Post a Job
             </Button>
           ) : null}
           {canManageTeam ? (
             <Button
               type="button"
               variant={tab === "team" ? "default" : "outline"}
-              onClick={() => setSearchParams({ tab: "team" })}
-              className={
-                tab === "team"
-                  ? "bg-[color:var(--brand-orange)] text-white hover:bg-[color:var(--brand-orange)]"
-                  : ""
-              }
+              onClick={() => changeTab("team")}
+              className={tab === "team" ? "bg-[color:var(--brand-orange)] text-white hover:brightness-110" : ""}
             >
               Manage Team
             </Button>
           ) : null}
+          <Button type="button" variant="outline" onClick={onShareCompany}>
+            <Share2 className="mr-1 h-4 w-4" />
+            Share
+          </Button>
         </div>
       </div>
 
       {tab === "overview" ? (
-        <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-          <div className="text-sm text-slate-700">
-            Company verification status:{" "}
-            <span className="font-semibold">{company.status}</span>
-          </div>
-          {company.status !== "approved" ? (
-            <div className="mt-2 text-sm text-slate-500">
-              Your submission has been received. Verification will take up to 5
-              business days.
+        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm space-y-4 text-left">
+          <div>
+            <div className="flex items-center justify-between gap-3">
+              <div className="text-sm font-semibold text-slate-800">Tagline</div>
+              {canEditCompanyPage ? (
+                editingAbout ? (
+                  <div className="flex items-center gap-2">
+                    <Button type="button" variant="outline" size="sm" onClick={() => { setEditingAbout(false); setAboutDraft(company?.about || ""); }}>
+                      Cancel
+                    </Button>
+                    <Button
+                      type="button"
+                      size="sm"
+                      onClick={onSaveAbout}
+                      disabled={aboutSaving || !String(aboutDraft || "").trim()}
+                      className="bg-[color:var(--brand-orange)] text-white hover:brightness-110"
+                    >
+                      <Save className="mr-1 h-4 w-4" />
+                      {aboutSaving ? "Saving..." : "Save"}
+                    </Button>
+                  </div>
+                ) : (
+                  <Button type="button" variant="outline" size="sm" onClick={() => setEditingAbout(true)}>
+                    <Pencil className="mr-1 h-4 w-4" />
+                    Edit
+                  </Button>
+                )
+              ) : null}
             </div>
-          ) : null}
+            {editingAbout ? (
+              <Textarea
+                value={aboutDraft}
+                onChange={(e) => setAboutDraft(e.target.value)}
+                placeholder="Tell people what your company does"
+                className="mt-2 min-h-[96px]"
+              />
+            ) : (
+              <p className="mt-1 text-sm text-slate-600 whitespace-pre-wrap">
+                {company.about || "No company about added yet."}
+              </p>
+            )}
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+            <div>
+              <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">Website</div>
+              <a href={company.website} target="_blank" rel="noreferrer" className="text-slate-700 hover:underline">
+                {company.website}
+              </a>
+            </div>
+            <div>
+              <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">Address</div>
+              <div className="text-slate-700">{company.address}</div>
+            </div>
+            <div>
+              <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">Phone</div>
+              <a href={`tel:${company.phone}`} className="text-slate-700 hover:underline">{company.phone}</a>
+            </div>
+            <div>
+              <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">Verification</div>
+              <div className="text-slate-700 capitalize">{company.status}</div>
+            </div>
+          </div>
         </div>
       ) : null}
 
       {tab === "jobs" ? (
-        <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-          <div className="text-sm font-semibold text-slate-800 mb-3">
-            Job Posts
+        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+          <div className="mb-4 grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div className="relative">
+              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+              <input
+                value={jobTitleQuery}
+                onChange={(e) => setJobTitleQuery(e.target.value)}
+                placeholder="Search by title"
+                className="h-10 w-full rounded-lg border border-slate-200 pl-9 pr-3 text-sm"
+              />
+            </div>
+            <div className="relative">
+              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+              <input
+                value={jobLocationQuery}
+                onChange={(e) => setJobLocationQuery(e.target.value)}
+                placeholder="Search by location"
+                className="h-10 w-full rounded-lg border border-slate-200 pl-9 pr-3 text-sm"
+              />
+            </div>
           </div>
-          {jobs.length ? (
+
+          {filteredJobs.length ? (
             <div className="space-y-3">
-              {jobs.map((job) => (
-                <div
-                  key={job._id}
-                  className="rounded-xl border border-slate-200 p-4"
-                >
-                  <div className="font-semibold text-slate-800">
-                    {job.title}
-                  </div>
-                  <div className="text-sm text-slate-600">
-                    {job.location || "Location not specified"}
-                  </div>
-                  <div className="text-sm text-slate-700 mt-2">
-                    {job.description}
+              {filteredJobs.map((job) => (
+                <div key={job._id} className="rounded-xl border border-slate-200 p-4">
+                  <div className="font-semibold text-slate-800">{job.title}</div>
+                  <div className="mt-1 text-sm text-slate-600">{job.location || "Location not specified"}</div>
+                  <div className="mt-2 text-sm text-slate-700">{job.description}</div>
+                  <div className="mt-3 text-xs text-slate-500">
+                    Posted {new Date(job.createdAt).toLocaleDateString()}
                   </div>
                 </div>
               ))}
             </div>
           ) : (
-            <div className="text-sm text-slate-500">No job posts yet.</div>
+            <div className="text-sm text-slate-500">No job posts found.</div>
           )}
         </div>
       ) : null}
 
       {tab === "create" && canPost ? (
-        <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-          <div className="text-sm font-semibold text-slate-800 mb-3">
-            Create Job Post
-          </div>
-          <div className="grid grid-cols-1 gap-4">
-            <AppInput
-              label="Job Title"
-              name="title"
-              value={form.title}
-              onChange={onChange}
-              placeholder="Job title"
+        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm space-y-4">
+          <AppInput
+            label="Job Title"
+            name="title"
+            value={form.title}
+            onChange={(e) => setForm((prev) => ({ ...prev, title: e.target.value }))}
+            placeholder="Job title"
+          />
+          <AppInput
+            label="Location"
+            name="location"
+            value={form.location}
+            onChange={(e) => setForm((prev) => ({ ...prev, location: e.target.value }))}
+            placeholder="Location"
+          />
+          <div>
+            <div className="mb-1 text-sm font-medium text-slate-700">Description</div>
+            <Textarea
+              name="description"
+              value={form.description}
+              onChange={(e) => setForm((prev) => ({ ...prev, description: e.target.value }))}
+              placeholder="Job description"
+              className="min-h-[120px]"
             />
-            <AppInput
-              label="Location"
-              name="location"
-              value={form.location}
-              onChange={onChange}
-              placeholder="Location"
-            />
-            <div>
-              <div className="text-sm font-medium text-slate-700 mb-1">
-                Description
-              </div>
-              <Textarea
-                name="description"
-                value={form.description}
-                onChange={onChange}
-                placeholder="Job description"
-                className="min-h-[120px]"
-              />
-            </div>
           </div>
-          <div className="mt-4 flex justify-end">
+          <div className="flex justify-end">
             <Button
               type="button"
               onClick={onCreateJob}
               disabled={saving}
-              className="bg-[color:var(--brand-orange)] text-white hover:bg-[color:var(--brand-orange)]"
+              className="bg-[color:var(--brand-orange)] text-white hover:brightness-110"
             >
               {saving ? "Creating..." : "Create Job Post"}
             </Button>
@@ -320,14 +464,14 @@ export default function CompanyProfile() {
       ) : null}
 
       {tab === "team" && canManageTeam ? (
-        <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm space-y-5">
-          <div className="text-sm font-semibold text-slate-800">Manage Team</div>
+        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm space-y-5">
+          <div className="flex items-center gap-2 text-sm font-semibold text-slate-800">
+            <Users className="h-4 w-4 text-[color:var(--brand-orange)]" /> Manage Team
+          </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-[1fr_120px_120px_120px_auto] gap-3 items-end">
+          <div className="grid grid-cols-1 md:grid-cols-[1fr_130px_130px_auto] gap-3 items-end">
             <div>
-              <div className="text-sm font-medium text-slate-700 mb-1">
-                Role
-              </div>
+              <div className="mb-1 text-sm font-medium text-slate-700">Role</div>
               <select
                 value={inviteRole}
                 onChange={(e) => setInviteRole(e.target.value)}
@@ -339,9 +483,7 @@ export default function CompanyProfile() {
               </select>
             </div>
             <div>
-              <div className="text-sm font-medium text-slate-700 mb-1">
-                Expiry (days)
-              </div>
+              <div className="mb-1 text-sm font-medium text-slate-700">Expiry (days)</div>
               <input
                 type="number"
                 min="1"
@@ -351,9 +493,7 @@ export default function CompanyProfile() {
               />
             </div>
             <div>
-              <div className="text-sm font-medium text-slate-700 mb-1">
-                Usage
-              </div>
+              <div className="mb-1 text-sm font-medium text-slate-700">Usage limit</div>
               <input
                 type="number"
                 min="1"
@@ -373,20 +513,11 @@ export default function CompanyProfile() {
           </div>
 
           {inviteLink ? (
-            <div className="flex flex-col gap-2">
+            <div className="space-y-2">
               <div className="text-xs text-slate-500">Invite link</div>
               <div className="flex items-center gap-2">
-                <input
-                  readOnly
-                  value={inviteLink}
-                  className="h-10 w-full rounded-lg border border-slate-200 px-3 text-sm"
-                />
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="h-10"
-                  onClick={() => navigator.clipboard.writeText(inviteLink)}
-                >
+                <input readOnly value={inviteLink} className="h-10 w-full rounded-lg border border-slate-200 px-3 text-sm" />
+                <Button type="button" variant="outline" className="h-10" onClick={() => navigator.clipboard.writeText(inviteLink)}>
                   Copy
                 </Button>
               </div>
@@ -394,9 +525,7 @@ export default function CompanyProfile() {
           ) : null}
 
           <div className="border-t border-slate-200 pt-4">
-            <div className="text-sm font-semibold text-slate-800 mb-3">
-              Members
-            </div>
+            <div className="mb-3 text-sm font-semibold text-slate-800">Members</div>
             {membersLoading ? (
               <div className="text-sm text-slate-500">Loading members...</div>
             ) : members.length ? (
@@ -406,10 +535,7 @@ export default function CompanyProfile() {
                   const memberId = userObj._id || userObj.id || "";
                   const displayName =
                     userObj.name ||
-                    [userObj.firstName, userObj.lastName]
-                      .filter(Boolean)
-                      .join(" ")
-                      .trim() ||
+                    [userObj.firstName, userObj.lastName].filter(Boolean).join(" ").trim() ||
                     userObj.email ||
                     "Member";
                   const isOwner = member.isOwner;
@@ -425,17 +551,11 @@ export default function CompanyProfile() {
                           value={member.role}
                           disabled={isOwner}
                           onChange={async (e) => {
-                            const newRole = e.target.value;
-                            await updateCompanyMemberRole(
-                              company._id,
-                              memberId,
-                              newRole
-                            );
+                            await updateCompanyMemberRole(company._id, memberId, e.target.value);
                             await loadMembers();
                           }}
                           className="h-9 rounded-md border border-slate-200 px-2 text-sm"
                         >
-                          <option value="owner">Owner</option>
                           <option value="admin">Admin</option>
                           <option value="manager">Manager</option>
                           <option value="viewer">Viewer</option>
@@ -460,6 +580,12 @@ export default function CompanyProfile() {
               <div className="text-sm text-slate-500">No members yet.</div>
             )}
           </div>
+        </div>
+      ) : null}
+
+      {tab === "team" && !canManageTeam ? (
+        <div className="rounded-2xl border border-slate-200 bg-white p-5 text-sm text-slate-600 shadow-sm">
+          You do not have permission to manage team members.
         </div>
       ) : null}
     </div>

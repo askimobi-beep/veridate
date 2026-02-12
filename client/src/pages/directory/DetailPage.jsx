@@ -221,9 +221,9 @@ function getVerifyLabel(type, status, isBusy) {
     return "You have already veridated this section";
   if (status === "eligible") {
     if (isBusy) return "Verifying...";
-    if (type === "experience") return "Veridate This Experience";
-    if (type === "education") return "Veridate This Education";
-    if (type === "project") return "Veridate This Project";
+    if (type === "experience") return "Veridate this experience";
+    if (type === "education") return "Veridate this education";
+    if (type === "project") return "Veridate this project";
     return "Veridate";
   }
   if (status === "no-credits")
@@ -1697,7 +1697,9 @@ export default function DetailPage() {
                       <SubSection
                         key={String(edu._id)}
                         id={`edu-${edu._id}`}
-                        className="animated-verify-border border-[color:var(--brand-orange)] bg-white shadow-[0_18px_50px_-30px_rgba(15,23,42,0.35)]"
+                        className={`${
+                          status === "eligible" ? "animated-verify-border" : ""
+                        } border-[color:var(--brand-orange)] bg-white shadow-[0_18px_50px_-30px_rgba(15,23,42,0.35)]`}
                       >
                         <EducationDetails edu={edu} fileUrl={fileUrl} />
                         <div className="my-3 h-px bg-slate-200/40" />
@@ -1757,7 +1759,9 @@ export default function DetailPage() {
                       <SubSection
                         key={String(exp._id)}
                         id={`exp-${exp._id}`}
-                        className="animated-verify-border border-[color:var(--brand-orange)] bg-white shadow-[0_18px_50px_-30px_rgba(15,23,42,0.35)]"
+                        className={`${
+                          status === "eligible" ? "animated-verify-border" : ""
+                        } border-[color:var(--brand-orange)] bg-white shadow-[0_18px_50px_-30px_rgba(15,23,42,0.35)]`}
                       >
                         <ExperienceDetails exp={exp} fileUrl={fileUrl} />
                         <div className="my-3 h-px bg-slate-200/40" />
@@ -1817,7 +1821,9 @@ export default function DetailPage() {
                       <SubSection
                         key={String(project._id)}
                         id={`proj-${project._id}`}
-                        className="animated-verify-border border-[color:var(--brand-orange)] bg-white shadow-[0_18px_50px_-30px_rgba(15,23,42,0.35)]"
+                        className={`${
+                          status === "eligible" ? "animated-verify-border" : ""
+                        } border-[color:var(--brand-orange)] bg-white shadow-[0_18px_50px_-30px_rgba(15,23,42,0.35)]`}
                       >
                         <ProjectDetails project={project} />
                         <div className="my-3 h-px bg-slate-200/40" />

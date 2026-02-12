@@ -15,11 +15,20 @@ const {
   listMembers,
   updateMemberRole,
   removeMember,
+  updateCompanyAbout,
 } = require("../controllers/company.Controller");
 
 const router = express.Router();
 
-router.post("/", protect, upload.array("companyDocs", 5), createCompany);
+router.post(
+  "/",
+  protect,
+  upload.fields([
+    { name: "companyDocs", maxCount: 5 },
+    { name: "companyLogo", maxCount: 1 },
+  ]),
+  createCompany
+);
 router.get("/mine", protect, listMyCompanies);
 router.get("/approved", protect, listApprovedCompanies);
 router.get("/invite/:token", getInvitePreview);
@@ -32,5 +41,6 @@ router.patch("/:companyId/members/:memberId", protect, updateMemberRole);
 router.delete("/:companyId/members/:memberId", protect, removeMember);
 router.post("/:companyId/jobs", protect, createJobPost);
 router.get("/:companyId/jobs", protect, listJobPosts);
+router.patch("/:companyId/about", protect, updateCompanyAbout);
 
 module.exports = router;

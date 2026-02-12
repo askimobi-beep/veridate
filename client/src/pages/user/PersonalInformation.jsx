@@ -1,6 +1,7 @@
 // pages/.../PersonalInformation.jsx
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useSnackbar } from "notistack";
+import { useSearchParams } from "react-router-dom";
 import {
   BriefcaseBusiness as Briefcase,
   FileText,
@@ -13,7 +14,6 @@ import {
 } from "lucide-react";
 
 import ProfileHeader from "@/components/profile/ProfileHeader";
-import { Button } from "@/components/ui/button";
 import PersonalDetailsForm from "@/components/profile/PersonalDetailsForm";
 import EducationForm from "@/components/profile/EducationForm";
 import ExperienceForm from "@/components/profile/ExperienceForm";
@@ -28,7 +28,7 @@ import { getProfileMe } from "@/lib/profileApi";
 import { useAuth } from "@/context/AuthContext";
 import ProfilePdfDownload from "@/components/profile/ProfilePdf";
 import { fetchOrganizations } from "@/services/organizationService";
-import { fetchApprovedCompanies } from "@/services/companyService";
+import { fetchApprovedCompanies, fetchMyCompanies } from "@/services/companyService";
 
 export default function PersonalInformation() {
   const {
@@ -69,14 +69,21 @@ export default function PersonalInformation() {
   } = usePersonalInformationForm();
 
   const { enqueueSnackbar } = useSnackbar();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [open, setOpen] = useState("pi");
   const [locked, setLocked] = useState({});
   const [companyCreateOpen, setCompanyCreateOpen] = useState(false);
+  const [companyPages, setCompanyPages] = useState([]);
+  const [companyPagesLoading, setCompanyPagesLoading] = useState(false);
   const [orgOptions, setOrgOptions] = useState({
     companies: [],
     universities: [],
   });
-  const [companyHasExisting, setCompanyHasExisting] = useState(false);
+  const selectedCompanyId = String(searchParams.get("companyId") || "").trim();
+  const selectedCompanyTab = String(searchParams.get("companyTab") || "overview").trim();
+  const hasPendingCompanyRequest = companyPages.some(
+    (company) => String(company?.status || "").toLowerCase() === "pending"
+  );
 
   const { user, loading: authLoading } = useAuth();
 
@@ -371,6 +378,26 @@ export default function PersonalInformation() {
     };
   }, [authLoading]);
 
+  useEffect(() => {
+    let mounted = true;
+    const loadMyCompanies = async () => {
+      if (authLoading) return;
+      setCompanyPagesLoading(true);
+      try {
+        const rows = await fetchMyCompanies();
+        if (mounted) setCompanyPages(rows || []);
+      } catch {
+        if (mounted) setCompanyPages([]);
+      } finally {
+        if (mounted) setCompanyPagesLoading(false);
+      }
+    };
+    loadMyCompanies();
+    return () => {
+      mounted = false;
+    };
+  }, [authLoading]);
+
   // fetch full profile — ✅ also preserves rowLocked from local state
   useEffect(() => {
     const load = async () => {
@@ -603,16 +630,52 @@ export default function PersonalInformation() {
     },
     {
       key: "company",
-      label: "Company Profile",
+      label: "Company Page",
       icon: Building2,
       done: false,
       hint: "Create company",
     },
   ];
 
+  const primarySectionItems = sectionItems.filter((item) => item.key !== "company");
+  const companySectionItem = sectionItems.find((item) => item.key === "company");
+
   const scrollToSection = (key) => {
     setOpen(key);
+    if (key !== "company") {
+      const next = new URLSearchParams(searchParams);
+      next.delete("section");
+      next.delete("companyId");
+      next.delete("companyTab");
+      setSearchParams(next, { replace: true });
+    }
   };
+
+  const openCompanyPage = (companyId) => {
+    setOpen("company");
+    setCompanyCreateOpen(false);
+    const next = new URLSearchParams(searchParams);
+    next.set("section", "company");
+    next.set("companyId", String(companyId));
+    next.set("companyTab", "overview");
+    setSearchParams(next, { replace: true });
+  };
+
+  useEffect(() => {
+    const section = String(searchParams.get("section") || "").trim();
+    const allowed = ["pi", "education", "experience", "projects", "audio", "video", "company"];
+    if (section && allowed.includes(section) && section !== open) {
+      setOpen(section);
+    }
+  }, [searchParams, open]);
+
+  useEffect(() => {
+    if (open !== "company" || companyCreateOpen || selectedCompanyId || !companyPages.length) {
+      return;
+    }
+    openCompanyPage(companyPages[0]._id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, companyCreateOpen, selectedCompanyId, companyPages]);
 
   const activeIndex = sectionOrder.indexOf(open);
   const safeIndex = activeIndex === -1 ? 0 : activeIndex;
@@ -621,6 +684,10 @@ export default function PersonalInformation() {
     setOpen(sectionOrder[safeIndex - 1]);
   };
   const goNext = () => {
+    if (open === "pi") {
+      setOpen("company");
+      return;
+    }
     if (safeIndex >= sectionOrder.length - 1) return;
     setOpen(sectionOrder[safeIndex + 1]);
   };
@@ -669,62 +736,130 @@ export default function PersonalInformation() {
           extraActions={<ProfilePdfDownload userId={user?._id} inline />}
         />
 
-        <div className="grid gap-6 lg:grid-cols-[240px_1fr]">
+        <div className="grid gap-6 lg:grid-cols-[280px_minmax(0,1fr)]">
           <aside className="hidden lg:block">
-            <div className="sticky top-24 space-y-3 rounded-2xl border border-white/60 bg-white/60 p-4 shadow-[0_20px_50px_-24px_rgba(15,23,42,0.35)] backdrop-blur-md">
-              <div className="sr-only">Profile Sections</div>
-              <div className="space-y-2">
-                {sectionItems.map((item) => {
-                  const Icon = item.icon;
-                  const isActive = open === item.key;
-                  return (
+            <div className="sticky top-24 max-h-[calc(100vh-7rem)] overflow-x-visible overflow-y-auto px-4 pb-12 pt-1">
+              <div className="rounded-2xl border border-white/60 bg-white/60 p-4 shadow-[0_22px_50px_-22px_rgba(15,23,42,0.38)] backdrop-blur-md">
+                <div className="sr-only">Profile Sections</div>
+                <div className="space-y-2">
+                  {primarySectionItems.map((item) => {
+                    const Icon = item.icon;
+                    const isActive = open === item.key;
+                    return (
+                      <button
+                        key={item.key}
+                        type="button"
+                        onClick={() => scrollToSection(item.key)}
+                        className={`flex w-full items-center gap-3 rounded-xl px-3 py-2 text-left text-sm font-semibold transition ${
+                          isActive
+                            ? "brand-orange-soft text-[color:var(--brand-orange)] shadow-[0_6px_16px_-10px_rgba(251,119,59,0.7)]"
+                            : "text-slate-500 hover:bg-white/70 hover:text-slate-700"
+                        }`}
+                      >
+                        <Icon className="h-4 w-4" />
+                        <span>{item.label}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {companySectionItem ? (
+                <div className="mt-5 mb-3 rounded-2xl border border-white/60 bg-white/60 p-4 shadow-[0_22px_50px_-22px_rgba(15,23,42,0.38)] backdrop-blur-md">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setCompanyCreateOpen(false);
+                      scrollToSection(companySectionItem.key);
+                    }}
+                    className={`flex w-full items-center gap-3 rounded-xl px-3 py-2 text-left text-sm font-semibold transition ${
+                      open === companySectionItem.key && !companyCreateOpen
+                        ? "brand-orange-soft text-[color:var(--brand-orange)] shadow-[0_6px_16px_-10px_rgba(251,119,59,0.7)]"
+                        : "text-slate-500 hover:bg-white/70 hover:text-slate-700"
+                    }`}
+                  >
+                    <companySectionItem.icon className="h-4 w-4" />
+                    <span>{companySectionItem.label}</span>
+                  </button>
+
+                  <div className="mt-2 space-y-1.5">
+                    {companyPagesLoading ? (
+                      <div className="px-3 py-1.5 text-xs text-slate-500">Loading companies...</div>
+                    ) : companyPages.length ? (
+                      companyPages.map((company) => (
+                        <button
+                          key={company._id}
+                          type="button"
+                          onClick={() => openCompanyPage(company._id)}
+                          className={`flex w-full rounded-xl px-3 py-2 text-left text-sm transition ${
+                            open === "company" &&
+                            String(selectedCompanyId) === String(company._id) &&
+                            !companyCreateOpen
+                              ? "brand-orange-soft text-[color:var(--brand-orange)]"
+                              : "text-slate-600 hover:bg-white/70 hover:text-slate-800"
+                          }`}
+                        >
+                          <span className="truncate">{company.name}</span>
+                        </button>
+                      ))
+                    ) : (
+                      <div className="px-3 py-1.5 text-xs text-slate-500">No company pages</div>
+                    )}
+                  </div>
+
                     <button
-                      key={item.key}
                       type="button"
-                      onClick={() => scrollToSection(item.key)}
-                      className={`flex w-full items-center gap-3 rounded-xl px-3 py-2 text-left text-sm font-semibold transition ${
-                        isActive
+                      onClick={() => {
+                        if (hasPendingCompanyRequest) return;
+                        setOpen("company");
+                        setCompanyCreateOpen(true);
+                        const next = new URLSearchParams(searchParams);
+                      next.set("section", "company");
+                      next.delete("companyId");
+                      next.delete("companyTab");
+                      setSearchParams(next, { replace: true });
+                      }}
+                      disabled={hasPendingCompanyRequest}
+                      title={
+                        hasPendingCompanyRequest
+                          ? "You already have a pending company page request."
+                          : "Create a Company Page"
+                      }
+                      className={`mt-3 flex h-9 w-full items-center gap-2 rounded-xl border border-transparent px-3 text-left text-sm font-semibold transition ${
+                        hasPendingCompanyRequest
+                          ? "cursor-not-allowed opacity-50"
+                          : open === "company" && companyCreateOpen
                           ? "brand-orange-soft text-[color:var(--brand-orange)] shadow-[0_6px_16px_-10px_rgba(251,119,59,0.7)]"
                           : "text-slate-500 hover:bg-white/70 hover:text-slate-700"
                       }`}
-                    >
-                      <Icon className="h-4 w-4" />
-                      <span>{item.label}</span>
-                    </button>
-                  );
-                })}
-              </div>
+                  >
+                    <PlusCircle className="h-4 w-4" />
+                    <span>Create a Company Page</span>
+                  </button>
+                </div>
+              ) : null}
             </div>
           </aside>
 
-          <div className="space-y-6">
+          <div className="min-w-0 space-y-6 lg:pl-2">
 
             <form onSubmit={handleSubmit} className="space-y-6">
               <div className="rounded-3xl border border-white/60 bg-white/60 p-6 shadow-[0_22px_50px_-28px_rgba(15,23,42,0.4)] backdrop-blur-md">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                    {open === "pi" ? <UserRound className="h-5 w-5 text-[color:var(--brand-orange)]" /> : null}
-                    {open === "education" ? <FileText className="h-5 w-5 text-[color:var(--brand-orange)]" /> : null}
-                    {open === "experience" ? <Briefcase className="h-5 w-5 text-[color:var(--brand-orange)]" /> : null}
-                    {open === "projects" ? <ClipboardList className="h-5 w-5 text-[color:var(--brand-orange)]" /> : null}
-                    {open === "audio" ? <Mic className="h-5 w-5 text-[color:var(--brand-orange)]" /> : null}
-                    {open === "video" ? <Video className="h-5 w-5 text-[color:var(--brand-orange)]" /> : null}
-                    {open === "company" ? <Building2 className="h-5 w-5 text-[color:var(--brand-orange)]" /> : null}
-                    <h2 className="text-lg font-semibold text-slate-800">
-                      {sectionItems[safeIndex]?.label}
-                    </h2>
+              {open !== "company" ? (
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                      {open === "pi" ? <UserRound className="h-5 w-5 text-[color:var(--brand-orange)]" /> : null}
+                      {open === "education" ? <FileText className="h-5 w-5 text-[color:var(--brand-orange)]" /> : null}
+                      {open === "experience" ? <Briefcase className="h-5 w-5 text-[color:var(--brand-orange)]" /> : null}
+                      {open === "projects" ? <ClipboardList className="h-5 w-5 text-[color:var(--brand-orange)]" /> : null}
+                      {open === "audio" ? <Mic className="h-5 w-5 text-[color:var(--brand-orange)]" /> : null}
+                      {open === "video" ? <Video className="h-5 w-5 text-[color:var(--brand-orange)]" /> : null}
+                      <h2 className="text-lg font-semibold text-slate-800">
+                        {sectionItems[safeIndex]?.label}
+                      </h2>
+                    </div>
                   </div>
-                  {open === "company" ? (
-                    <Button
-                      type="button"
-                      onClick={() => setCompanyCreateOpen(true)}
-                      className="rounded-xl bg-[color:var(--brand-orange)] text-white hover:brightness-110"
-                    >
-                      <PlusCircle className="h-4 w-4 mr-2" />
-                      {companyHasExisting ? "Create Another Company Profile" : "Create Company Profile"}
-                    </Button>
-                  ) : null}
-                </div>
+              ) : null}
 
                 <div className="mt-6">
                   {open === "pi" ? (
@@ -821,10 +956,9 @@ export default function PersonalInformation() {
                     <CompanyProfilesSection
                       createOpen={companyCreateOpen}
                       setCreateOpen={setCompanyCreateOpen}
-                      hideCreateButton
-                      onCompanyCountChange={(count) =>
-                        setCompanyHasExisting(count > 0)
-                      }
+                      selectedCompanyId={selectedCompanyId}
+                      selectedCompanyTab={selectedCompanyTab || "overview"}
+                      onCompaniesLoaded={setCompanyPages}
                     />
                   ) : null}
                 </div>
@@ -844,7 +978,7 @@ export default function PersonalInformation() {
                     disabled={safeIndex === sectionOrder.length - 1}
                     className="rounded-full border border-[color:var(--brand-orange)] brand-orange-soft px-4 py-2 text-sm font-semibold text-[color:var(--brand-orange)] transition hover:text-[color:var(--brand-orange)] disabled:cursor-not-allowed disabled:opacity-50"
                   >
-                    Next
+                    {open === "pi" ? "Create Company Page" : "Next"}
                   </button>
                 </div>
               </div>

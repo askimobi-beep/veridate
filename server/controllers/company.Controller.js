@@ -10,6 +10,15 @@ const buildDocPayload = (files = []) =>
     mimetype: f.mimetype || "",
   }));
 
+const buildSingleFilePayload = (file) =>
+  file
+    ? {
+        filename: file.filename || "",
+        originalName: file.originalname || "",
+        mimetype: file.mimetype || "",
+      }
+    : { filename: "", originalName: "", mimetype: "" };
+
 const normalizeRole = (value) =>
   String(value || "")
     .trim()
@@ -32,21 +41,38 @@ const requireRole = (company, userId, roles) => {
 
 exports.createCompany = async (req, res) => {
   try {
-    const { name, phone, website, address, role } = req.body || {};
-    if (!name || !phone || !website || !address || !role) {
+    const { name, about = "", phone, website, address, role } = req.body || {};
+    if (!name || !phone || !website || !address || !role || !about) {
       return res.status(400).json({ message: "All fields are required." });
     }
 
-    const docs = Array.isArray(req.files) ? buildDocPayload(req.files) : [];
+    const existingPending = await CompanyProfile.findOne({
+      createdBy: req.user.id,
+      status: "pending",
+    })
+      .select("_id name createdAt")
+      .lean();
+    if (existingPending) {
+      return res.status(409).json({
+        message:
+          "You already have a pending company page request. Please wait for admin approval/rejection before creating another one.",
+      });
+    }
+
+    const docsFiles = Array.isArray(req.files?.companyDocs) ? req.files.companyDocs : [];
+    const logoFile = Array.isArray(req.files?.companyLogo) ? req.files.companyLogo[0] : null;
+    const docs = buildDocPayload(docsFiles);
     if (!docs.length) {
       return res.status(400).json({ message: "At least one document is required." });
     }
 
     const company = await CompanyProfile.create({
       name: String(name).trim(),
+      about: String(about).trim(),
       phone: String(phone).trim(),
       website: String(website).trim(),
       address: String(address).trim(),
+      logo: buildSingleFilePayload(logoFile),
       role: String(role).trim(),
       createdBy: req.user.id,
       members: [
@@ -454,5 +480,29 @@ exports.listJobPosts = async (req, res) => {
   } catch (err) {
     console.error("listJobPosts error:", err);
     return res.status(500).json({ message: "Failed to fetch job posts." });
+  }
+};
+
+exports.updateCompanyAbout = async (req, res) => {
+  try {
+    const { about = "" } = req.body || {};
+    if (!String(about).trim()) {
+      return res.status(400).json({ message: "About is required." });
+    }
+
+    const company = await CompanyProfile.findById(req.params.companyId);
+    if (!company) return res.status(404).json({ message: "Company not found." });
+
+    const role = requireRole(company, req.user.id, ["owner", "admin", "manager"]);
+    if (!role) {
+      return res.status(403).json({ message: "You do not have permission to edit company page." });
+    }
+
+    company.about = String(about).trim();
+    await company.save();
+    return res.json({ message: "Company about updated.", data: company });
+  } catch (err) {
+    console.error("updateCompanyAbout error:", err);
+    return res.status(500).json({ message: "Failed to update company about." });
   }
 };

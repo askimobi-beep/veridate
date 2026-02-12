@@ -33,6 +33,8 @@ export default forwardRef(function FileUploader(
     disabled = false,
     defaultPreviewUrl, // optional: show an existing image url
     defaultFileName,
+    contentAlign = "center",
+    showImagePreview = true,
   },
   ref
 ) {
@@ -99,6 +101,8 @@ export default forwardRef(function FileUploader(
   const borderStyle = dropzoneClassName?.includes("border-dotted")
     ? "border-dotted"
     : "border-dashed";
+  const shouldRenderImagePreview =
+    showImagePreview && (isImage(file) || (!!previewUrl && !file));
 
   return (
     <div className={cn("space-y-2", className)}>
@@ -139,7 +143,14 @@ export default forwardRef(function FileUploader(
           )}
         />
 
-        <div className="flex items-center justify-center text-center pointer-events-none h-full min-h-0">
+        <div
+          className={cn(
+            "pointer-events-none flex h-full min-h-0 items-center",
+            contentAlign === "left"
+              ? "justify-start text-left"
+              : "justify-center text-center"
+          )}
+        >
           {!file && !previewUrl && !defaultFileName ? (
             <div className="flex items-center gap-2">
               {Icon ? <Icon className="w-4 h-4 text-[color:var(--brand-orange)]" /> : null}
@@ -154,7 +165,7 @@ export default forwardRef(function FileUploader(
             </div>
           ) : null}
 
-          {(isImage(file) || (!!previewUrl && !file)) && (
+          {shouldRenderImagePreview && (
             <div className="relative w-full pointer-events-none">
               <img
                 src={previewUrl || ""}
@@ -169,7 +180,7 @@ export default forwardRef(function FileUploader(
             </div>
           )}
 
-          {file && !isImage(file) && (
+          {file && !shouldRenderImagePreview && (
             <div className="flex items-center gap-2 max-w-full px-2">
               <FileIcon className="w-5 h-5 text-[color:var(--brand-orange)]" />
               <div className="text-sm text-gray-700 max-w-full truncate">

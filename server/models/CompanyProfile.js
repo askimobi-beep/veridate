@@ -27,9 +27,15 @@ const CompanyMemberSchema = new mongoose.Schema(
 const CompanyProfileSchema = new mongoose.Schema(
   {
     name: { type: String, required: true, trim: true },
+    about: { type: String, default: "", trim: true },
     phone: { type: String, required: true, trim: true },
     website: { type: String, required: true, trim: true },
     address: { type: String, required: true, trim: true },
+    logo: {
+      filename: { type: String, default: "" },
+      originalName: { type: String, default: "" },
+      mimetype: { type: String, default: "" },
+    },
     role: { type: String, required: true, trim: true },
     createdBy: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
     members: { type: [CompanyMemberSchema], default: [] },
