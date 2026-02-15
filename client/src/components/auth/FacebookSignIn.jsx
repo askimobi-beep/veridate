@@ -7,10 +7,12 @@ export default function FacebookSignIn({ onError }) {
   const { facebookLogin } = useAuth();
   const navigate = useNavigate();
   const [ready, setReady] = useState(false);
+  const appId = String(import.meta.env.VITE_FB_APP_ID || "").trim();
+
   const normalizeVersion = (raw) => {
     const v = String(raw || "").trim();
     if (/^v?\d+\.\d+$/.test(v)) return v.startsWith("v") ? v : `v${v}`;
-    return "v20.0";
+    return "v22.0";
   };
 
   useEffect(() => {
@@ -29,12 +31,21 @@ export default function FacebookSignIn({ onError }) {
     script.onload = () => {
       // init exactly once
       if (!window.__FB_SDK_LOADED__) {
-        window.FB.init({
-          appId: import.meta.env.VITE_FB_APP_ID,
-          cookie: true,
-          xfbml: false,
-          version: normalizeVersion(import.meta.env.VITE_FB_API_VERSION),
-        });
+        if (!appId) {
+          onError?.("Facebook App ID is missing");
+          return;
+        }
+        try {
+          window.FB.init({
+            appId,
+            cookie: true,
+            xfbml: false,
+            version: normalizeVersion(import.meta.env.VITE_FB_API_VERSION),
+          });
+        } catch (e) {
+          onError?.(e?.message || "Facebook SDK init failed");
+          return;
+        }
         window.__FB_SDK_LOADED__ = true;
       }
       setReady(true);
@@ -42,7 +53,7 @@ export default function FacebookSignIn({ onError }) {
 
     script.onerror = () => onError?.("Failed to load Facebook SDK");
     document.body.appendChild(script);
-  }, [onError]);
+  }, [appId, onError]);
 
   const handleClick = () => {
     if (!window.FB) return onError?.("Facebook SDK not ready");
