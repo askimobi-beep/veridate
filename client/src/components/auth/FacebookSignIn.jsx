@@ -12,7 +12,7 @@ export default function FacebookSignIn({ onError }) {
   const normalizeVersion = (raw) => {
     const v = String(raw || "").trim();
     if (/^v?\d+\.\d+$/.test(v)) return v.startsWith("v") ? v : `v${v}`;
-    return "v22.0";
+    return "v20.0";
   };
 
   useEffect(() => {
