@@ -4,6 +4,9 @@ const dotenv = require("dotenv");
 const path = require("path");
 const cors = require("cors");
 const cookieParser = require("cookie-parser");
+
+dotenv.config();
+
 const DatabaseConnection = require("./config/Database");
 const authRoutes = require("./router/auth.Routes");
 const adminRoutes = require("./router/admin.Routes");
@@ -14,9 +17,6 @@ const verify = require("./router/verify.routes");
 const degreeRoutes = require("./router/degree.Routes");
 const jobTitleRoutes = require("./router/jobTitle.Routes");
 const corsOptions = require("./config/corsOptions");
-
-
-dotenv.config();
 
 const app = express();
 // Trust proxy (Vercel/HTTPS) so req.protocol reflects x-forwarded-proto
