@@ -10,6 +10,16 @@ import { useSnackbar } from "notistack";
 import CompanyProfile from "@/pages/company/CompanyProfile";
 
 const roleOptions = ["Founder", "Co-founder", "HR", "Recruiter", "Employee"];
+const documentTypeOptions = [
+  "Certificate of Incorporation",
+  "Articles of Organization (USA LLC)",
+  "Business Registration Certificate",
+  "Tax Registration Certificate (EIN / NTN)",
+  "Sales Tax Certificate",
+  "Trade License",
+  "Certificate of Good Standing",
+  "Other Government-Issued Document",
+];
 
 export default function CompanyProfilesSection({
   createOpen: createOpenProp,
@@ -37,6 +47,7 @@ export default function CompanyProfilesSection({
     website: "",
     address: "",
     role: "",
+    documentType: "",
   });
 
   const loadCompanies = async () => {
@@ -60,7 +71,15 @@ export default function CompanyProfilesSection({
   };
 
   const handleSubmit = async () => {
-    if (!form.name || !form.about || !form.phone || !form.website || !form.address || !form.role) {
+    if (
+      !form.name ||
+      !form.about ||
+      !form.phone ||
+      !form.website ||
+      !form.address ||
+      !form.role ||
+      !form.documentType
+    ) {
       enqueueSnackbar("Please fill all required fields", { variant: "warning" });
       return;
     }
@@ -80,6 +99,7 @@ export default function CompanyProfilesSection({
     body.append("website", form.website);
     body.append("address", form.address);
     body.append("role", form.role);
+    body.append("documentType", form.documentType);
     body.append("companyDocs", docFile);
     if (logoFile) body.append("companyLogo", logoFile);
 
@@ -90,7 +110,15 @@ export default function CompanyProfilesSection({
         res?.message || "Your submission has been received. Verification will take up to 5 business days.",
         { variant: "success" }
       );
-      setForm({ name: "", about: "", phone: "", website: "", address: "", role: "" });
+      setForm({
+        name: "",
+        about: "",
+        phone: "",
+        website: "",
+        address: "",
+        role: "",
+        documentType: "",
+      });
       setDocFile(null);
       setLogoFile(null);
       setTermsAccepted(false);
@@ -149,6 +177,15 @@ export default function CompanyProfilesSection({
               />
             </div>
 
+            <AppSelect
+              label="Select Document Type *"
+              name="documentType"
+              value={form.documentType}
+              onChange={onChange}
+              options={documentTypeOptions}
+              placeholder="Select document type"
+            />
+
             <div className="text-left">
               <div className="mb-2 text-sm font-medium text-slate-700">Verification Document *</div>
               <FileUploader
@@ -157,8 +194,9 @@ export default function CompanyProfilesSection({
                 icon={UploadCloud}
                 onChange={(file) => setDocFile(file)}
                 onClear={() => setDocFile(null)}
-                className="w-full"
-                dropzoneClassName="h-10 px-3 py-2 border border-dotted border-slate-200 rounded-lg"
+                className="w-full space-y-1"
+                contentAlign="left"
+                dropzoneClassName="h-10 w-full px-3 py-2 border border-slate-200 rounded-lg bg-white shadow-sm"
                 defaultFileName={docFile?.name || ""}
               />
               <p className="mt-1 text-left text-xs text-slate-500">Accepted formats: PDF, JPG, PNG</p>

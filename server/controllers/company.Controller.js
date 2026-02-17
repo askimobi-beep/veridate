@@ -41,8 +41,8 @@ const requireRole = (company, userId, roles) => {
 
 exports.createCompany = async (req, res) => {
   try {
-    const { name, about = "", phone, website, address, role } = req.body || {};
-    if (!name || !phone || !website || !address || !role || !about) {
+    const { name, about = "", phone, website, address, role, documentType = "" } = req.body || {};
+    if (!name || !phone || !website || !address || !role || !about || !documentType) {
       return res.status(400).json({ message: "All fields are required." });
     }
 
@@ -72,6 +72,7 @@ exports.createCompany = async (req, res) => {
       phone: String(phone).trim(),
       website: String(website).trim(),
       address: String(address).trim(),
+      documentType: String(documentType).trim(),
       logo: buildSingleFilePayload(logoFile),
       role: String(role).trim(),
       createdBy: req.user.id,
