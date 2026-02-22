@@ -120,7 +120,7 @@ export default function UserMenu({ user, onLogout }) {
             {/* Actions */}
             <div className="py-2">
               <button
-                onClick={() => go(homePath)}
+                onClick={() => go(role === "user" ? "/dashboard/profile" : homePath)}
                 className="w-full flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition"
               >
                 <User className="h-4 w-4" />

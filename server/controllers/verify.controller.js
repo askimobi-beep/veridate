@@ -1,41 +1,11 @@
 const mongoose = require("mongoose");
 const Profile = require("../models/Profile");
-const User = require("../models/auth.model");
-
-
 
 const toStr = (v) => String(v);
 const extractHex24 = (s) => (s || "").trim().match(/^[a-f0-9]{24}$/i)?.[0];
 
-const summarizeEduCredits = (userDoc) => {
-  const buckets = (userDoc?.verifyCredits?.education || []).map((b) => {
-    const available = Number(b.available || 0);
-    const used = Number(b.used || 0);
-    return {
-      institute: b.institute,
-      instituteKey: b.instituteKey,
-      available,
-      used,
-      total: available + used, // computed, not stored
-    };
-  });
-
-  const totals = buckets.reduce(
-    (acc, b) => {
-      acc.available += b.available;
-      acc.used += b.used;
-      return acc;
-    },
-    { available: 0, used: 0 }
-  );
-
-  return { buckets, totals: { ...totals, total: totals.available + totals.used } };
-};
-
-
 const normalize = (val) => {
   if (val == null) return "";
-  // coerce non-strings safely
   const s = typeof val === "string" ? val : String(val);
   return s.trim().toLowerCase().replace(/\s+/g, " ");
 };
@@ -43,8 +13,21 @@ const normalize = (val) => {
 const normalizeInstitute = normalize;
 const normalizeCompany = normalize;
 
-
-
+/**
+ * Returns approximate overlap in months between two date ranges.
+ * A null/undefined end date is treated as "ongoing" (today).
+ * Returns 0 if no overlap or if either start date is missing.
+ */
+const overlapMonths = (startA, endA, startB, endB) => {
+  if (!startA || !startB) return 0;
+  const s = Math.max(new Date(startA).getTime(), new Date(startB).getTime());
+  const e = Math.min(
+    endA ? new Date(endA).getTime() : Date.now(),
+    endB ? new Date(endB).getTime() : Date.now()
+  );
+  if (e <= s) return 0;
+  return (e - s) / (1000 * 60 * 60 * 24 * 30.44);
+};
 
 
 exports.verifyEducation = async (req, res) => {
@@ -53,7 +36,6 @@ exports.verifyEducation = async (req, res) => {
     let { targetUserId, eduId } = req.params;
     const { rating: rawRating, comment: rawComment } = req.body || {};
 
-    // sanitize ids
     targetUserId = extractHex24(targetUserId);
     eduId = extractHex24(eduId);
 
@@ -105,51 +87,35 @@ exports.verifyEducation = async (req, res) => {
         .json({ message: "Target education has no institute" });
     }
 
-    // 2) eligibility: verifier must also have same-institute row on their profile
+    // 2) eligibility: verifier must have same institute AND overlap >= 1 month
     const verifierProfile = await Profile.findOne({ user: verifierId }).lean();
-    const eligible =
-      Array.isArray(verifierProfile?.education) &&
-      verifierProfile.education.some(
-        (e) =>
-          (e.instituteKey || normalizeInstitute(e.institute)) === instituteKey
-      );
-    if (!eligible) {
+    const matchingRows = (verifierProfile?.education || []).filter(
+      (e) => (e.instituteKey || normalizeInstitute(e.institute)) === instituteKey
+    );
+
+    if (!matchingRows.length) {
       return res
         .status(403)
         .json({ message: "Not eligible (institute mismatch)" });
     }
 
-    // 3) spend 1 credit from verifier's matching bucket (only if available > 0)
-    const spent = await User.findOneAndUpdate(
-      {
-        _id: verifierId,
-        "verifyCredits.education": {
-          $elemMatch: { instituteKey, available: { $gt: 0 } },
-        },
-      },
-      {
-        $inc: {
-          "verifyCredits.education.$.available": -1,
-          "verifyCredits.education.$.used": 1,
-        },
-      },
-      { new: false }
-    ).lean();
+    const hasOverlap = matchingRows.some(
+      (row) => overlapMonths(row.startDate, row.endDate, edu.startDate, edu.endDate) >= 1
+    );
 
-    if (!spent) {
+    if (!hasOverlap) {
       return res
         .status(403)
-        .json({ message: "No credits left for this institute" });
+        .json({ message: "Not eligible (no date overlap of at least 1 month at the same institute)" });
     }
 
-    // 4) add verification to target row (ObjectId-safe) — USE $elemMatch to bind conditions to SAME array element
+    // 3) add verification to target row
     const oid = new mongoose.Types.ObjectId(verifierId);
     const eduOid = new mongoose.Types.ObjectId(eduId);
 
     const upd = await Profile.updateOne(
       {
         user: targetUserId,
-        // 👇 both _id and verifiedBy check must apply to the SAME array element
         education: { $elemMatch: { _id: eduOid, verifiedBy: { $nin: [oid] } } },
       },
       {
@@ -167,21 +133,6 @@ exports.verifyEducation = async (req, res) => {
     );
 
     if (upd.modifiedCount === 0) {
-      // refund the spend
-      await User.updateOne(
-        {
-          _id: verifierId,
-          "verifyCredits.education": { $elemMatch: { instituteKey } },
-        },
-        {
-          $inc: {
-            "verifyCredits.education.$.available": 1,
-            "verifyCredits.education.$.used": -1,
-          },
-        }
-      );
-
-      // diagnose: already verified vs bad pair
       const fresh = await Profile.findOne(
         { user: targetUserId, "education._id": eduOid },
         { "education.$": 1 }
@@ -200,80 +151,22 @@ exports.verifyEducation = async (req, res) => {
 
       return res.status(409).json({
         message: already
-          ? "Already verified this user’s education"
+          ? "Already verified this user's education"
           : "Row changed or invalid eduId for the selected user",
       });
     }
 
-    // 5) reward +1 available to target's same-institute bucket (and +1 total if you persist total)
-    const rewardInc = await User.updateOne(
-      {
-        _id: targetUserId,
-        "verifyCredits.education.instituteKey": instituteKey,
-      },
-      {
-        $inc: {
-          "verifyCredits.education.$.available": 1,
-          "verifyCredits.education.$.total": 1, // remove this if you DON'T store `total` in DB
-        },
-      }
-    );
-
-    if (rewardInc.modifiedCount === 0) {
-      await User.updateOne(
-        { _id: targetUserId },
-        {
-          $push: {
-            "verifyCredits.education": {
-              institute,
-              instituteKey,
-              available: 1,
-              used: 0,
-              total: 1, // remove this if you DON'T store `total` in DB
-            },
-          },
-        }
-      );
-    }
-
-    // 6) return fresh, summarized credits + target edu verify counts
-    const [verifierUser, targetUser, refreshedTargetProfile] = await Promise.all([
-      User.findById(verifierId).select("verifyCredits.education").lean(),
-      User.findById(targetUserId).select("verifyCredits.education").lean(),
-      Profile.findOne({ user: targetUserId })
-        .select("education")
-        .populate({
-          path: "education.verifications.user",
-          select: "firstName lastName name email profilePic",
-        })
-        .lean(),
-    ]);
-
-    const withComputedTotals = (u) => {
-      const buckets = (u?.verifyCredits?.education || []).map((b) => ({
-        institute: b.institute,
-        instituteKey: b.instituteKey,
-        available: b.available || 0,
-        used: b.used || 0,
-        total:
-          typeof b.total === "number" ? b.total : (b.available || 0) + (b.used || 0),
-      }));
-      const totals = buckets.reduce(
-        (acc, b) => {
-          acc.available += b.available;
-          acc.used += b.used;
-          acc.total += b.total;
-          return acc;
-        },
-        { available: 0, used: 0, total: 0 }
-      );
-      return { buckets, totals };
-    };
+    // 4) return refreshed education records
+    const refreshedTargetProfile = await Profile.findOne({ user: targetUserId })
+      .select("education")
+      .populate({
+        path: "education.verifications.user",
+        select: "firstName lastName name email profilePic",
+      })
+      .lean();
 
     return res.status(200).json({
       message: "Education verified",
-      verifier: withComputedTotals(verifierUser),
-      target: withComputedTotals(targetUser),
       education: (refreshedTargetProfile?.education || []).map((r) => ({
         _id: r._id,
         institute: r.institute,
@@ -295,14 +188,12 @@ exports.verifyEducation = async (req, res) => {
 
 
 
-
 exports.verifyExperience = async (req, res) => {
   try {
     const verifierId = req.user?.id;
     let { targetUserId, expId } = req.params;
     const { rating: rawRating, comment: rawComment } = req.body || {};
 
-    // sanitize ids
     targetUserId = extractHex24(targetUserId);
     expId = extractHex24(expId);
 
@@ -356,43 +247,29 @@ exports.verifyExperience = async (req, res) => {
         .json({ message: "Target experience has no company" });
     }
 
-    // 2) eligibility: verifier must also have same-company row on their profile
+    // 2) eligibility: verifier must have same company AND overlap >= 1 month
     const verifierProfile = await Profile.findOne({ user: verifierId }).lean();
-    const eligible =
-      Array.isArray(verifierProfile?.experience) &&
-      verifierProfile.experience.some(
-        (e) => (e.companyKey || normalizeCompany(e.company)) === companyKey
-      );
-    if (!eligible) {
+    const matchingRows = (verifierProfile?.experience || []).filter(
+      (e) => (e.companyKey || normalizeCompany(e.company)) === companyKey
+    );
+
+    if (!matchingRows.length) {
       return res
         .status(403)
         .json({ message: "Not eligible (company mismatch)" });
     }
 
-    // 3) spend 1 credit from verifier's matching company bucket
-    const spent = await User.findOneAndUpdate(
-      {
-        _id: verifierId,
-        "verifyCredits.experience": {
-          $elemMatch: { companyKey, available: { $gt: 0 } },
-        },
-      },
-      {
-        $inc: {
-          "verifyCredits.experience.$.available": -1,
-          "verifyCredits.experience.$.used": 1,
-        },
-      },
-      { new: false }
-    ).lean();
+    const hasOverlap = matchingRows.some(
+      (row) => overlapMonths(row.startDate, row.endDate, exp.startDate, exp.endDate) >= 1
+    );
 
-    if (!spent) {
+    if (!hasOverlap) {
       return res
         .status(403)
-        .json({ message: "No credits left for this company" });
+        .json({ message: "Not eligible (no date overlap of at least 1 month at the same company)" });
     }
 
-    // 4) add verification to target row (ObjectId-safe) — bind conditions to SAME array element
+    // 3) add verification to target row
     const oid = new mongoose.Types.ObjectId(verifierId);
     const expOid = new mongoose.Types.ObjectId(expId);
 
@@ -416,21 +293,6 @@ exports.verifyExperience = async (req, res) => {
     );
 
     if (upd.modifiedCount === 0) {
-      // refund the spend
-      await User.updateOne(
-        {
-          _id: verifierId,
-          "verifyCredits.experience": { $elemMatch: { companyKey } },
-        },
-        {
-          $inc: {
-            "verifyCredits.experience.$.available": 1,
-            "verifyCredits.experience.$.used": -1,
-          },
-        }
-      );
-
-      // diagnose: already verified vs bad pair
       const fresh = await Profile.findOne(
         { user: targetUserId, "experience._id": expOid },
         { "experience.$": 1 }
@@ -449,80 +311,22 @@ exports.verifyExperience = async (req, res) => {
 
       return res.status(409).json({
         message: already
-          ? "Already verified this user’s experience"
+          ? "Already verified this user's experience"
           : "Row changed or invalid expId for the selected user",
       });
     }
 
-    // 5) reward target's same-company bucket (+1 available, +1 total if you persist total)
-    const rewardInc = await User.updateOne(
-      {
-        _id: targetUserId,
-        "verifyCredits.experience.companyKey": companyKey,
-      },
-      {
-        $inc: {
-          "verifyCredits.experience.$.available": 1,
-          "verifyCredits.experience.$.total": 1, // remove if you DON'T store total
-        },
-      }
-    );
-
-    if (rewardInc.modifiedCount === 0) {
-      await User.updateOne(
-        { _id: targetUserId },
-        {
-          $push: {
-            "verifyCredits.experience": {
-              company,
-              companyKey,
-              available: 1,
-              used: 0,
-              total: 1, // remove if you DON'T store total
-            },
-          },
-        }
-      );
-    }
-
-    // 6) return fresh, summarized credits + target exp verify counts
-    const [verifierUser, targetUser, refreshedTargetProfile] = await Promise.all([
-      User.findById(verifierId).select("verifyCredits.experience").lean(),
-      User.findById(targetUserId).select("verifyCredits.experience").lean(),
-      Profile.findOne({ user: targetUserId })
-        .select("experience")
-        .populate({
-          path: "experience.verifications.user",
-          select: "firstName lastName name email profilePic",
-        })
-        .lean(),
-    ]);
-
-    const withComputedTotals = (u) => {
-      const buckets = (u?.verifyCredits?.experience || []).map((b) => ({
-        company: b.company,
-        companyKey: b.companyKey,
-        available: b.available || 0,
-        used: b.used || 0,
-        total:
-          typeof b.total === "number" ? b.total : (b.available || 0) + (b.used || 0),
-      }));
-      const totals = buckets.reduce(
-        (acc, b) => {
-          acc.available += b.available;
-          acc.used += b.used;
-          acc.total += b.total;
-          return acc;
-        },
-        { available: 0, used: 0, total: 0 }
-      );
-      return { buckets, totals };
-    };
+    // 4) return refreshed experience records
+    const refreshedTargetProfile = await Profile.findOne({ user: targetUserId })
+      .select("experience")
+      .populate({
+        path: "experience.verifications.user",
+        select: "firstName lastName name email profilePic",
+      })
+      .lean();
 
     return res.status(200).json({
       message: "Experience verified",
-      verifier: withComputedTotals(verifierUser),
-      target: withComputedTotals(targetUser),
       experience: (refreshedTargetProfile?.experience || []).map((r) => ({
         _id: r._id,
         company: r.company,
@@ -601,73 +405,29 @@ exports.verifyProject = async (req, res) => {
         .json({ message: "Target project has no company" });
     }
 
+    // eligibility: verifier must have same company in experience AND overlap >= 1 month with project dates
     const verifierProfile = await Profile.findOne({ user: verifierId }).lean();
-    const eligible =
-      Array.isArray(verifierProfile?.experience) &&
-      verifierProfile.experience.some(
-        (e) => (e.companyKey || normalizeCompany(e.company)) === companyKey
-      );
-    if (!eligible) {
+    const matchingRows = (verifierProfile?.experience || []).filter(
+      (e) => (e.companyKey || normalizeCompany(e.company)) === companyKey
+    );
+
+    if (!matchingRows.length) {
       return res
         .status(403)
         .json({ message: "Not eligible (company mismatch)" });
     }
 
-    const availableBucket = await User.findOne(
-      {
-        _id: verifierId,
-        "verifyCredits.projects": {
-          $elemMatch: { companyKey, available: { $gt: 0 } },
-        },
-      },
-      { "verifyCredits.projects.$": 1 }
-    ).lean();
+    const hasOverlap = matchingRows.some(
+      (row) => overlapMonths(row.startDate, row.endDate, project.startDate, project.endDate) >= 1
+    );
 
-    const spentBucket = availableBucket?.verifyCredits?.projects?.[0];
-    const spentProjectId =
-      spentBucket?.projectId && mongoose.Types.ObjectId.isValid(spentBucket.projectId)
-        ? new mongoose.Types.ObjectId(spentBucket.projectId)
-        : null;
-
-    if (!spentBucket) {
+    if (!hasOverlap) {
       return res
         .status(403)
-        .json({ message: "No project credits available for this company" });
+        .json({ message: "Not eligible (no date overlap of at least 1 month at the same company)" });
     }
 
-    const spendFilter = spentProjectId
-      ? {
-          _id: verifierId,
-          "verifyCredits.projects": {
-            $elemMatch: { projectId: spentProjectId, available: { $gt: 0 } },
-          },
-        }
-      : {
-          _id: verifierId,
-          "verifyCredits.projects": {
-            $elemMatch: {
-              companyKey,
-              available: { $gt: 0 },
-              projectId: { $exists: false },
-            },
-          },
-        };
-
-    const spendUpdate = {
-      $inc: {
-        "verifyCredits.projects.$.available": -1,
-        "verifyCredits.projects.$.used": 1,
-      },
-    };
-
-    const spent = await User.updateOne(spendFilter, spendUpdate);
-
-    if (spent.modifiedCount === 0) {
-      return res
-        .status(403)
-        .json({ message: "No project credits available for this company" });
-    }
-
+    // add verification to target row
     const oid = new mongoose.Types.ObjectId(verifierId);
     const projOid = new mongoose.Types.ObjectId(projectId);
 
@@ -691,24 +451,6 @@ exports.verifyProject = async (req, res) => {
     );
 
     if (upd.modifiedCount === 0) {
-      const refundFilter = spentProjectId
-        ? {
-            _id: verifierId,
-            "verifyCredits.projects.projectId": spentProjectId,
-          }
-        : {
-            _id: verifierId,
-            "verifyCredits.projects.companyKey": companyKey,
-            "verifyCredits.projects.projectId": { $exists: false },
-          };
-
-      await User.updateOne(refundFilter, {
-        $inc: {
-          "verifyCredits.projects.$.available": 1,
-          "verifyCredits.projects.$.used": -1,
-        },
-      });
-
       const fresh = await Profile.findOne(
         { user: targetUserId, "projects._id": projOid },
         { "projects.$": 1 }
@@ -732,79 +474,17 @@ exports.verifyProject = async (req, res) => {
       });
     }
 
-    const rewardInc = await User.updateOne(
-      {
-        _id: targetUserId,
-        "verifyCredits.projects.projectId": projOid,
-      },
-      {
-        $inc: {
-          "verifyCredits.projects.$.available": 1,
-          "verifyCredits.projects.$.total": 1,
-        },
-      }
-    );
-
-    if (rewardInc.modifiedCount === 0) {
-      await User.updateOne(
-        { _id: targetUserId },
-        {
-          $push: {
-            "verifyCredits.projects": {
-              projectId: projOid,
-              projectTitle: project.projectTitle || "",
-              company,
-              companyKey,
-              available: 1,
-              used: 0,
-              total: 1,
-            },
-          },
-        }
-      );
-    }
-
-    const [verifierUser, targetUser, refreshedTargetProfile] = await Promise.all([
-      User.findById(verifierId).select("verifyCredits.projects").lean(),
-      User.findById(targetUserId).select("verifyCredits.projects").lean(),
-      Profile.findOne({ user: targetUserId })
-        .select("projects")
-        .populate({
-          path: "projects.verifications.user",
-          select: "firstName lastName name email profilePic",
-        })
-        .lean(),
-    ]);
-
-    const withComputedTotals = (u) => {
-      const buckets = (u?.verifyCredits?.projects || []).map((b) => ({
-        projectId: b.projectId,
-        projectTitle: b.projectTitle || "",
-        company: b.company,
-        companyKey: b.companyKey,
-        available: b.available || 0,
-        used: b.used || 0,
-        total:
-          typeof b.total === "number"
-            ? b.total
-            : (b.available || 0) + (b.used || 0),
-      }));
-      const totals = buckets.reduce(
-        (acc, b) => {
-          acc.available += b.available;
-          acc.used += b.used;
-          acc.total += b.total;
-          return acc;
-        },
-        { available: 0, used: 0, total: 0 }
-      );
-      return { buckets, totals };
-    };
+    // return refreshed project records
+    const refreshedTargetProfile = await Profile.findOne({ user: targetUserId })
+      .select("projects")
+      .populate({
+        path: "projects.verifications.user",
+        select: "firstName lastName name email profilePic",
+      })
+      .lean();
 
     return res.status(200).json({
       message: "Project verified",
-      verifier: withComputedTotals(verifierUser),
-      target: withComputedTotals(targetUser),
       projects: (refreshedTargetProfile?.projects || []).map((r) => ({
         _id: r._id,
         company: r.company,
@@ -823,4 +503,3 @@ exports.verifyProject = async (req, res) => {
     return res.status(500).json({ message: "Failed to verify project" });
   }
 };
-

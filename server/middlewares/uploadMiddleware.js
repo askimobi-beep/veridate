@@ -30,6 +30,8 @@ const storage = multer.diskStorage({
       folder = "uploads/company-docs";
     } else if (file.fieldname === "companyLogo" || file.fieldname.startsWith("companyLogo[")) {
       folder = "uploads/company-logo";
+    } else if (file.fieldname === "media") {
+      folder = "uploads/feed";
     } else {
       folder = "uploads/others";
     }

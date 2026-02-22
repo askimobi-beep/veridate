@@ -11,7 +11,6 @@ import {
   Video,
   Building2,
   PlusCircle,
-  Plus,
 } from "lucide-react";
 
 import ProfileHeader from "@/components/profile/ProfileHeader";
@@ -37,28 +36,24 @@ export default function PersonalInformation() {
     setFormData,
     handleChange,
     handleCustomChange,
-    // education
     addEducation,
     updateEducation,
     removeEducation,
     saveEducation,
     saveEducationRow,
     isRowSaving,
-    // experience
     addExperience,
     updateExperience,
     removeExperience,
     saveExperience,
     saveExperienceRow,
     isExpRowSaving,
-    // projects
     addProject,
     updateProject,
     removeProject,
     saveProjects,
     saveProjectRow,
     isProjectRowSaving,
-    // personal
     savePersonalInfo,
     saveProfilePhoto,
     saving,
@@ -76,7 +71,6 @@ export default function PersonalInformation() {
   const [companyCreateOpen, setCompanyCreateOpen] = useState(false);
   const [companyPages, setCompanyPages] = useState([]);
   const [companyPagesLoading, setCompanyPagesLoading] = useState(false);
-  const [expandedCompanyId, setExpandedCompanyId] = useState("");
   const [orgOptions, setOrgOptions] = useState({
     companies: [],
     universities: [],
@@ -90,59 +84,6 @@ export default function PersonalInformation() {
   const { user, loading: authLoading } = useAuth();
   const userId = String(user?._id || "").trim();
 
-  const norm = (s) => (s || "").trim().toLowerCase().replace(/\s+/g, " ");
-  const eduBuckets = Array.isArray(user?.verifyCredits?.education)
-    ? user.verifyCredits.education
-    : [];
-  const expBuckets = Array.isArray(user?.verifyCredits?.experience)
-    ? user.verifyCredits.experience
-    : [];
-  const projectBuckets = Array.isArray(user?.verifyCredits?.projects)
-    ? user.verifyCredits.projects
-    : [];
-  const eduTotalAvailable = eduBuckets.reduce(
-    (a, b) => a + (b?.available || 0),
-    0
-  );
-  const expTotalAvailable = expBuckets.reduce(
-    (a, b) => a + (b?.available || 0),
-    0
-  );
-  const projectTotalAvailable = projectBuckets.reduce(
-    (a, b) => a + (b?.available || 0),
-    0
-  );
-
-  const eduCreditByKey = useMemo(() => {
-    const m = new Map();
-    for (const b of eduBuckets) {
-      if (!b) continue;
-      const key = b.instituteKey || norm(b.institute);
-      if (key) m.set(key, b);
-    }
-    return m;
-  }, [user?.verifyCredits?.education]);
-
-  const expCreditByKey = useMemo(() => {
-    const m = new Map();
-    for (const b of expBuckets) {
-      if (!b) continue;
-      const key = b.companyKey || norm(b.company);
-      if (key) m.set(key, b);
-    }
-    return m;
-  }, [user?.verifyCredits?.experience]);
-
-  const projectCreditByKey = useMemo(() => {
-    const m = new Map();
-    for (const b of projectBuckets) {
-      if (!b) continue;
-      const key = b.projectId ? String(b.projectId) : "";
-      if (key) m.set(key, b);
-    }
-    return m;
-  }, [user?.verifyCredits?.projects]);
-
   const projectCompanyOptions = useMemo(() => {
     const list = Array.isArray(formData?.experience) ? formData.experience : [];
     const unique = new Set(
@@ -153,13 +94,11 @@ export default function PersonalInformation() {
     return Array.from(unique).sort((a, b) => a.localeCompare(b));
   }, [formData?.experience]);
 
-  // uploader refs
   const resumeRef = useRef(null);
   const profilePicRef = useRef(null);
   const degreeRefs = useRef([]);
   const letterRefs = useRef([]);
 
-  // confirm dialog state
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [pendingAction, setPendingAction] = useState(null);
   const [pendingTitle, setPendingTitle] = useState("");
@@ -192,7 +131,6 @@ export default function PersonalInformation() {
             ...e,
             startDate: toYMD(e.startDate),
             endDate: toYMD(e.endDate),
-            // ✅ keep any existing local rowLocked unless server explicitly sets it
             rowLocked:
               (typeof e.rowLocked === "boolean" ? e.rowLocked : undefined) ??
               prev.education?.[i]?.rowLocked ??
@@ -204,7 +142,6 @@ export default function PersonalInformation() {
             ...x,
             startDate: toYMD(x.startDate),
             endDate: toYMD(x.endDate),
-            // (optional) if you also do row locking for experience later
             rowLocked:
               (typeof x.rowLocked === "boolean" ? x.rowLocked : undefined) ??
               prev.experience?.[i]?.rowLocked ??
@@ -244,7 +181,6 @@ export default function PersonalInformation() {
         const serverProfile = res?.data?.profile;
         enqueueSnackbar(`${pendingTitle} saved`, { variant: "success" });
 
-        // lock only full sections; don't lock the entire education section for a single row save
         if (
           pendingValue === "pi" ||
           pendingValue === "experience" ||
@@ -262,27 +198,23 @@ export default function PersonalInformation() {
           clearPersonalFiles();
         }
 
-        // full education section save (legacy behavior)
         if (pendingValue === "education") {
           degreeRefs.current.forEach((r) => r?.reset?.());
           clearEducationFiles();
-          // (optional) lock all rows after full save
           setFormData((prev) => ({
             ...prev,
             education: prev.education.map((e) => ({ ...e, rowLocked: true })),
           }));
         }
 
-        // row-wise education save: pendingValue = "education:<index>"
         if (
           typeof pendingValue === "string" &&
           pendingValue.startsWith("education:")
         ) {
           const idx = Number(pendingValue.split(":")[1]);
           if (!Number.isNaN(idx)) {
-            degreeRefs.current?.[idx]?.reset?.(); // only reset this uploader
+            degreeRefs.current?.[idx]?.reset?.();
           }
-          // keep the accordion open on row save
           setOpen("education");
         }
 
@@ -292,9 +224,9 @@ export default function PersonalInformation() {
         ) {
           const idx = Number(pendingValue.split(":")[1]);
           if (!Number.isNaN(idx)) {
-            letterRefs.current?.[idx]?.reset?.(); // reset only this row's uploader
+            letterRefs.current?.[idx]?.reset?.();
           }
-          setOpen("experience"); // keep accordion open on row save
+          setOpen("experience");
         }
 
         if (pendingValue === "experience") {
@@ -326,14 +258,6 @@ export default function PersonalInformation() {
     }
   };
 
-  // const handleCancel = () => {
-  //   setConfirmOpen(false);
-  //   setPendingAction(null);
-  //   setPendingTitle("");
-  //   setPendingValue(null);
-  // };
-
-  // reflect auth user into the form fast
   useEffect(() => {
     if (!authLoading && user) {
       setFormData((prev) => ({
@@ -401,7 +325,6 @@ export default function PersonalInformation() {
     };
   }, [authLoading]);
 
-  // fetch full profile — ✅ also preserves rowLocked from local state
   useEffect(() => {
     const load = async () => {
       try {
@@ -520,7 +443,6 @@ export default function PersonalInformation() {
     }
   };
 
-  // Share button logic ...
   const baseUrl =
     import.meta.env.VITE_PROFILE_BASE_URL ||
     (typeof window !== "undefined" && window.location?.origin) ||
@@ -641,7 +563,6 @@ export default function PersonalInformation() {
   ];
 
   const primarySectionItems = sectionItems.filter((item) => item.key !== "company");
-  const companySectionItem = sectionItems.find((item) => item.key === "company");
 
   const scrollToSection = (key) => {
     setOpen(key);
@@ -658,7 +579,6 @@ export default function PersonalInformation() {
   const openCompanySection = (companyId, tab = "overview") => {
     setOpen("company");
     setCompanyCreateOpen(false);
-    setExpandedCompanyId(String(companyId));
     const next = new URLSearchParams(searchParams);
     next.set("section", "company");
     next.set("companyId", String(companyId));
@@ -682,11 +602,6 @@ export default function PersonalInformation() {
     return status === "approved" && ["owner", "admin", "manager"].includes(role);
   };
 
-  const canManageTeam = (company) => {
-    const role = getCompanyRole(company);
-    return ["owner", "admin"].includes(role);
-  };
-
   useEffect(() => {
     const section = String(searchParams.get("section") || "").trim();
     const allowed = ["pi", "education", "experience", "projects", "audio", "video", "company"];
@@ -702,13 +617,6 @@ export default function PersonalInformation() {
     openCompanyPage(companyPages[0]._id);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, companyCreateOpen, selectedCompanyId, companyPages]);
-
-  useEffect(() => {
-    if (companyCreateOpen) return;
-    if (open !== "company") return;
-    if (!selectedCompanyId) return;
-    setExpandedCompanyId(String(selectedCompanyId));
-  }, [open, selectedCompanyId, companyCreateOpen]);
 
   const activeIndex = sectionOrder.indexOf(open);
   const safeIndex = activeIndex === -1 ? 0 : activeIndex;
@@ -797,114 +705,103 @@ export default function PersonalInformation() {
                 </div>
               </div>
 
-              {companySectionItem ? (
-                <div className="mt-5 mb-3 space-y-3">
-                  {companyPagesLoading ? (
-                    <div className="rounded-2xl border border-white/60 bg-white/60 p-4 text-xs text-slate-500 shadow-[0_22px_50px_-28px_rgba(15,23,42,0.4)] backdrop-blur-md">
-                      Loading companies...
-                    </div>
-                  ) : companyPages.length ? (
-                    companyPages.map((company) => (
-                      <div
-                        key={company._id}
-                        className="rounded-2xl border border-white/60 bg-white/60 p-4 shadow-[0_22px_50px_-28px_rgba(15,23,42,0.4)] backdrop-blur-md"
-                      >
+              {/* Company pages — always expanded, no accordion toggle */}
+              <div className="mt-5 mb-3 space-y-3">
+                {companyPagesLoading ? (
+                  <div className="rounded-2xl border border-white/60 bg-white/60 p-4 text-xs text-slate-500 shadow-[0_22px_50px_-28px_rgba(15,23,42,0.4)] backdrop-blur-md">
+                    Loading companies...
+                  </div>
+                ) : (
+                  companyPages.map((company) => (
+                    <div
+                      key={company._id}
+                      className="rounded-2xl border border-white/60 bg-white/60 p-4 shadow-[0_22px_50px_-28px_rgba(15,23,42,0.4)] backdrop-blur-md"
+                    >
+                      <div className="text-left text-sm font-semibold text-slate-700 px-3 py-1 truncate">
+                        {company.name}
+                      </div>
+                      <div className="mt-2 mb-1 space-y-1.5 pl-2 pr-1">
                         <button
                           type="button"
-                          onClick={() =>
-                            setExpandedCompanyId((prev) =>
-                              prev === String(company._id) ? "" : String(company._id)
-                            )
-                          }
-                          className={`flex w-full items-center justify-between rounded-xl px-3 py-2 text-left text-sm transition ${
-                            open === "company" &&
-                            String(selectedCompanyId) === String(company._id) &&
-                            !companyCreateOpen
-                              ? "brand-orange-soft text-[color:var(--brand-orange)]"
-                              : "text-slate-600 hover:bg-white/70 hover:text-slate-800"
-                          }`}
+                          onClick={() => openCompanySection(company._id, "overview")}
+                          className="flex w-full rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-left text-xs font-semibold text-slate-700 transition hover:border-[color:var(--brand-orange)] hover:text-[color:var(--brand-orange)]"
                         >
-                          <span className="truncate">{company.name}</span>
-                          <Plus className="h-4 w-4 shrink-0" />
+                          View Page
                         </button>
-
-                        <div
-                          className={`grid transition-all duration-300 ease-out ${
-                            expandedCompanyId === String(company._id)
-                              ? "grid-rows-[1fr] opacity-100"
-                              : "grid-rows-[0fr] opacity-0"
-                          }`}
+                        <button
+                          type="button"
+                          onClick={() => openCompanySection(company._id, "jobs")}
+                          className="flex w-full rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-left text-xs font-semibold text-slate-700 transition hover:border-[color:var(--brand-orange)] hover:text-[color:var(--brand-orange)]"
                         >
-                          <div className="overflow-hidden pl-2 pr-1">
-                            <div className="mt-2 mb-1 space-y-1.5">
-                              <button
-                                type="button"
-                                onClick={() => openCompanySection(company._id, "overview")}
-                                className="flex w-full rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-left text-xs font-semibold text-slate-700 transition hover:border-[color:var(--brand-orange)] hover:text-[color:var(--brand-orange)]"
-                              >
-                                View Page
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => openCompanySection(company._id, "jobs")}
-                                className="flex w-full rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-left text-xs font-semibold text-slate-700 transition hover:border-[color:var(--brand-orange)] hover:text-[color:var(--brand-orange)]"
-                              >
-                                View Job Posts
-                              </button>
-                              {canPostJob(company) ? (
-                                <button
-                                  type="button"
-                                  onClick={() => openCompanySection(company._id, "create")}
-                                  className="flex w-full rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-left text-xs font-semibold text-slate-700 transition hover:border-[color:var(--brand-orange)] hover:text-[color:var(--brand-orange)]"
-                                >
-                                  Post a Job
-                                </button>
-                              ) : null}
-                            </div>
-                          </div>
-                        </div>
+                          View Job Posts
+                        </button>
+                        {canPostJob(company) ? (
+                          <button
+                            type="button"
+                            onClick={() => openCompanySection(company._id, "create")}
+                            className="flex w-full rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-left text-xs font-semibold text-slate-700 transition hover:border-[color:var(--brand-orange)] hover:text-[color:var(--brand-orange)]"
+                          >
+                            Post a Job
+                          </button>
+                        ) : null}
                       </div>
-                    ))
-                  ) : (
-                    <div className="rounded-2xl border border-white/60 bg-white/60 p-4 text-xs text-slate-500 shadow-[0_22px_50px_-28px_rgba(15,23,42,0.4)] backdrop-blur-md">
-                      No company pages
                     </div>
-                  )}
+                  ))
+                )}
 
-                  <div className="rounded-2xl border border-white/60 bg-white/60 p-4 shadow-[0_22px_50px_-28px_rgba(15,23,42,0.4)] backdrop-blur-md">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        if (hasPendingCompanyRequest) return;
-                        setOpen("company");
-                        setCompanyCreateOpen(true);
-                        setExpandedCompanyId("");
-                        const next = new URLSearchParams(searchParams);
+                <div className="rounded-2xl border border-white/60 bg-white/60 p-4 shadow-[0_22px_50px_-28px_rgba(15,23,42,0.4)] backdrop-blur-md space-y-1.5">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (hasPendingCompanyRequest) return;
+                      setOpen("company");
+                      setCompanyCreateOpen(true);
+                      const next = new URLSearchParams(searchParams);
                       next.set("section", "company");
                       next.delete("companyId");
                       next.delete("companyTab");
                       setSearchParams(next, { replace: true });
-                      }}
-                      disabled={hasPendingCompanyRequest}
-                      title={
-                        hasPendingCompanyRequest
-                          ? "You already have a pending company page request."
-                          : "Create a Company Page"
-                      }
-                      className={`flex h-9 w-full items-center gap-2 rounded-xl border border-transparent px-3 text-left text-sm font-semibold transition ${
-                        hasPendingCompanyRequest
-                          ? "cursor-not-allowed opacity-50"
-                          : open === "company" && companyCreateOpen
-                          ? "brand-orange-soft text-[color:var(--brand-orange)] shadow-[0_6px_16px_-10px_rgba(251,119,59,0.7)]"
-                          : "text-slate-500 hover:bg-white/70 hover:text-slate-700"
-                      }`}
+                    }}
+                    disabled={hasPendingCompanyRequest}
+                    title={
+                      hasPendingCompanyRequest
+                        ? "You already have a pending company page request."
+                        : "Create a Company Page"
+                    }
+                    className={`flex h-9 w-full items-center gap-2 rounded-xl border border-transparent px-3 text-left text-sm font-semibold transition ${
+                      hasPendingCompanyRequest
+                        ? "cursor-not-allowed opacity-50"
+                        : open === "company" && companyCreateOpen
+                        ? "brand-orange-soft text-[color:var(--brand-orange)] shadow-[0_6px_16px_-10px_rgba(251,119,59,0.7)]"
+                        : "text-slate-500 hover:bg-white/70 hover:text-slate-700"
+                    }`}
                   >
                     <PlusCircle className="h-4 w-4" />
                     <span>Create a Company Page</span>
                   </button>
-                  </div>
+
+                  {!companyPages.length && !companyPagesLoading ? (
+                    <>
+                      <button
+                        type="button"
+                        disabled
+                        title="Create a Company Page first"
+                        className="flex w-full rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1.5 text-left text-xs font-semibold text-slate-400 cursor-not-allowed"
+                      >
+                        View Job Posts
+                      </button>
+                      <button
+                        type="button"
+                        disabled
+                        title="Create a Company Page first"
+                        className="flex w-full rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1.5 text-left text-xs font-semibold text-slate-400 cursor-not-allowed"
+                      >
+                        Post a Job
+                      </button>
+                    </>
+                  ) : null}
                 </div>
-              ) : null}
+              </div>
             </div>
           </aside>
 
@@ -952,7 +849,6 @@ export default function PersonalInformation() {
                       updateEducation={updateEducation}
                       locked={!!locked.education}
                       degreeRefs={degreeRefs}
-                      eduCreditByKey={eduCreditByKey}
                       instituteOptions={orgOptions.universities}
                       saveEducation={saveEducationRow}
                       isRowSaving={isRowSaving}
@@ -968,7 +864,6 @@ export default function PersonalInformation() {
                       updateExperience={updateExperience}
                       locked={!!locked.experience}
                       letterRefs={letterRefs}
-                      expCreditByKey={expCreditByKey}
                       companyOptions={orgOptions.companies}
                       onAskConfirm={onAskConfirm}
                       saveExperience={saveExperienceRow}
@@ -983,7 +878,6 @@ export default function PersonalInformation() {
                       removeProject={removeProject}
                       updateProject={updateProject}
                       locked={!!locked.projects}
-                      projectCreditByKey={projectCreditByKey}
                       companyOptions={projectCompanyOptions}
                       saveProject={saveProjectRow}
                       isRowSaving={isProjectRowSaving}

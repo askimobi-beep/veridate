@@ -484,6 +484,54 @@ exports.listJobPosts = async (req, res) => {
   }
 };
 
+exports.searchAllJobs = async (req, res) => {
+  try {
+    const { title, location, company: companyName, page: rawPage, limit: rawLimit } = req.query;
+    const page = Math.max(1, Number(rawPage) || 1);
+    const limit = Math.min(50, Math.max(1, Number(rawLimit) || 10));
+    const skip = (page - 1) * limit;
+
+    const jobFilter = { status: "active" };
+
+    if (title) {
+      jobFilter.title = { $regex: title, $options: "i" };
+    }
+    if (location) {
+      jobFilter.location = { $regex: location, $options: "i" };
+    }
+
+    // If company name filter provided, find matching approved company IDs first
+    if (companyName) {
+      const matchingCompanies = await CompanyProfile.find({
+        name: { $regex: companyName, $options: "i" },
+        status: "approved",
+      })
+        .select("_id")
+        .lean();
+      const ids = matchingCompanies.map((c) => c._id);
+      if (!ids.length) {
+        return res.json({ data: [], total: 0, page, limit });
+      }
+      jobFilter.company = { $in: ids };
+    }
+
+    const [data, total] = await Promise.all([
+      JobPost.find(jobFilter)
+        .populate("company", "name logo about")
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit)
+        .lean(),
+      JobPost.countDocuments(jobFilter),
+    ]);
+
+    return res.json({ data, total, page, limit });
+  } catch (err) {
+    console.error("searchAllJobs error:", err);
+    return res.status(500).json({ message: "Failed to search jobs." });
+  }
+};
+
 exports.updateCompanyAbout = async (req, res) => {
   try {
     const { about = "" } = req.body || {};

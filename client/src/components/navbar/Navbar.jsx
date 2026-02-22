@@ -1,9 +1,8 @@
-// Navbar.jsx
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/context/AuthContext";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useCallback } from "react";
-import { Search } from "lucide-react";
+import { Search, Briefcase } from "lucide-react";
 import logo from "@/assets/logo/logo.png";
 import UserMenu from "@/components/navbar/UserMenu";
 
@@ -13,7 +12,7 @@ export default function Navbar() {
   const canAccessDirectory = !user || role === "user";
 
   const navigate = useNavigate();
-  const { pathname } = useLocation(); // keeping in case you style active states later
+  const { pathname } = useLocation();
 
   const handleLogout = useCallback(async () => {
     try {
@@ -29,10 +28,15 @@ export default function Navbar() {
     navigate("/dashboard/directory");
   };
 
+  const goJobs = () => {
+    if (role && role !== "user") return;
+    navigate("/dashboard/jobs");
+  };
+
   return (
     <header className="w-full bg-transparent backdrop-blur">
       <div className="w-full mx-auto px-3 sm:px-4 md:px-6">
-        {/* 3-col: search | logo | user */}
+        {/* 3-col: logo | search buttons | user */}
         <div className="h-16 grid grid-cols-3 items-center gap-3">
           {/* Left: Logo */}
           <div className="flex items-center">
@@ -41,18 +45,31 @@ export default function Navbar() {
             </Link>
           </div>
 
-          {/* Center: Directory */}
-          <div className="flex items-center justify-center">
+          {/* Center: Search Candidates + Search Jobs */}
+          <div className="flex items-center justify-center gap-2">
             {canAccessDirectory ? (
-              <Button
-                type="button"
-                variant="outline"
-                onClick={goDirectory}
-                className="rounded-full border-[color:var(--brand-orange)] text-[color:var(--brand-orange)] hover:brand-orange-soft gap-2"
-              >
-                <Search className="h-4 w-4" />
-                <span>Search Candidates</span>
-              </Button>
+              <>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={goDirectory}
+                  className="rounded-full border-[color:var(--brand-orange)] text-[color:var(--brand-orange)] hover:brand-orange-soft gap-2"
+                >
+                  <Search className="h-4 w-4" />
+                  <span className="hidden sm:inline">Search Candidates</span>
+                  <span className="sm:hidden">Candidates</span>
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={goJobs}
+                  className="rounded-full border-[color:var(--brand-orange)] text-[color:var(--brand-orange)] hover:brand-orange-soft gap-2"
+                >
+                  <Briefcase className="h-4 w-4" />
+                  <span className="hidden sm:inline">Search Jobs</span>
+                  <span className="sm:hidden">Jobs</span>
+                </Button>
+              </>
             ) : null}
           </div>
 

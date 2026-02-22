@@ -16,6 +16,8 @@ const profileRoutes = require("./router/profile.Routes");
 const verify = require("./router/verify.routes");
 const degreeRoutes = require("./router/degree.Routes");
 const jobTitleRoutes = require("./router/jobTitle.Routes");
+const jobsRoutes = require("./router/jobs.Routes");
+const feedRoutes = require("./router/feed.Routes");
 const corsOptions = require("./config/corsOptions");
 
 const app = express();
@@ -38,6 +40,8 @@ app.use("/api/v1/profile", profileRoutes);
 app.use("/api/v1/verify", verify);
 app.use("/api/v1/degrees", degreeRoutes);
 app.use("/api/v1/job-titles", jobTitleRoutes);
+app.use("/api/v1/jobs", jobsRoutes);
+app.use("/api/v1/feed", feedRoutes);
 
 app.listen(PORT, () => {
   DatabaseConnection();

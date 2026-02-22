@@ -234,17 +234,9 @@ export default function CompanyProfilesSection({
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center gap-2 text-lg font-semibold text-slate-900">
-        <Building2 className="h-5 w-5 text-[color:var(--brand-orange)]" />
-        Company Page
-      </div>
       {selectedCompanyId ? (
         <CompanyProfile companyId={selectedCompanyId} embedded initialTab={selectedCompanyTab || "overview"} />
-      ) : (
-        <div className="rounded-2xl border border-slate-200 bg-white p-6 text-sm text-slate-600 shadow-sm">
-          Select a company from the sidebar to view its page.
-        </div>
-      )}
+      ) : null}
     </div>
   );
 }

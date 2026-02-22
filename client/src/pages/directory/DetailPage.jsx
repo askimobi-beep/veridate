@@ -137,7 +137,18 @@ const creditsToMap = (arr, keyField) => {
 };
 
 // === status helpers for verification ===
-function eduStatus({ row, meId, meProfile, eduCreditMap }) {
+function overlapMonths(startA, endA, startB, endB) {
+  if (!startA || !startB) return 0;
+  const s = Math.max(new Date(startA).getTime(), new Date(startB).getTime());
+  const e = Math.min(
+    endA ? new Date(endA).getTime() : Date.now(),
+    endB ? new Date(endB).getTime() : Date.now()
+  );
+  if (e <= s) return 0;
+  return (e - s) / (1000 * 60 * 60 * 24 * 30.44);
+}
+
+function eduStatus({ row, meId, meProfile }) {
   const already =
     Array.isArray(row?.verifiedBy) &&
     row.verifiedBy.some((x) => String(x) === String(meId));
@@ -146,20 +157,20 @@ function eduStatus({ row, meId, meProfile, eduCreditMap }) {
   const key = row?.instituteKey || normalizeInstitute(row?.institute);
   if (!key) return "ineligible";
 
-  const hasSame =
-    Array.isArray(meProfile?.education) &&
-    meProfile.education.some(
-      (e) => (e.instituteKey || normalizeInstitute(e.institute)) === key
-    );
-  if (!hasSame) return "ineligible";
+  const matchingRows = (meProfile?.education || []).filter(
+    (e) => (e.instituteKey || normalizeInstitute(e.institute)) === key
+  );
+  if (!matchingRows.length) return "ineligible";
 
-  const bucket = eduCreditMap.get(key);
-  if (!bucket || (bucket.available || 0) <= 0) return "no-credits";
+  const hasOverlap = matchingRows.some(
+    (e) => overlapMonths(e.startDate, e.endDate, row.startDate, row.endDate) >= 1
+  );
+  if (!hasOverlap) return "no-overlap";
 
   return "eligible";
 }
 
-function expStatus({ row, meId, meProfile, expCreditMap }) {
+function expStatus({ row, meId, meProfile }) {
   const already =
     Array.isArray(row?.verifiedBy) &&
     row.verifiedBy.some((x) => String(x) === String(meId));
@@ -168,20 +179,20 @@ function expStatus({ row, meId, meProfile, expCreditMap }) {
   const key = row?.companyKey || normalizeCompany(row?.company);
   if (!key) return "ineligible";
 
-  const hasSame =
-    Array.isArray(meProfile?.experience) &&
-    meProfile.experience.some(
-      (e) => (e.companyKey || normalizeCompany(e.company)) === key
-    );
-  if (!hasSame) return "ineligible";
+  const matchingRows = (meProfile?.experience || []).filter(
+    (e) => (e.companyKey || normalizeCompany(e.company)) === key
+  );
+  if (!matchingRows.length) return "ineligible";
 
-  const bucket = expCreditMap.get(key);
-  if (!bucket || (bucket.available || 0) <= 0) return "no-credits";
+  const hasOverlap = matchingRows.some(
+    (e) => overlapMonths(e.startDate, e.endDate, row.startDate, row.endDate) >= 1
+  );
+  if (!hasOverlap) return "no-overlap";
 
   return "eligible";
 }
 
-function projectStatus({ row, meId, meProfile, projectCreditMap }) {
+function projectStatus({ row, meId, meProfile }) {
   const already =
     Array.isArray(row?.verifiedBy) &&
     row.verifiedBy.some((x) => String(x) === String(meId));
@@ -190,15 +201,15 @@ function projectStatus({ row, meId, meProfile, projectCreditMap }) {
   const key = row?.companyKey || normalizeCompany(row?.company);
   if (!key) return "ineligible";
 
-  const hasSame =
-    Array.isArray(meProfile?.experience) &&
-    meProfile.experience.some(
-      (e) => (e.companyKey || normalizeCompany(e.company)) === key
-    );
-  if (!hasSame) return "ineligible";
+  const matchingRows = (meProfile?.experience || []).filter(
+    (e) => (e.companyKey || normalizeCompany(e.company)) === key
+  );
+  if (!matchingRows.length) return "ineligible";
 
-  const bucket = projectCreditMap.get(key);
-  if (!bucket || (bucket.available || 0) <= 0) return "no-credits";
+  const hasOverlap = matchingRows.some(
+    (e) => overlapMonths(e.startDate, e.endDate, row.startDate, row.endDate) >= 1
+  );
+  if (!hasOverlap) return "no-overlap";
 
   return "eligible";
 }
@@ -226,9 +237,9 @@ function getVerifyLabel(type, status, isBusy) {
     if (type === "project") return "Veridate this project";
     return "Veridate";
   }
-  if (status === "no-credits")
-    return "Unable to veridate: No credits available";
-  // ineligible message depends on type
+  if (status === "no-overlap") {
+    return "Unable to veridate: Dates don't overlap by at least 1 month";
+  }
   if (type === "education") {
     return "Unable to veridate: Education doesn't match";
   }
@@ -309,7 +320,7 @@ function VerifyButton({ type, status, isBusy, id, onVerify }) {
   return (
     <button
       type="button"
-      className={`inline-flex items-center rounded-md px-3 py-1.5 text-xs font-semibold transition disabled:cursor-not-allowed ${
+      className={`inline-flex items-center rounded-md px-[5px] pt-[5px] pb-[10px] text-xs font-semibold transition disabled:cursor-not-allowed ${
         isEligible
           ? "bg-[color:var(--brand-orange)] text-white hover:brightness-110"
           : "bg-transparent text-slate-600 hover:text-slate-800"
@@ -810,10 +821,9 @@ export default function DetailPage() {
           row,
           meId,
           meProfile,
-          eduCreditMap,
         }) === "eligible"
     );
-  }, [eduCreditMap, isSelfProfile, meId, meProfile, profile?.education]);
+  }, [isSelfProfile, meId, meProfile, profile?.education]);
 
   const canVerifyExperience = useMemo(() => {
     if (!meId || !meProfile || isSelfProfile) return false;
@@ -824,10 +834,9 @@ export default function DetailPage() {
           row,
           meId,
           meProfile,
-          expCreditMap,
         }) === "eligible"
     );
-  }, [expCreditMap, isSelfProfile, meId, meProfile, profile?.experience]);
+  }, [isSelfProfile, meId, meProfile, profile?.experience]);
 
   const canVerifyProjects = useMemo(() => {
     if (!meId || !meProfile || isSelfProfile) return false;
@@ -838,10 +847,9 @@ export default function DetailPage() {
           row,
           meId,
           meProfile,
-          projectCreditMap,
         }) === "eligible"
     );
-  }, [meId, meProfile, isSelfProfile, profile?.projects, projectCreditMap]);
+  }, [meId, meProfile, isSelfProfile, profile?.projects]);
 
   const scrollToRow = (prefix, id) => {
     const el = document.getElementById(`${prefix}-${id}`);
@@ -864,13 +872,12 @@ export default function DetailPage() {
     const statusFn =
       type === "education"
         ? (row) =>
-            eduStatus({ row, meId, meProfile, eduCreditMap }) === "eligible"
+            eduStatus({ row, meId, meProfile }) === "eligible"
         : type === "experience"
         ? (row) =>
-            expStatus({ row, meId, meProfile, expCreditMap }) === "eligible"
+            expStatus({ row, meId, meProfile }) === "eligible"
         : (row) =>
-            projectStatus({ row, meId, meProfile, projectCreditMap }) ===
-            "eligible";
+            projectStatus({ row, meId, meProfile }) === "eligible";
 
     const match = list.find((row) => statusFn(row));
     if (match && match._id) {
@@ -1687,7 +1694,6 @@ export default function DetailPage() {
                       row: edu,
                       meId,
                       meProfile,
-                      eduCreditMap,
                     });
                     const verifications = Array.isArray(edu.verifications)
                       ? edu.verifications
@@ -1749,7 +1755,6 @@ export default function DetailPage() {
                       row: exp,
                       meId,
                       meProfile,
-                      expCreditMap,
                     });
                     const verifications = Array.isArray(exp.verifications)
                       ? exp.verifications
@@ -1811,7 +1816,6 @@ export default function DetailPage() {
                       row: project,
                       meId,
                       meProfile,
-                      projectCreditMap,
                     });
                     const verifications = Array.isArray(project.verifications)
                       ? project.verifications

@@ -1,4 +1,4 @@
-import React, { useEffect, useId, useMemo, useState } from "react";
+import React, { useEffect, useId, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -88,27 +88,18 @@ const normalize = (s) => (s || "").trim().toLowerCase().replace(/\s+/g, " ");
 const normalizeInstitute = normalize;
 const normalizeCompany = normalize;
 
-const creditsToMap = (arr, keyField) => {
-  const out = new Map();
-  (arr || []).forEach((b) => {
-    const rawKey = b?.[keyField];
-    const k =
-      typeof rawKey === "string"
-        ? rawKey
-        : rawKey?.toString
-        ? rawKey.toString()
-        : "";
-    if (!k) return;
-    const prev = out.get(k) || { available: 0, used: 0 };
-    out.set(k, {
-      available: prev.available + Number(b.available || 0),
-      used: prev.used + Number(b.used || 0),
-    });
-  });
-  return out;
+const overlapMonths = (startA, endA, startB, endB) => {
+  if (!startA || !startB) return 0;
+  const s = Math.max(new Date(startA).getTime(), new Date(startB).getTime());
+  const e = Math.min(
+    endA ? new Date(endA).getTime() : Date.now(),
+    endB ? new Date(endB).getTime() : Date.now()
+  );
+  if (e <= s) return 0;
+  return (e - s) / (1000 * 60 * 60 * 24 * 30.44);
 };
 
-function eduStatus({ row, meId, meProfile, eduCreditMap }) {
+function eduStatus({ row, meId, meProfile }) {
   const already =
     Array.isArray(row?.verifiedBy) &&
     row.verifiedBy.some((x) => String(x) === String(meId));
@@ -117,20 +108,20 @@ function eduStatus({ row, meId, meProfile, eduCreditMap }) {
   const key = row?.instituteKey || normalizeInstitute(row?.institute);
   if (!key) return "ineligible";
 
-  const hasSame =
-    Array.isArray(meProfile?.education) &&
-    meProfile.education.some(
-      (e) => (e.instituteKey || normalizeInstitute(e.institute)) === key
-    );
-  if (!hasSame) return "ineligible";
+  const matchingRows = (meProfile?.education || []).filter(
+    (e) => (e.instituteKey || normalizeInstitute(e.institute)) === key
+  );
+  if (!matchingRows.length) return "ineligible";
 
-  const bucket = eduCreditMap.get(key);
-  if (!bucket || (bucket.available || 0) <= 0) return "no-credits";
+  const hasOverlap = matchingRows.some(
+    (e) => overlapMonths(e.startDate, e.endDate, row.startDate, row.endDate) >= 1
+  );
+  if (!hasOverlap) return "no-overlap";
 
   return "eligible";
 }
 
-function expStatus({ row, meId, meProfile, expCreditMap }) {
+function expStatus({ row, meId, meProfile }) {
   const already =
     Array.isArray(row?.verifiedBy) &&
     row.verifiedBy.some((x) => String(x) === String(meId));
@@ -139,20 +130,20 @@ function expStatus({ row, meId, meProfile, expCreditMap }) {
   const key = row?.companyKey || normalizeCompany(row?.company);
   if (!key) return "ineligible";
 
-  const hasSame =
-    Array.isArray(meProfile?.experience) &&
-    meProfile.experience.some(
-      (e) => (e.companyKey || normalizeCompany(e.company)) === key
-    );
-  if (!hasSame) return "ineligible";
+  const matchingRows = (meProfile?.experience || []).filter(
+    (e) => (e.companyKey || normalizeCompany(e.company)) === key
+  );
+  if (!matchingRows.length) return "ineligible";
 
-  const bucket = expCreditMap.get(key);
-  if (!bucket || (bucket.available || 0) <= 0) return "no-credits";
+  const hasOverlap = matchingRows.some(
+    (e) => overlapMonths(e.startDate, e.endDate, row.startDate, row.endDate) >= 1
+  );
+  if (!hasOverlap) return "no-overlap";
 
   return "eligible";
 }
 
-function projectStatus({ row, meId, meProfile, projectCreditMap }) {
+function projectStatus({ row, meId, meProfile }) {
   const already =
     Array.isArray(row?.verifiedBy) &&
     row.verifiedBy.some((x) => String(x) === String(meId));
@@ -161,15 +152,15 @@ function projectStatus({ row, meId, meProfile, projectCreditMap }) {
   const key = row?.companyKey || normalizeCompany(row?.company);
   if (!key) return "ineligible";
 
-  const hasSame =
-    Array.isArray(meProfile?.experience) &&
-    meProfile.experience.some(
-      (e) => (e.companyKey || normalizeCompany(e.company)) === key
-    );
-  if (!hasSame) return "ineligible";
+  const matchingRows = (meProfile?.experience || []).filter(
+    (e) => (e.companyKey || normalizeCompany(e.company)) === key
+  );
+  if (!matchingRows.length) return "ineligible";
 
-  const bucket = projectCreditMap.get(key);
-  if (!bucket || (bucket.available || 0) <= 0) return "no-credits";
+  const hasOverlap = matchingRows.some(
+    (e) => overlapMonths(e.startDate, e.endDate, row.startDate, row.endDate) >= 1
+  );
+  if (!hasOverlap) return "no-overlap";
 
   return "eligible";
 }
@@ -255,58 +246,25 @@ export default function DirectoryCard({
   const hasAudio = Boolean(detail?.audioProfile);
   const hasVideo = Boolean(detail?.videoProfile);
 
-  const eduCreditMap = useMemo(() => {
-    const buckets = authUser?.verifyCredits?.education || [];
-    return creditsToMap(buckets, "instituteKey");
-  }, [authUser]);
-
-  const expCreditMap = useMemo(() => {
-    const buckets = authUser?.verifyCredits?.experience || [];
-    return creditsToMap(buckets, "companyKey");
-  }, [authUser]);
-
-  const projectCreditMap = useMemo(() => {
-    const buckets = authUser?.verifyCredits?.projects || [];
-    return creditsToMap(buckets, "companyKey");
-  }, [authUser]);
-
   const canVerifyEducation =
     Boolean(meId) &&
     String(meId) !== String(profile?.user || profile?._id) &&
     allEducations.some(
-      (row) =>
-        eduStatus({
-          row,
-          meId,
-          meProfile,
-          eduCreditMap,
-        }) === "eligible"
+      (row) => eduStatus({ row, meId, meProfile }) === "eligible"
     );
 
   const canVerifyExperience =
     Boolean(meId) &&
     String(meId) !== String(profile?.user || profile?._id) &&
     allExperiences.some(
-      (row) =>
-        expStatus({
-          row,
-          meId,
-          meProfile,
-          expCreditMap,
-        }) === "eligible"
+      (row) => expStatus({ row, meId, meProfile }) === "eligible"
     );
 
   const canVerifyProjects =
     Boolean(meId) &&
     String(meId) !== String(profile?.user || profile?._id) &&
     allProjects.some(
-      (row) =>
-        projectStatus({
-          row,
-          meId,
-          meProfile,
-          projectCreditMap,
-        }) === "eligible"
+      (row) => projectStatus({ row, meId, meProfile }) === "eligible"
     );
 
   const handleDownload = async () => {
@@ -336,7 +294,7 @@ export default function DirectoryCard({
       <CardContent className="p-5 text-left">
         <div className="flex items-start justify-between gap-4">
           <div className="flex items-start gap-3">
-            <Avatar className="h-20 w-20 ring-2 ring-[color:var(--brand-orange)]">
+            <Avatar className="h-20 w-20 shrink-0 ring-2 ring-[color:var(--brand-orange)]">
               <AvatarImage src={profile.profilePicUrl || ""} alt={profile.name} />
               <AvatarFallback>{initials(profile.name)}</AvatarFallback>
             </Avatar>
