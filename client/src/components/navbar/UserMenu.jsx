@@ -11,6 +11,7 @@ import {
   ChevronDown,
   GraduationCap,
   Briefcase,
+  Bell,
 } from "lucide-react";
 
 function getInitial(name) {
@@ -127,13 +128,13 @@ export default function UserMenu({ user, onLogout }) {
                 {role === "user" ? "Profile" : "Dashboard"}
               </button>
 
-              {/* <button
-                onClick={() => go("/settings")}
+              <button
+                onClick={() => go("/dashboard/notifications")}
                 className="w-full flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition"
               >
-                <Settings className="h-4 w-4" />
-                Settings
-              </button> */}
+                <Bell className="h-4 w-4" />
+                Notifications
+              </button>
             </div>
 
             <div className="h-px bg-gray-100" />

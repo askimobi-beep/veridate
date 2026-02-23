@@ -5,6 +5,7 @@ import DetailPage from "@/pages/directory/DetailPage";
 import CompanyProfile from "@/pages/company/CompanyProfile";
 import JobsDirectory from "@/pages/directory/JobsDirectory";
 import HomeFeed from "@/pages/HomeFeed";
+import NotificationsPage from "@/pages/NotificationsPage";
 
 const dashboardRoutes = [
   {
@@ -16,6 +17,7 @@ const dashboardRoutes = [
       { path: "jobs", element: <JobsDirectory /> },
       { path: "profiles/:userId", element: <DetailPage /> },
       { path: "companies/:id", element: <CompanyProfile /> },
+      { path: "notifications", element: <NotificationsPage /> },
     ],
   },
 ];

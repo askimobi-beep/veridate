@@ -5,6 +5,7 @@ import { useCallback } from "react";
 import { Search, Briefcase } from "lucide-react";
 import logo from "@/assets/logo/logo.png";
 import UserMenu from "@/components/navbar/UserMenu";
+import NotificationBell from "@/components/navbar/NotificationBell";
 
 export default function Navbar() {
   const { user, logout, authLoading } = useAuth();
@@ -76,7 +77,10 @@ export default function Navbar() {
           {/* Right: User menu / Login */}
           <div className="flex items-center justify-end gap-3">
             {!authLoading && user ? (
-              <UserMenu user={user} onLogout={handleLogout} />
+              <>
+                <NotificationBell />
+                  <UserMenu user={user} onLogout={handleLogout} />
+              </>
             ) : (
               !authLoading && (
                 <Link to="/login">
