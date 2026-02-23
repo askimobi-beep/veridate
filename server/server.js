@@ -18,6 +18,7 @@ const degreeRoutes = require("./router/degree.Routes");
 const jobTitleRoutes = require("./router/jobTitle.Routes");
 const jobsRoutes = require("./router/jobs.Routes");
 const feedRoutes = require("./router/feed.Routes");
+const notificationRoutes = require("./router/notification.Routes");
 const corsOptions = require("./config/corsOptions");
 
 const app = express();
@@ -42,6 +43,7 @@ app.use("/api/v1/degrees", degreeRoutes);
 app.use("/api/v1/job-titles", jobTitleRoutes);
 app.use("/api/v1/jobs", jobsRoutes);
 app.use("/api/v1/feed", feedRoutes);
+app.use("/api/v1/notifications", notificationRoutes);
 
 app.listen(PORT, () => {
   DatabaseConnection();

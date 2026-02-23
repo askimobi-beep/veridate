@@ -85,6 +85,7 @@ const ExperienceSchema = new mongoose.Schema({
   verifications: { type: [VerificationReviewSchema], default: [] },
   companyKey: { type: String, index: true },
   projects: { type: [ProjectSchema], default: [] },
+  lineManagers: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
 });
 
 const ProfileSchema = new mongoose.Schema(

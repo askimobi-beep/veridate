@@ -54,6 +54,7 @@ const getEmptyForm = () => ({
       jobFunctions: [],
       industry: "",
       hiddenFields: [],
+      lineManagers: [],
     },
   ],
 
@@ -182,6 +183,7 @@ export default function usePersonalInformationForm() {
           jobFunctions: [],
           industry: "",
           hiddenFields: [],
+          lineManagers: [],
         },
       ],
     }));

@@ -79,6 +79,7 @@ const EXPERIENCE_UNLOCKED = new Set([
   "jobFunctions",
   "skills",
   "hiddenFields",
+  "lineManagers",
 ]);
 
 const isExpDisabled = (rowLocked, field) =>
@@ -377,6 +378,156 @@ export default function ExperienceForm({
       </div>
     );
   };
+  // ---- Line Manager multi-select with API fetch ----
+  const LineManagerSelect = ({ company, startDate, endDate, isPresent, value, onChange, disabled }) => {
+    const [candidates, setCandidates] = useState([]);
+    const [loading, setLoading] = useState(false);
+    const [open, setOpen] = useState(false);
+    const [query, setQuery] = useState("");
+
+    useEffect(() => {
+      if (!company || !startDate) {
+        setCandidates([]);
+        return;
+      }
+      let active = true;
+      const fetchCandidates = async () => {
+        setLoading(true);
+        try {
+          const params = { company, startDate };
+          if (endDate && !isPresent) params.endDate = endDate;
+          const res = await axiosInstance.get("/profile/line-manager-candidates", { params });
+          if (active) setCandidates(res.data?.candidates || []);
+        } catch {
+          if (active) setCandidates([]);
+        } finally {
+          if (active) setLoading(false);
+        }
+      };
+      fetchCandidates();
+      return () => { active = false; };
+    }, [company, startDate, endDate, isPresent]);
+
+    const selected = Array.isArray(value) ? value : [];
+    const filtered = candidates.filter((c) => {
+      const label = `${c.name} ${c.jobTitle}`.toLowerCase();
+      return label.includes(query.trim().toLowerCase());
+    });
+
+    const toggle = (userId) => {
+      if (disabled) return;
+      const next = selected.includes(userId)
+        ? selected.filter((id) => id !== userId)
+        : [...selected, userId];
+      onChange(next);
+    };
+
+    const remove = (userId) => {
+      if (disabled) return;
+      onChange(selected.filter((id) => id !== userId));
+    };
+
+    const selectedNames = selected
+      .map((id) => candidates.find((c) => c.userId === id))
+      .filter(Boolean);
+
+    return (
+      <div className="space-y-1 w-full">
+        <Label className="text-sm font-medium text-slate-700 text-left w-full inline-flex items-center gap-2">
+          Reporting Line Manager
+        </Label>
+        <Popover modal={false} open={open} onOpenChange={setOpen}>
+          <PopoverTrigger asChild>
+            <button
+              type="button"
+              disabled={disabled || (!company || !startDate)}
+              className={`h-12 w-full rounded-lg border border-slate-200 bg-white px-3 text-left text-sm text-slate-900 shadow-sm ${
+                disabled || !company || !startDate
+                  ? "bg-slate-100 text-slate-500 cursor-not-allowed"
+                  : ""
+              }`}
+            >
+              {!company || !startDate
+                ? "Set company & start date first"
+                : selected.length
+                ? `${selected.length} manager${selected.length > 1 ? "s" : ""} selected`
+                : "Select line manager(s)"}
+            </button>
+          </PopoverTrigger>
+          <PopoverContent className="w-[--radix-popover-trigger-width] bg-white p-2">
+            <Input
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Search managers..."
+              className="h-10"
+            />
+            <div className="mt-2 max-h-48 overflow-y-auto space-y-1">
+              {loading ? (
+                <div className="px-2 py-2 text-xs text-gray-500">Loading...</div>
+              ) : filtered.length ? (
+                filtered.map((c) => {
+                  const active = selected.includes(c.userId);
+                  return (
+                    <button
+                      key={c.userId}
+                      type="button"
+                      onClick={() => toggle(c.userId)}
+                      className={`flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm ${
+                        active ? "brand-orange-soft brand-orange" : "text-slate-700"
+                      }`}
+                    >
+                      <span
+                        className={`inline-flex h-4 w-4 items-center justify-center rounded border ${
+                          active
+                            ? "border-[color:var(--brand-orange)] bg-[color:var(--brand-orange)] text-white"
+                            : "border-gray-300"
+                        }`}
+                      >
+                        {active ? "✓" : ""}
+                      </span>
+                      <span>
+                        {c.name}{c.jobTitle ? ` - ${c.jobTitle}` : ""}
+                      </span>
+                    </button>
+                  );
+                })
+              ) : (
+                <div className="px-2 py-2 text-xs text-gray-500">
+                  {candidates.length === 0 && !loading
+                    ? "No eligible managers found for this company & date range"
+                    : "No matches"}
+                </div>
+              )}
+            </div>
+          </PopoverContent>
+        </Popover>
+        {selectedNames.length > 0 && (
+          <div className="mt-2 min-h-12 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 shadow-sm">
+            <div className="flex flex-wrap gap-2">
+              {selectedNames.map((c) => (
+                <span
+                  key={c.userId}
+                  className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-slate-50 px-2 py-1 text-xs text-slate-700"
+                >
+                  {c.name}{c.jobTitle ? ` - ${c.jobTitle}` : ""}
+                  <button
+                    type="button"
+                    className="ml-1 text-slate-400 hover:text-slate-700"
+                    onClick={() => remove(c.userId)}
+                    aria-label={`Remove ${c.name}`}
+                    disabled={disabled}
+                  >
+                    ×
+                  </button>
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  };
+
   const norm = (s) => (s || "").trim().toLowerCase().replace(/\s+/g, " ");
   const [creditInfoOpen, setCreditInfoOpen] = useState(false);
   const [editingRow, setEditingRow] = useState(null);
@@ -671,6 +822,19 @@ export default function ExperienceForm({
                         ? exp.experienceLetterFile
                         : ""
                     }
+                  />
+                </div>
+
+                {/* Reporting Line Manager */}
+                <div className="md:col-span-2">
+                  <LineManagerSelect
+                    company={exp.company}
+                    startDate={exp.startDate}
+                    endDate={exp.endDate}
+                    isPresent={exp.isPresent}
+                    value={exp.lineManagers || []}
+                    onChange={(updated) => updateExperience(index, "lineManagers", updated)}
+                    disabled={rowLocked && !allowEdit}
                   />
                 </div>
 

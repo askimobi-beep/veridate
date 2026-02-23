@@ -12,6 +12,7 @@ const {
   removeOldExperienceFile,
 } = require("../utils/fileCleanup");
 const { normalizeInstitute, normalizeCompany } = require("../utils/normalize");
+const Notification = require("../models/Notification");
 
 // --- Personal privacy keys ---
 const PERSONAL_PRIVACY_KEYS = new Set([
@@ -681,6 +682,7 @@ exports.saveExperience = async (req, res) => {
       "skills",
       "hiddenFields",
       "projects",
+      "lineManagers",
     ]);
 
     // parse incoming rows
@@ -753,6 +755,9 @@ exports.saveExperience = async (req, res) => {
         // 👇 add normalized key so verifyExperience can match buckets
         companyKey: normalizeInstitute(e?.company || ""),
         projects: normalizeProjects(e?.projects),
+        lineManagers: Array.isArray(e?.lineManagers)
+          ? e.lineManagers.filter((id) => mongoose.Types.ObjectId.isValid(id))
+          : [],
       }));
 
       const updated = await Profile.findOneAndUpdate(
@@ -763,6 +768,9 @@ exports.saveExperience = async (req, res) => {
 
       // 👇 seed per-company credits on User
       await ensureUserExpCredits(userId, updated.experience);
+
+      // 👇 notify line managers on first save
+      await notifyNewLineManagers(userId, updated.experience, new Map());
 
       return res
         .status(200)
@@ -814,6 +822,10 @@ exports.saveExperience = async (req, res) => {
             next.skills = Array.isArray(v) ? v : [];
           } else if (k === "projects") {
             next.projects = normalizeProjects(v);
+          } else if (k === "lineManagers") {
+            next.lineManagers = Array.isArray(v)
+              ? v.filter((id) => mongoose.Types.ObjectId.isValid(id))
+              : [];
           } else if (k === "isPresent") {
             next.isPresent = Boolean(v);
             if (next.isPresent) next.endDate = "";
@@ -844,7 +856,18 @@ exports.saveExperience = async (req, res) => {
             : [],
           companyKey: normalizeInstitute(inc?.company || ""),
           projects: normalizeProjects(inc?.projects),
+          lineManagers: Array.isArray(inc?.lineManagers)
+            ? inc.lineManagers.filter((id) => mongoose.Types.ObjectId.isValid(id))
+            : [],
         });
+      }
+    }
+
+    // snapshot old lineManagers before saving
+    const oldManagersMap = new Map();
+    for (const row of current) {
+      if (row._id) {
+        oldManagersMap.set(String(row._id), (row.lineManagers || []).map(String));
       }
     }
 
@@ -856,6 +879,9 @@ exports.saveExperience = async (req, res) => {
 
     // 👇 ensure buckets exist for any newly added company rows
     await ensureUserExpCredits(userId, updated.experience);
+
+    // 👇 notify newly added line managers
+    await notifyNewLineManagers(userId, updated.experience, oldManagersMap);
 
     return res.status(200).json({
       message: "Experience updated (existing rows locked; new rows added)",
@@ -1581,4 +1607,124 @@ exports.profileChat = async (req, res) => {
   }
 };
 
+/* =========================
+   HELPER: Notify newly added line managers
+   ========================= */
+async function notifyNewLineManagers(userId, updatedExperience, oldManagersMap) {
+  try {
+    const requestingUser = await User.findById(userId)
+      .select("firstName lastName")
+      .lean();
+    const userName = requestingUser
+      ? `${requestingUser.firstName || ""} ${requestingUser.lastName || ""}`.trim()
+      : "Someone";
 
+    const notifications = [];
+
+    for (const row of updatedExperience) {
+      const newManagers = (row.lineManagers || []).map(String);
+      const oldManagers = row._id ? oldManagersMap.get(String(row._id)) || [] : [];
+      const oldSet = new Set(oldManagers);
+
+      const added = newManagers.filter((id) => !oldSet.has(id));
+      if (!added.length) continue;
+
+      for (const managerId of added) {
+        notifications.push({
+          userId: managerId,
+          type: "line_manager_added",
+          message: `${userName} has added you as a Line Manager at ${row.company || "a company"}.`,
+          metadata: {
+            fromUserId: userId,
+            companyName: row.company || "",
+            experienceId: String(row._id || ""),
+          },
+        });
+      }
+    }
+
+    if (notifications.length) {
+      await Notification.insertMany(notifications);
+    }
+  } catch (err) {
+    console.error("notifyNewLineManagers error:", err);
+  }
+}
+
+/* =========================
+   GET LINE MANAGER CANDIDATES
+   ========================= */
+exports.getLineManagerCandidates = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { company, startDate, endDate } = req.query;
+
+    if (!company) {
+      return res.status(400).json({ error: "company is required" });
+    }
+    if (!startDate) {
+      return res.status(400).json({ error: "startDate is required" });
+    }
+
+    const companyKey = normalizeCompany(company);
+    if (!companyKey) {
+      return res.status(400).json({ error: "Invalid company name" });
+    }
+
+    const profiles = await Profile.find({
+      user: { $ne: new ObjectId(userId) },
+      "experience.companyKey": companyKey,
+    })
+      .populate("user", "firstName lastName")
+      .lean();
+
+    const candidates = [];
+
+    for (const profile of profiles) {
+      const matchingExps = (profile.experience || []).filter(
+        (exp) =>
+          (exp.companyKey || normalizeCompany(exp.company)) === companyKey
+      );
+
+      const hasOverlap = matchingExps.some((exp) => {
+        const overlapStart = Math.max(
+          new Date(startDate).getTime(),
+          new Date(exp.startDate).getTime()
+        );
+        const overlapEnd = Math.min(
+          endDate ? new Date(endDate).getTime() : Date.now(),
+          exp.endDate ? new Date(exp.endDate).getTime() : Date.now()
+        );
+        if (overlapEnd <= overlapStart) return false;
+        return (overlapEnd - overlapStart) / (1000 * 60 * 60 * 24) >= 5;
+      });
+
+      if (hasOverlap) {
+        const bestExp = matchingExps.sort((a, b) => {
+          const da = new Date(a.endDate || Date.now()).getTime();
+          const db = new Date(b.endDate || Date.now()).getTime();
+          return db - da;
+        })[0];
+
+        const userDoc = profile.user;
+        const name = userDoc
+          ? `${userDoc.firstName || ""} ${userDoc.lastName || ""}`.trim()
+          : profile.name || "Unknown";
+
+        candidates.push({
+          userId:
+            typeof profile.user === "object"
+              ? profile.user._id
+              : profile.user,
+          name,
+          jobTitle: bestExp?.jobTitle || "",
+        });
+      }
+    }
+
+    return res.status(200).json({ candidates });
+  } catch (err) {
+    console.error("getLineManagerCandidates error:", err);
+    return res.status(500).json({ error: "Failed to fetch candidates" });
+  }
+};
