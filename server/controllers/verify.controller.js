@@ -14,11 +14,11 @@ const normalizeInstitute = normalize;
 const normalizeCompany = normalize;
 
 /**
- * Returns approximate overlap in months between two date ranges.
+ * Returns overlap in days between two date ranges.
  * A null/undefined end date is treated as "ongoing" (today).
  * Returns 0 if no overlap or if either start date is missing.
  */
-const overlapMonths = (startA, endA, startB, endB) => {
+const overlapDays = (startA, endA, startB, endB) => {
   if (!startA || !startB) return 0;
   const s = Math.max(new Date(startA).getTime(), new Date(startB).getTime());
   const e = Math.min(
@@ -26,7 +26,7 @@ const overlapMonths = (startA, endA, startB, endB) => {
     endB ? new Date(endB).getTime() : Date.now()
   );
   if (e <= s) return 0;
-  return (e - s) / (1000 * 60 * 60 * 24 * 30.44);
+  return (e - s) / (1000 * 60 * 60 * 24);
 };
 
 
@@ -100,13 +100,13 @@ exports.verifyEducation = async (req, res) => {
     }
 
     const hasOverlap = matchingRows.some(
-      (row) => overlapMonths(row.startDate, row.endDate, edu.startDate, edu.endDate) >= 1
+      (row) => overlapDays(row.startDate, row.endDate, edu.startDate, edu.endDate) >= 30
     );
 
     if (!hasOverlap) {
       return res
         .status(403)
-        .json({ message: "Not eligible (no date overlap of at least 1 month at the same institute)" });
+        .json({ message: "Not eligible (no date overlap of at least 30 days at the same institute)" });
     }
 
     // 3) add verification to target row
@@ -260,13 +260,13 @@ exports.verifyExperience = async (req, res) => {
     }
 
     const hasOverlap = matchingRows.some(
-      (row) => overlapMonths(row.startDate, row.endDate, exp.startDate, exp.endDate) >= 1
+      (row) => overlapDays(row.startDate, row.endDate, exp.startDate, exp.endDate) >= 30
     );
 
     if (!hasOverlap) {
       return res
         .status(403)
-        .json({ message: "Not eligible (no date overlap of at least 1 month at the same company)" });
+        .json({ message: "Not eligible (no date overlap of at least 30 days at the same company)" });
     }
 
     // 3) add verification to target row
@@ -418,13 +418,13 @@ exports.verifyProject = async (req, res) => {
     }
 
     const hasOverlap = matchingRows.some(
-      (row) => overlapMonths(row.startDate, row.endDate, project.startDate, project.endDate) >= 1
+      (row) => overlapDays(row.startDate, row.endDate, project.startDate, project.endDate) >= 30
     );
 
     if (!hasOverlap) {
       return res
         .status(403)
-        .json({ message: "Not eligible (no date overlap of at least 1 month at the same company)" });
+        .json({ message: "Not eligible (no date overlap of at least 30 days at the same company)" });
     }
 
     // add verification to target row

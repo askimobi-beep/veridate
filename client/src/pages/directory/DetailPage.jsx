@@ -137,7 +137,7 @@ const creditsToMap = (arr, keyField) => {
 };
 
 // === status helpers for verification ===
-function overlapMonths(startA, endA, startB, endB) {
+function overlapDays(startA, endA, startB, endB) {
   if (!startA || !startB) return 0;
   const s = Math.max(new Date(startA).getTime(), new Date(startB).getTime());
   const e = Math.min(
@@ -145,7 +145,7 @@ function overlapMonths(startA, endA, startB, endB) {
     endB ? new Date(endB).getTime() : Date.now()
   );
   if (e <= s) return 0;
-  return (e - s) / (1000 * 60 * 60 * 24 * 30.44);
+  return (e - s) / (1000 * 60 * 60 * 24);
 }
 
 function eduStatus({ row, meId, meProfile }) {
@@ -163,7 +163,7 @@ function eduStatus({ row, meId, meProfile }) {
   if (!matchingRows.length) return "ineligible";
 
   const hasOverlap = matchingRows.some(
-    (e) => overlapMonths(e.startDate, e.endDate, row.startDate, row.endDate) >= 1
+    (e) => overlapDays(e.startDate, e.endDate, row.startDate, row.endDate) >= 30
   );
   if (!hasOverlap) return "no-overlap";
 
@@ -185,7 +185,7 @@ function expStatus({ row, meId, meProfile }) {
   if (!matchingRows.length) return "ineligible";
 
   const hasOverlap = matchingRows.some(
-    (e) => overlapMonths(e.startDate, e.endDate, row.startDate, row.endDate) >= 1
+    (e) => overlapDays(e.startDate, e.endDate, row.startDate, row.endDate) >= 30
   );
   if (!hasOverlap) return "no-overlap";
 
@@ -207,7 +207,7 @@ function projectStatus({ row, meId, meProfile }) {
   if (!matchingRows.length) return "ineligible";
 
   const hasOverlap = matchingRows.some(
-    (e) => overlapMonths(e.startDate, e.endDate, row.startDate, row.endDate) >= 1
+    (e) => overlapDays(e.startDate, e.endDate, row.startDate, row.endDate) >= 30
   );
   if (!hasOverlap) return "no-overlap";
 
@@ -238,7 +238,7 @@ function getVerifyLabel(type, status, isBusy) {
     return "Veridate";
   }
   if (status === "no-overlap") {
-    return "Unable to veridate: Dates don't overlap by at least 1 month";
+    return "Unable to veridate: Dates don't overlap by at least 30 days";
   }
   if (type === "education") {
     return "Unable to veridate: Education doesn't match";

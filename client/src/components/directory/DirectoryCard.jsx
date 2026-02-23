@@ -88,7 +88,7 @@ const normalize = (s) => (s || "").trim().toLowerCase().replace(/\s+/g, " ");
 const normalizeInstitute = normalize;
 const normalizeCompany = normalize;
 
-const overlapMonths = (startA, endA, startB, endB) => {
+const overlapDays = (startA, endA, startB, endB) => {
   if (!startA || !startB) return 0;
   const s = Math.max(new Date(startA).getTime(), new Date(startB).getTime());
   const e = Math.min(
@@ -96,7 +96,7 @@ const overlapMonths = (startA, endA, startB, endB) => {
     endB ? new Date(endB).getTime() : Date.now()
   );
   if (e <= s) return 0;
-  return (e - s) / (1000 * 60 * 60 * 24 * 30.44);
+  return (e - s) / (1000 * 60 * 60 * 24);
 };
 
 function eduStatus({ row, meId, meProfile }) {
@@ -114,7 +114,7 @@ function eduStatus({ row, meId, meProfile }) {
   if (!matchingRows.length) return "ineligible";
 
   const hasOverlap = matchingRows.some(
-    (e) => overlapMonths(e.startDate, e.endDate, row.startDate, row.endDate) >= 1
+    (e) => overlapDays(e.startDate, e.endDate, row.startDate, row.endDate) >= 30
   );
   if (!hasOverlap) return "no-overlap";
 
@@ -136,7 +136,7 @@ function expStatus({ row, meId, meProfile }) {
   if (!matchingRows.length) return "ineligible";
 
   const hasOverlap = matchingRows.some(
-    (e) => overlapMonths(e.startDate, e.endDate, row.startDate, row.endDate) >= 1
+    (e) => overlapDays(e.startDate, e.endDate, row.startDate, row.endDate) >= 30
   );
   if (!hasOverlap) return "no-overlap";
 
@@ -158,7 +158,7 @@ function projectStatus({ row, meId, meProfile }) {
   if (!matchingRows.length) return "ineligible";
 
   const hasOverlap = matchingRows.some(
-    (e) => overlapMonths(e.startDate, e.endDate, row.startDate, row.endDate) >= 1
+    (e) => overlapDays(e.startDate, e.endDate, row.startDate, row.endDate) >= 30
   );
   if (!hasOverlap) return "no-overlap";
 
