@@ -320,7 +320,7 @@ function VerifyButton({ type, status, isBusy, id, onVerify }) {
   return (
     <button
       type="button"
-      className={`inline-flex items-center rounded-md px-[5px] pt-[5px] pb-[10px] text-xs font-semibold transition disabled:cursor-not-allowed ${
+      className={`inline-flex items-center rounded-md px-[5px] pt-[5px] pb-[5px] text-xs font-semibold transition disabled:cursor-not-allowed ${
         isEligible
           ? "bg-[color:var(--brand-orange)] text-white hover:brightness-110"
           : "bg-transparent text-slate-600 hover:text-slate-800"
