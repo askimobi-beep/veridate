@@ -1413,6 +1413,7 @@ exports.getProfileByUserId = async (req, res) => {
     }
 
     const profile = await Profile.findOne({ user: userId })
+      .populate({ path: "user", select: "firstName lastName" })
       .populate({
         path: "education.verifications.user",
         select: "firstName lastName name email profilePic",
@@ -1434,6 +1435,15 @@ exports.getProfileByUserId = async (req, res) => {
     const redacted = redactPersonalFields(profile);
     redactEduExpArrays(redacted);
     redacted.profilePicUrl = makeFileUrl(req, "profile", redacted.profilePic);
+
+    // Fallback: derive name from User's firstName/lastName if profile.name is unset
+    if (!redacted.name) {
+      const userDoc = profile.user;
+      if (userDoc) {
+        const derived = [userDoc.firstName, userDoc.lastName].filter(Boolean).join(" ").trim();
+        if (derived) redacted.name = derived;
+      }
+    }
 
     return res.status(200).json(redacted);
   } catch (err) {

@@ -2,6 +2,7 @@ import React, { useEffect, useState, useCallback, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import { fetchFeed, createFeedPost, deleteFeedPost } from "@/services/feedService";
+import { fetchMyCompanies } from "@/services/companyService";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
@@ -23,6 +24,7 @@ import {
   Building2,
   PlusSquare,
   ChevronRight,
+  ChevronDown,
   Sparkles,
 } from "lucide-react";
 
@@ -43,7 +45,6 @@ const LEFT_LINKS = [
   { key: "education",  label: "Education",        icon: FileText,     section: "education" },
   { key: "experience", label: "Experience",       icon: Briefcase,    section: "experience" },
   { key: "projects",   label: "Projects",         icon: ClipboardList,section: "projects" },
-  { key: "company",    label: "Company",          icon: Building2,    section: "company" },
 ];
 
 /* ─── helpers ─── */
@@ -68,7 +69,8 @@ function timeAgo(dateStr) {
 /* ═══════════════════════════════════════
    LEFT SIDEBAR
 ═══════════════════════════════════════ */
-function LeftSidebar({ user, apiPicUrl, onNavigate }) {
+function LeftSidebar({ user, apiPicUrl, onNavigate, companies }) {
+  const [companyOpen, setCompanyOpen] = useState(false);
   const displayName =
     [user?.firstName, user?.lastName].filter(Boolean).join(" ").trim() ||
     user?.email || "User";
@@ -120,6 +122,47 @@ function LeftSidebar({ user, apiPicUrl, onNavigate }) {
               <ChevronRight className="h-3 w-3 opacity-30" />
             </button>
           ))}
+
+          {/* Company Page — expandable dropdown */}
+          <div>
+            <button
+              onClick={() => setCompanyOpen((v) => !v)}
+              className="flex w-full items-center gap-2.5 rounded-xl px-2 py-2 text-left text-sm font-medium text-slate-600 transition hover:bg-orange-50 hover:text-[color:var(--brand-orange)]"
+            >
+              <Building2 className="h-4 w-4 shrink-0" />
+              <span className="flex-1 text-xs">Company Page</span>
+              {companyOpen
+                ? <ChevronDown className="h-3 w-3 opacity-40" />
+                : <ChevronRight className="h-3 w-3 opacity-30" />}
+            </button>
+
+            {companyOpen && (
+              <div className="ml-6 mt-0.5 space-y-0.5">
+                {companies && companies.length > 0 ? (
+                  companies.map((co) => (
+                    <button
+                      key={co._id}
+                      onClick={() =>
+                        onNavigate(`/dashboard/profile?section=company&companyId=${co._id}`)
+                      }
+                      className="flex w-full items-center gap-2 rounded-xl px-2 py-1.5 text-left text-xs font-medium text-slate-600 transition hover:bg-orange-50 hover:text-[color:var(--brand-orange)] truncate"
+                    >
+                      <Building2 className="h-3.5 w-3.5 shrink-0 text-slate-400" />
+                      <span className="truncate">{co.name || co.companyName}</span>
+                    </button>
+                  ))
+                ) : (
+                  <button
+                    onClick={() => onNavigate("/dashboard/profile?section=company")}
+                    className="flex w-full items-center gap-2 rounded-xl px-2 py-1.5 text-left text-xs font-medium text-[color:var(--brand-orange)] transition hover:bg-orange-50"
+                  >
+                    <PlusSquare className="h-3.5 w-3.5 shrink-0" />
+                    Create a Company Page
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
         </div>
       </Card>
     </div>
@@ -135,7 +178,7 @@ function RightSidebar({ onNavigate }) {
       {/* Suggested Jobs */}
       <Card className="rounded-2xl border border-white/60 bg-white/80 shadow-sm backdrop-blur-md p-4">
         <div className="flex items-center justify-between mb-3">
-          <p className="text-xs font-semibold text-slate-700 uppercase tracking-wider">Suggested Jobs</p>
+          <p className="text-xs font-semibold text-slate-700 tracking-wide">Suggested Jobs</p>
           <button
             onClick={() => onNavigate("/dashboard/jobs")}
             className="text-[10px] font-medium text-[color:var(--brand-orange)] hover:underline"
@@ -170,7 +213,7 @@ function RightSidebar({ onNavigate }) {
       {/* Suggested Companies */}
       <Card className="rounded-2xl border border-white/60 bg-white/80 shadow-sm backdrop-blur-md p-4">
         <div className="flex items-center justify-between mb-3">
-          <p className="text-xs font-semibold text-slate-700 uppercase tracking-wider">Companies</p>
+          <p className="text-xs font-semibold text-slate-700 tracking-wide">Companies</p>
           <button
             onClick={() => onNavigate("/dashboard/directory")}
             className="text-[10px] font-medium text-[color:var(--brand-orange)] hover:underline"
@@ -202,7 +245,7 @@ function RightSidebar({ onNavigate }) {
       {/* Suggested Connections — future-ready placeholder */}
       <Card className="rounded-2xl border border-white/60 bg-white/80 shadow-sm backdrop-blur-md p-4">
         <div className="flex items-center justify-between mb-3">
-          <p className="text-xs font-semibold text-slate-700 uppercase tracking-wider">People You May Know</p>
+          <p className="text-xs font-semibold text-slate-700 tracking-wide">People You May Know</p>
         </div>
         <div className="flex flex-col items-center justify-center py-4 text-center gap-2">
           <Users className="h-8 w-8 text-slate-200" />
@@ -526,6 +569,7 @@ export default function HomeFeed() {
   const [total,       setTotal]       = useState(0);
   const [loading,     setLoading]     = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
+  const [companies,   setCompanies]   = useState([]);
 
   const composerRef = useRef(null);
   const apiPicUrl   = import.meta.env.VITE_API_PIC_URL || "";
@@ -546,6 +590,10 @@ export default function HomeFeed() {
   }, []);
 
   useEffect(() => { loadFeed(1); }, [loadFeed]);
+
+  useEffect(() => {
+    fetchMyCompanies().then(setCompanies).catch(() => {});
+  }, []);
 
   const handleLoadMore = () => {
     const next = page + 1;
@@ -582,7 +630,7 @@ export default function HomeFeed() {
         {/* ── Left Sidebar ── */}
         <aside className="hidden lg:block">
           <div className="sticky top-24">
-            <LeftSidebar user={user} apiPicUrl={apiPicUrl} onNavigate={navigate} />
+            <LeftSidebar user={user} apiPicUrl={apiPicUrl} onNavigate={navigate} companies={companies} />
           </div>
         </aside>
 

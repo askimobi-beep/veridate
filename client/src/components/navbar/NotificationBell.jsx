@@ -14,7 +14,7 @@ function resolveNotificationRoute(n) {
     const { fromUserId, experienceId } = n.metadata || {};
     const params = new URLSearchParams({ section: "experience" });
     if (experienceId) params.set("experienceId", experienceId);
-    if (fromUserId) return `/dashboard/profile/${fromUserId}?${params}`;
+    if (fromUserId) return `/dashboard/profiles/${fromUserId}?${params}`;
     return `/dashboard/profile?section=experience`;
   }
   return null;

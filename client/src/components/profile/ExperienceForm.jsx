@@ -432,7 +432,7 @@ export default function ExperienceForm({
     return (
       <div className="space-y-1 w-full">
         <Label className="text-sm font-medium text-slate-700 text-left w-full inline-flex items-center gap-2">
-          Reporting Line Manager
+          Line Manager
         </Label>
         <Popover modal={false} open={open} onOpenChange={setOpen}>
           <PopoverTrigger asChild>
@@ -719,8 +719,8 @@ export default function ExperienceForm({
                   disabled={(rowLocked && !allowEdit) || !!exp.isPresent}
                 />
 
-                {/* 5. Reporting Line Manager */}
-                <div className="md:col-span-2">
+                {/* 5. Line Manager + 6. Industry — same row */}
+                <div>
                   <LineManagerSelect
                     company={exp.company}
                     startDate={exp.startDate}
@@ -732,7 +732,6 @@ export default function ExperienceForm({
                   />
                 </div>
 
-                {/* 6. Industry */}
                 <AppSelect
                   name={`industry-${index}`}
                   label="Industry"
@@ -742,6 +741,7 @@ export default function ExperienceForm({
                   }
                   options={industries}
                   disabled={rowLocked}
+                  selectClassName="h-12"
                 />
 
                 {/* 7+8. Job Functions + Skills */}
@@ -772,7 +772,7 @@ export default function ExperienceForm({
                 </div>
 
                 {/* 9. Upload Experience Letter */}
-                <div className="md:col-span-2">
+                <div>
                   <div className="mb-2 flex flex-wrap items-center justify-between gap-3">
                     <label className="text-sm font-medium text-slate-700">
                       Upload Experience Letter

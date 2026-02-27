@@ -140,8 +140,8 @@ function highlightSummaryText(text, phrases) {
 
 function SummaryLoadingState() {
   return (
-    <div className="relative overflow-hidden rounded-2xl border border-[color:var(--brand-orange)]/70 bg-gradient-to-br from-[color:var(--brand-orange)]/80 via-white to-[color:var(--brand-orange)]/60 p-6 shadow-sm">
-      <div className="absolute inset-0 opacity-80 bg-[radial-gradient(circle_at_top_right,_rgba(249,115,22,0.18),_transparent_55%)]" />
+    <div className="relative overflow-hidden rounded-2xl border border-[color:var(--brand-orange)]/20 bg-gradient-to-br from-orange-50 via-white to-orange-50/40 p-6 shadow-sm">
+      <div className="absolute inset-0 opacity-60 bg-[radial-gradient(circle_at_top_right,_rgba(249,115,22,0.08),_transparent_55%)]" />
       <div className="relative space-y-3 text-left">
         <span className="inline-flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.35em] text-[color:var(--brand-orange)]/80">
           <Loader2 className="h-4 w-4 animate-spin text-[color:var(--brand-orange)]/90" />

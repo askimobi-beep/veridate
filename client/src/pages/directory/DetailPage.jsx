@@ -20,6 +20,7 @@ import {
   MapPin,
   Phone,
   FileDown,
+  ShieldCheck,
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -532,7 +533,7 @@ function EducationDetails({ edu, fileUrl }) {
     </div>
   );
 }
-function ExperienceDetails({ exp, fileUrl }) {
+function ExperienceDetails({ exp, fileUrl, verificationIcons }) {
   const companyHref = exp.companyWebsite || undefined;
   const fileHref = exp.experienceLetterFile
     ? fileUrl("experience", exp.experienceLetterFile)
@@ -544,9 +545,12 @@ function ExperienceDetails({ exp, fileUrl }) {
   return (
     <div className="space-y-3 text-left">
       <div>
-        <h4 className="text-[18px] font-semibold text-slate-800">
-          {exp.jobTitle || "Experience"}
-        </h4>
+        <div className="flex items-center gap-2">
+          <h4 className="text-[18px] font-semibold text-slate-800">
+            {exp.jobTitle || "Experience"}
+          </h4>
+          {verificationIcons}
+        </div>
         <div className="mt-1 text-[16px] text-slate-600">
           {exp.company ? (
             <LinkText href={companyHref}>{exp.company}</LinkText>
@@ -1554,7 +1558,7 @@ export default function DetailPage() {
                   <div className="relative rounded-full brand-orange-soft-strong p-1.5 shadow-sm backdrop-blur-sm">
                     <Avatar className="h-20 w-20 rounded-full border border-[color:var(--brand-orange)] shadow-md">
                       {avatarUrl ? (
-                        <AvatarImage src={avatarUrl} alt={fullName} />
+                        <AvatarImage src={avatarUrl} alt={fullName} className="object-cover" />
                       ) : null}
                       <AvatarFallback className="rounded-full brand-orange-soft text-lg font-semibold text-[color:var(--brand-orange)]">
                         {initials(fullName)}
@@ -1760,6 +1764,31 @@ export default function DetailPage() {
                       ? exp.verifications
                       : [];
 
+                    const lineManagerVerified =
+                      Array.isArray(exp.lineManagers) &&
+                      exp.lineManagers.length > 0 &&
+                      Array.isArray(exp.verifiedBy) &&
+                      exp.verifiedBy.some((vid) =>
+                        exp.lineManagers.some(
+                          (lmId) => String(vid) === String(lmId)
+                        )
+                      );
+
+                    const verificationIcons = (cnt > 0 || lineManagerVerified) ? (
+                      <span className="flex items-center gap-1.5">
+                        {cnt > 0 && (
+                          <span title="Veridation" className="cursor-default inline-flex">
+                            <CheckCircle2 className="h-4 w-4 text-[color:var(--brand-orange)]" />
+                          </span>
+                        )}
+                        {lineManagerVerified && (
+                          <span title="Line Manager Verified" className="cursor-default inline-flex">
+                            <ShieldCheck className="h-4 w-4 text-emerald-600" />
+                          </span>
+                        )}
+                      </span>
+                    ) : null;
+
                     return (
                       <SubSection
                         key={String(exp._id)}
@@ -1768,7 +1797,8 @@ export default function DetailPage() {
                           status === "eligible" ? "animated-verify-border" : ""
                         } border-[color:var(--brand-orange)] bg-white shadow-[0_18px_50px_-30px_rgba(15,23,42,0.35)]`}
                       >
-                        <ExperienceDetails exp={exp} fileUrl={fileUrl} />
+                        <ExperienceDetails exp={exp} fileUrl={fileUrl} verificationIcons={verificationIcons} />
+
                         <div className="my-3 h-px bg-slate-200/40" />
                         <div className="grid grid-cols-1 gap-3 md:grid-cols-[minmax(0,320px)_1fr] md:items-start">
                           <div>

@@ -295,7 +295,7 @@ export default function DirectoryCard({
         <div className="flex items-start justify-between gap-4">
           <div className="flex items-start gap-3">
             <Avatar className="h-20 w-20 shrink-0 ring-2 ring-[color:var(--brand-orange)]">
-              <AvatarImage src={profile.profilePicUrl || ""} alt={profile.name} />
+              <AvatarImage src={profile.profilePicUrl || ""} alt={profile.name} className="object-cover" />
               <AvatarFallback>{initials(profile.name)}</AvatarFallback>
             </Avatar>
             <div className="text-left">

@@ -654,7 +654,7 @@ export default function PersonalInformation() {
 
   return (
     <div className="min-h-screen w-full flex items-start justify-center px-4 py-10 relative">
-      <div className="relative z-10 w-full max-w-5xl">
+      <div className="relative z-10 w-full max-w-6xl">
         <ProfileHeader
           user={formData}
           profilePicRef={profilePicRef}
@@ -698,7 +698,7 @@ export default function PersonalInformation() {
 
         <div className="grid gap-6 lg:grid-cols-[280px_minmax(0,1fr)]">
           <aside className="hidden lg:block">
-            <div className="sticky top-24 overflow-visible px-4 pb-12 pt-1">
+            <div className="sticky top-24 overflow-visible pb-12 pt-1">
               <div className="rounded-2xl border border-white/60 bg-white/60 p-4 shadow-[0_22px_50px_-28px_rgba(15,23,42,0.4)] backdrop-blur-md">
                 <div className="sr-only">Profile Sections</div>
                 <div className="space-y-2">
