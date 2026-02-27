@@ -2,7 +2,7 @@ import { Button } from "@/components/ui/button";
 import { useAuth } from "@/context/AuthContext";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useCallback } from "react";
-import { Search, Briefcase } from "lucide-react";
+import { Search } from "lucide-react";
 import logo from "@/assets/logo/logo.png";
 import UserMenu from "@/components/navbar/UserMenu";
 import NotificationBell from "@/components/navbar/NotificationBell";
@@ -47,16 +47,16 @@ export default function Navbar() {
           </div>
 
           {/* Center: Search Candidates + Search Jobs */}
-          <div className="flex items-center justify-center gap-2">
+          <div className="flex items-center justify-center gap-3">
             {canAccessDirectory ? (
               <>
                 <Button
                   type="button"
                   variant="outline"
                   onClick={goDirectory}
-                  className="rounded-full border-[color:var(--brand-orange)] text-[color:var(--brand-orange)] hover:brand-orange-soft gap-2"
+                  className="h-9 w-44 justify-center rounded-full border-[color:var(--brand-orange)] text-[color:var(--brand-orange)] hover:brand-orange-soft gap-2 transition-all duration-200 hover:scale-[1.03] active:scale-[0.97]"
                 >
-                  <Search className="h-4 w-4" />
+                  <Search className="h-4 w-4 shrink-0" />
                   <span className="hidden sm:inline">Search Candidates</span>
                   <span className="sm:hidden">Candidates</span>
                 </Button>
@@ -64,9 +64,9 @@ export default function Navbar() {
                   type="button"
                   variant="outline"
                   onClick={goJobs}
-                  className="rounded-full border-[color:var(--brand-orange)] text-[color:var(--brand-orange)] hover:brand-orange-soft gap-2"
+                  className="h-9 w-44 justify-center rounded-full border-[color:var(--brand-orange)] text-[color:var(--brand-orange)] hover:brand-orange-soft gap-2 transition-all duration-200 hover:scale-[1.03] active:scale-[0.97]"
                 >
-                  <Briefcase className="h-4 w-4" />
+                  <Search className="h-4 w-4 shrink-0" />
                   <span className="hidden sm:inline">Search Jobs</span>
                   <span className="sm:hidden">Jobs</span>
                 </Button>
@@ -79,7 +79,7 @@ export default function Navbar() {
             {!authLoading && user ? (
               <>
                 <NotificationBell />
-                  <UserMenu user={user} onLogout={handleLogout} />
+                <UserMenu user={user} onLogout={handleLogout} />
               </>
             ) : (
               !authLoading && (

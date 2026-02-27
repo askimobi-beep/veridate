@@ -74,7 +74,6 @@ const skillOptions = [
 // fields editable even when row is locked
 const EXPERIENCE_UNLOCKED = new Set([
   "endDate",
-  "companyWebsite",
   "experienceLetterFile",
   "jobFunctions",
   "skills",
@@ -97,7 +96,6 @@ const toggleHidden = (row, key, onUpdate) => {
   onUpdate("hiddenFields", next);
 };
 
-const companyWebsiteRegex = /^https:\/\/[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
 
 export default function ExperienceForm({
   experienceList,
@@ -565,10 +563,6 @@ export default function ExperienceForm({
               ? [...baseCompanies, exp.company]
               : baseCompanies;
 
-          const isCompanyWebsiteValid = companyWebsiteRegex.test(
-            (exp.companyWebsite || "").trim()
-          );
-
           const key = exp.companyKey || norm(exp.company);
           const bucket =
             key && expCreditByKey?.get ? expCreditByKey.get(key) : null;
@@ -638,6 +632,8 @@ export default function ExperienceForm({
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
+
+                {/* 1. Job Title */}
                 <div className="flex flex-col gap-2">
                   <SearchableSelect
                     label="Job Title"
@@ -651,7 +647,7 @@ export default function ExperienceForm({
                   />
                 </div>
 
-                {/* Company (dropdown + optional "Other" input) */}
+                {/* 2. Company */}
                 <div className="flex flex-col gap-2">
                   <AppSelect
                     name={`company-${index}`}
@@ -666,6 +662,7 @@ export default function ExperienceForm({
                   />
                 </div>
 
+                {/* 3. Start Date */}
                 <AppInput
                   name={`startDate-${index}`}
                   label="Start Date"
@@ -678,6 +675,7 @@ export default function ExperienceForm({
                   disabled={rowLocked}
                 />
 
+                {/* 4. End Date / Currently Working */}
                 <AppInput
                   name={`endDate-${index}`}
                   label={
@@ -721,27 +719,20 @@ export default function ExperienceForm({
                   disabled={(rowLocked && !allowEdit) || !!exp.isPresent}
                 />
 
-                <AppInput
-                  name={`companyWebsite-${index}`}
-                  label="Company Website"
-                  type="url"
-                  value={exp.companyWebsite}
-                  onChange={(e) => {
-                    const val = e.target.value.trim();
-                    updateExperience(index, "companyWebsite", val);
-                    updateExperience(
-                      index,
-                      "error_companyWebsite",
-                      val && !companyWebsiteRegex.test(val)
-                        ? "Only valid website URLs allowed (e.g. https://company.com/)"
-                        : ""
-                    );
-                  }}
-                  placeholder="https://company.com"
-                  disabled={rowLocked && !allowEdit}
-                  error={exp.error_companyWebsite}
-                />
+                {/* 5. Reporting Line Manager */}
+                <div className="md:col-span-2">
+                  <LineManagerSelect
+                    company={exp.company}
+                    startDate={exp.startDate}
+                    endDate={exp.endDate}
+                    isPresent={exp.isPresent}
+                    value={exp.lineManagers || []}
+                    onChange={(updated) => updateExperience(index, "lineManagers", updated)}
+                    disabled={rowLocked && !allowEdit}
+                  />
+                </div>
 
+                {/* 6. Industry */}
                 <AppSelect
                   name={`industry-${index}`}
                   label="Industry"
@@ -753,6 +744,7 @@ export default function ExperienceForm({
                   disabled={rowLocked}
                 />
 
+                {/* 7+8. Job Functions + Skills */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:col-span-2">
                   <SearchableMultiSelect
                     label="Job Functions"
@@ -779,7 +771,8 @@ export default function ExperienceForm({
                   />
                 </div>
 
-                <div>
+                {/* 9. Upload Experience Letter */}
+                <div className="md:col-span-2">
                   <div className="mb-2 flex flex-wrap items-center justify-between gap-3">
                     <label className="text-sm font-medium text-slate-700">
                       Upload Experience Letter
@@ -802,7 +795,6 @@ export default function ExperienceForm({
                       />
                     </div>
                   </div>
-
                   <FileUploader
                     ref={(el) => {
                       if (letterRefs?.current) letterRefs.current[index] = el;
@@ -822,19 +814,6 @@ export default function ExperienceForm({
                         ? exp.experienceLetterFile
                         : ""
                     }
-                  />
-                </div>
-
-                {/* Reporting Line Manager */}
-                <div className="md:col-span-2">
-                  <LineManagerSelect
-                    company={exp.company}
-                    startDate={exp.startDate}
-                    endDate={exp.endDate}
-                    isPresent={exp.isPresent}
-                    value={exp.lineManagers || []}
-                    onChange={(updated) => updateExperience(index, "lineManagers", updated)}
-                    disabled={rowLocked && !allowEdit}
                   />
                 </div>
 
@@ -894,20 +873,9 @@ export default function ExperienceForm({
                   ) : (
                     <Button
                       type="button"
-                      disabled={savingThis || !isCompanyWebsiteValid}
+                      disabled={savingThis}
                       onClick={(e) => {
                         e.stopPropagation(); // don't toggle accordion
-
-                        const val = (exp.companyWebsite || "").trim();
-                        if (!companyWebsiteRegex.test(val)) {
-                          updateExperience(
-                            index,
-                            "error_companyWebsite",
-                            "Only valid website URLs allowed (e.g. https://company.com/)"
-                          );
-                          return;
-                        }
-                        updateExperience(index, "error_companyWebsite", "");
 
                         onAskConfirm?.(
                           `experience:${index}`,

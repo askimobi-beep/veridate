@@ -1633,9 +1633,9 @@ async function notifyNewLineManagers(userId, updatedExperience, oldManagersMap) 
         notifications.push({
           userId: managerId,
           type: "line_manager_added",
-          message: `${userName} has added you as a Line Manager at ${row.company || "a company"}.`,
+          message: `${userName} has added you as a line manager at ${row.company || "a company"}. Click here to verify their experience.`,
           metadata: {
-            fromUserId: userId,
+            fromUserId: String(userId),
             companyName: row.company || "",
             experienceId: String(row._id || ""),
           },

@@ -11,6 +11,11 @@ import {
   Video,
   Building2,
   PlusCircle,
+  ChevronDown,
+  ChevronRight,
+  Eye,
+  List,
+  FilePlus,
 } from "lucide-react";
 
 import ProfileHeader from "@/components/profile/ProfileHeader";
@@ -71,6 +76,20 @@ export default function PersonalInformation() {
   const [companyCreateOpen, setCompanyCreateOpen] = useState(false);
   const [companyPages, setCompanyPages] = useState([]);
   const [companyPagesLoading, setCompanyPagesLoading] = useState(false);
+  const [expandedCompanyId, setExpandedCompanyId] = useState(() => {
+    try { return localStorage.getItem("sidebar_expandedCompanyId") || null; } catch { return null; }
+  });
+
+  const toggleCompany = (companyId) => {
+    setExpandedCompanyId((prev) => {
+      const next = prev === companyId ? null : companyId;
+      try {
+        if (next) localStorage.setItem("sidebar_expandedCompanyId", next);
+        else localStorage.removeItem("sidebar_expandedCompanyId");
+      } catch {}
+      return next;
+    });
+  };
   const [orgOptions, setOrgOptions] = useState({
     companies: [],
     universities: [],
@@ -705,51 +724,88 @@ export default function PersonalInformation() {
                 </div>
               </div>
 
-              {/* Company pages — always expanded, no accordion toggle */}
+              {/* Company pages — collapsible per company */}
               <div className="mt-5 mb-3 space-y-3">
                 {companyPagesLoading ? (
                   <div className="rounded-2xl border border-white/60 bg-white/60 p-4 text-xs text-slate-500 shadow-[0_22px_50px_-28px_rgba(15,23,42,0.4)] backdrop-blur-md">
                     Loading companies...
                   </div>
                 ) : (
-                  companyPages.map((company) => (
-                    <div
-                      key={company._id}
-                      className="rounded-2xl border border-white/60 bg-white/60 p-4 shadow-[0_22px_50px_-28px_rgba(15,23,42,0.4)] backdrop-blur-md"
-                    >
-                      <div className="text-left text-sm font-semibold text-slate-700 px-3 py-1 truncate">
-                        {company.name}
+                  companyPages.map((company) => {
+                    const isMultiple = companyPages.length > 1;
+                    const isExpanded = isMultiple ? expandedCompanyId === company._id : true;
+                    return (
+                      <div
+                        key={company._id}
+                        className="rounded-2xl border border-white/60 bg-white/60 p-4 shadow-[0_22px_50px_-28px_rgba(15,23,42,0.4)] backdrop-blur-md"
+                      >
+                        <div className="space-y-1">
+                          {/* Company name row */}
+                          {isMultiple ? (
+                            <button
+                              type="button"
+                              onClick={() => toggleCompany(company._id)}
+                              className={`flex w-full items-center gap-3 rounded-xl px-3 py-2 text-left text-sm font-semibold transition ${
+                                open === "company" && selectedCompanyId === company._id
+                                  ? "brand-orange-soft text-[color:var(--brand-orange)] shadow-[0_6px_16px_-10px_rgba(251,119,59,0.7)]"
+                                  : "text-slate-700 hover:bg-white/70 hover:text-slate-700"
+                              }`}
+                            >
+                              <Building2 className="h-4 w-4 flex-shrink-0" />
+                              <span className="flex-1 truncate">{company.name}</span>
+                              {isExpanded
+                                ? <ChevronDown className="h-4 w-4 flex-shrink-0 opacity-50" />
+                                : <ChevronRight className="h-4 w-4 flex-shrink-0 opacity-50" />}
+                            </button>
+                          ) : (
+                            <div className={`flex w-full items-center gap-3 rounded-xl px-3 py-2 text-sm font-semibold ${
+                              open === "company" && selectedCompanyId === company._id
+                                ? "brand-orange-soft text-[color:var(--brand-orange)] shadow-[0_6px_16px_-10px_rgba(251,119,59,0.7)]"
+                                : "text-slate-700"
+                            }`}>
+                              <Building2 className="h-4 w-4 flex-shrink-0" />
+                              <span className="flex-1 truncate">{company.name}</span>
+                            </div>
+                          )}
+
+                          {/* Sub-items */}
+                          {isExpanded && (
+                            <div className="space-y-1 pl-2">
+                              <button
+                                type="button"
+                                onClick={() => openCompanySection(company._id, "overview")}
+                                className="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-left text-sm font-semibold transition text-slate-500 hover:bg-white/70 hover:text-slate-700"
+                              >
+                                <Eye className="h-4 w-4" />
+                                <span>View Page</span>
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => openCompanySection(company._id, "jobs")}
+                                className="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-left text-sm font-semibold transition text-slate-500 hover:bg-white/70 hover:text-slate-700"
+                              >
+                                <List className="h-4 w-4" />
+                                <span>View Job Posts</span>
+                              </button>
+                              {canPostJob(company) && (
+                                <button
+                                  type="button"
+                                  onClick={() => openCompanySection(company._id, "create")}
+                                  className="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-left text-sm font-semibold transition text-slate-500 hover:bg-white/70 hover:text-slate-700"
+                                >
+                                  <FilePlus className="h-4 w-4" />
+                                  <span>Post a Job</span>
+                                </button>
+                              )}
+                            </div>
+                          )}
+                        </div>
                       </div>
-                      <div className="mt-2 mb-1 space-y-1.5 pl-2 pr-1">
-                        <button
-                          type="button"
-                          onClick={() => openCompanySection(company._id, "overview")}
-                          className="flex w-full rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-left text-xs font-semibold text-slate-700 transition hover:border-[color:var(--brand-orange)] hover:text-[color:var(--brand-orange)]"
-                        >
-                          View Page
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => openCompanySection(company._id, "jobs")}
-                          className="flex w-full rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-left text-xs font-semibold text-slate-700 transition hover:border-[color:var(--brand-orange)] hover:text-[color:var(--brand-orange)]"
-                        >
-                          View Job Posts
-                        </button>
-                        {canPostJob(company) ? (
-                          <button
-                            type="button"
-                            onClick={() => openCompanySection(company._id, "create")}
-                            className="flex w-full rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-left text-xs font-semibold text-slate-700 transition hover:border-[color:var(--brand-orange)] hover:text-[color:var(--brand-orange)]"
-                          >
-                            Post a Job
-                          </button>
-                        ) : null}
-                      </div>
-                    </div>
-                  ))
+                    );
+                  })
                 )}
 
-                <div className="rounded-2xl border border-white/60 bg-white/60 p-4 shadow-[0_22px_50px_-28px_rgba(15,23,42,0.4)] backdrop-blur-md space-y-1.5">
+                <div className="rounded-2xl border border-white/60 bg-white/60 p-4 shadow-[0_22px_50px_-28px_rgba(15,23,42,0.4)] backdrop-blur-md space-y-1">
                   <button
                     type="button"
                     onClick={() => {
@@ -768,9 +824,9 @@ export default function PersonalInformation() {
                         ? "You already have a pending company page request."
                         : "Create a Company Page"
                     }
-                    className={`flex h-9 w-full items-center gap-2 rounded-xl border border-transparent px-3 text-left text-sm font-semibold transition ${
+                    className={`flex w-full items-center gap-3 rounded-xl px-3 py-2 text-left text-sm font-semibold transition ${
                       hasPendingCompanyRequest
-                        ? "cursor-not-allowed opacity-50"
+                        ? "cursor-not-allowed opacity-50 text-slate-500"
                         : open === "company" && companyCreateOpen
                         ? "brand-orange-soft text-[color:var(--brand-orange)] shadow-[0_6px_16px_-10px_rgba(251,119,59,0.7)]"
                         : "text-slate-500 hover:bg-white/70 hover:text-slate-700"
@@ -780,26 +836,28 @@ export default function PersonalInformation() {
                     <span>Create a Company Page</span>
                   </button>
 
-                  {!companyPages.length && !companyPagesLoading ? (
+                  {!companyPages.length && !companyPagesLoading && (
                     <>
                       <button
                         type="button"
                         disabled
                         title="Create a Company Page first"
-                        className="flex w-full rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1.5 text-left text-xs font-semibold text-slate-400 cursor-not-allowed"
+                        className="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-left text-sm font-semibold opacity-40 cursor-not-allowed text-slate-400"
                       >
-                        View Job Posts
+                        <List className="h-4 w-4" />
+                        <span>View Job Posts</span>
                       </button>
                       <button
                         type="button"
                         disabled
                         title="Create a Company Page first"
-                        className="flex w-full rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1.5 text-left text-xs font-semibold text-slate-400 cursor-not-allowed"
+                        className="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-left text-sm font-semibold opacity-40 cursor-not-allowed text-slate-400"
                       >
-                        Post a Job
+                        <FilePlus className="h-4 w-4" />
+                        <span>Post a Job</span>
                       </button>
                     </>
-                  ) : null}
+                  )}
                 </div>
               </div>
             </div>

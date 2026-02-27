@@ -1,11 +1,24 @@
 import { useEffect, useRef, useState, useCallback } from "react";
+import { useNavigate } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
-import { Bell, Check, CheckCheck, UserPlus } from "lucide-react";
+import { Bell, CheckCheck, UserPlus } from "lucide-react";
 import {
   fetchNotifications,
   markNotificationRead,
   markAllNotificationsRead,
 } from "@/services/notificationService";
+
+/* Route to navigate to when a notification type is clicked */
+function resolveNotificationRoute(n) {
+  if (n.type === "line_manager_added") {
+    const { fromUserId, experienceId } = n.metadata || {};
+    const params = new URLSearchParams({ section: "experience" });
+    if (experienceId) params.set("experienceId", experienceId);
+    if (fromUserId) return `/dashboard/profile/${fromUserId}?${params}`;
+    return `/dashboard/profile?section=experience`;
+  }
+  return null;
+}
 
 /* ── helpers ── */
 function timeAgo(dateStr) {
@@ -28,6 +41,7 @@ const ICON_MAP = {
 
 /* ── component ── */
 export default function NotificationBell() {
+  const navigate = useNavigate();
   const [open, setOpen] = useState(false);
   const [notifications, setNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
@@ -96,15 +110,21 @@ export default function NotificationBell() {
 
   /* ── actions ── */
   const handleRead = async (n) => {
-    if (n.read) return;
     try {
-      await markNotificationRead(n._id);
-      setNotifications((prev) =>
-        prev.map((x) => (x._id === n._id ? { ...x, read: true } : x)),
-      );
-      setUnreadCount((c) => Math.max(0, c - 1));
+      if (!n.read) {
+        await markNotificationRead(n._id);
+        setNotifications((prev) =>
+          prev.map((x) => (x._id === n._id ? { ...x, read: true } : x)),
+        );
+        setUnreadCount((c) => Math.max(0, c - 1));
+      }
     } catch (err) {
       console.error(err);
+    }
+    const route = resolveNotificationRoute(n);
+    if (route) {
+      setOpen(false);
+      navigate(route);
     }
   };
 
