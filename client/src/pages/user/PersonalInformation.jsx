@@ -11,6 +11,8 @@ import {
   Video,
   Building2,
   PlusCircle,
+  Plus,
+  Minus,
   ChevronDown,
   ChevronRight,
   Eye,
@@ -627,6 +629,9 @@ export default function PersonalInformation() {
     if (section && allowed.includes(section)) {
       setOpen((prev) => (prev === section ? prev : section));
     }
+    if (section === "company" && searchParams.get("create") === "true") {
+      setCompanyCreateOpen(true);
+    }
   }, [searchParams]);
 
   useEffect(() => {
@@ -754,8 +759,8 @@ export default function PersonalInformation() {
                               <Building2 className="h-4 w-4 flex-shrink-0" />
                               <span className="flex-1 truncate">{company.name}</span>
                               {isExpanded
-                                ? <ChevronDown className="h-4 w-4 flex-shrink-0 opacity-50" />
-                                : <ChevronRight className="h-4 w-4 flex-shrink-0 opacity-50" />}
+                                ? <Minus className="h-3.5 w-3.5 flex-shrink-0 opacity-50" />
+                                : <Plus className="h-3.5 w-3.5 flex-shrink-0 opacity-50" />}
                             </button>
                           ) : (
                             <div className={`flex w-full items-center gap-3 rounded-xl px-3 py-2 text-sm font-semibold ${
@@ -770,7 +775,7 @@ export default function PersonalInformation() {
 
                           {/* Sub-items */}
                           {isExpanded && (
-                            <div className="space-y-1 pl-2">
+                            <div className="space-y-1">
                               <button
                                 type="button"
                                 onClick={() => openCompanySection(company._id, "overview")}

@@ -8,7 +8,7 @@ import { Card } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
-  Briefcase,
+  BriefcaseBusiness as Briefcase,
   Award,
   FolderKanban,
   GraduationCap,
@@ -25,6 +25,12 @@ import {
   PlusSquare,
   ChevronRight,
   ChevronDown,
+  Plus,
+  Minus,
+  Eye,
+  List,
+  Mic,
+  Video,
   Sparkles,
 } from "lucide-react";
 
@@ -45,6 +51,8 @@ const LEFT_LINKS = [
   { key: "education",  label: "Education",        icon: FileText,     section: "education" },
   { key: "experience", label: "Experience",       icon: Briefcase,    section: "experience" },
   { key: "projects",   label: "Projects",         icon: ClipboardList,section: "projects" },
+  { key: "audio",      label: "Audio Profile",    icon: Mic,          section: "audio" },
+  { key: "video",      label: "Video Profile",    icon: Video,        section: "video" },
 ];
 
 /* ─── helpers ─── */
@@ -70,15 +78,20 @@ function timeAgo(dateStr) {
    LEFT SIDEBAR
 ═══════════════════════════════════════ */
 function LeftSidebar({ user, apiPicUrl, onNavigate, companies }) {
-  const [companyOpen, setCompanyOpen] = useState(false);
+  const [expandedCompanyId, setExpandedCompanyId] = useState(null);
   const displayName =
     [user?.firstName, user?.lastName].filter(Boolean).join(" ").trim() ||
     user?.email || "User";
 
+  const isMultiple = companies && companies.length > 1;
+
+  const toggleCompany = (id) =>
+    setExpandedCompanyId((prev) => (prev === id ? null : id));
+
   return (
     <div className="space-y-3">
       {/* Profile card */}
-      <Card className="rounded-2xl border border-white/60 bg-white/80 shadow-sm backdrop-blur-md overflow-hidden">
+      <Card className="rounded-2xl border border-white/60 bg-white/60 shadow-[0_22px_50px_-28px_rgba(15,23,42,0.4)] backdrop-blur-md overflow-hidden">
         {/* Banner */}
         <div className="h-14 bg-gradient-to-r from-[color:var(--brand-orange)]/20 to-orange-100/60" />
         <div className="px-4 pb-4 -mt-7">
@@ -105,8 +118,8 @@ function LeftSidebar({ user, apiPicUrl, onNavigate, companies }) {
         </div>
       </Card>
 
-      {/* Quick navigation */}
-      <Card className="rounded-2xl border border-white/60 bg-white/80 shadow-sm backdrop-blur-md p-3">
+      {/* Quick navigation — Profile Sections */}
+      <Card className="rounded-2xl border border-white/60 bg-white/60 shadow-[0_22px_50px_-28px_rgba(15,23,42,0.4)] backdrop-blur-md p-3">
         <p className="px-2 pb-2 text-[10px] font-semibold uppercase tracking-wider text-slate-400 text-left">
           Profile Sections
         </p>
@@ -119,52 +132,80 @@ function LeftSidebar({ user, apiPicUrl, onNavigate, companies }) {
             >
               <Icon className="h-4 w-4 shrink-0" />
               <span className="flex-1 text-xs">{label}</span>
-              <ChevronRight className="h-3 w-3 opacity-30" />
             </button>
           ))}
-
-          {/* Company Page — expandable dropdown */}
-          <div>
-            <button
-              onClick={() => setCompanyOpen((v) => !v)}
-              className="flex w-full items-center gap-2.5 rounded-xl px-2 py-2 text-left text-sm font-medium text-slate-600 transition hover:bg-orange-50 hover:text-[color:var(--brand-orange)]"
-            >
-              <Building2 className="h-4 w-4 shrink-0" />
-              <span className="flex-1 text-xs">Company Page</span>
-              {companyOpen
-                ? <ChevronDown className="h-3 w-3 opacity-40" />
-                : <ChevronRight className="h-3 w-3 opacity-30" />}
-            </button>
-
-            {companyOpen && (
-              <div className="ml-6 mt-0.5 space-y-0.5">
-                {companies && companies.length > 0 ? (
-                  companies.map((co) => (
-                    <button
-                      key={co._id}
-                      onClick={() =>
-                        onNavigate(`/dashboard/profile?section=company&companyId=${co._id}`)
-                      }
-                      className="flex w-full items-center gap-2 rounded-xl px-2 py-1.5 text-left text-xs font-medium text-slate-600 transition hover:bg-orange-50 hover:text-[color:var(--brand-orange)] truncate"
-                    >
-                      <Building2 className="h-3.5 w-3.5 shrink-0 text-slate-400" />
-                      <span className="truncate">{co.name || co.companyName}</span>
-                    </button>
-                  ))
-                ) : (
-                  <button
-                    onClick={() => onNavigate("/dashboard/profile?section=company")}
-                    className="flex w-full items-center gap-2 rounded-xl px-2 py-1.5 text-left text-xs font-medium text-[color:var(--brand-orange)] transition hover:bg-orange-50"
-                  >
-                    <PlusSquare className="h-3.5 w-3.5 shrink-0" />
-                    Create a Company Page
-                  </button>
-                )}
-              </div>
-            )}
-          </div>
         </div>
       </Card>
+
+      {/* Company Page — separate card, styled like /profile sidebar */}
+      <div className="space-y-3">
+        {companies && companies.length > 0 ? (
+          companies.map((co) => {
+            const isExpanded = isMultiple ? expandedCompanyId === co._id : true;
+            const name = co.name || co.companyName || "Company";
+            return (
+              <div
+                key={co._id}
+                className="rounded-2xl border border-white/60 bg-white/60 p-4 shadow-[0_22px_50px_-28px_rgba(15,23,42,0.4)] backdrop-blur-md"
+              >
+                <div className="space-y-1">
+                  {isMultiple ? (
+                    <button
+                      type="button"
+                      onClick={() => toggleCompany(co._id)}
+                      className="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-left text-sm font-semibold transition text-slate-700 hover:bg-white/70"
+                    >
+                      <Building2 className="h-4 w-4 flex-shrink-0" />
+                      <span className="flex-1 truncate">{name}</span>
+                      {isExpanded
+                        ? <Minus className="h-3.5 w-3.5 flex-shrink-0 opacity-50" />
+                        : <Plus className="h-3.5 w-3.5 flex-shrink-0 opacity-50" />}
+                    </button>
+                  ) : (
+                    <div className="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-sm font-semibold text-slate-700">
+                      <Building2 className="h-4 w-4 flex-shrink-0" />
+                      <span className="flex-1 truncate">{name}</span>
+                    </div>
+                  )}
+
+                  {isExpanded && (
+                    <div className="space-y-1">
+                      <button
+                        type="button"
+                        onClick={() => onNavigate(`/dashboard/profile?section=company&companyId=${co._id}&companyTab=overview`)}
+                        className="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-left text-sm font-semibold transition text-slate-500 hover:bg-white/70 hover:text-slate-700"
+                      >
+                        <Eye className="h-4 w-4" />
+                        <span>View Page</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => onNavigate(`/dashboard/profile?section=company&companyId=${co._id}&companyTab=jobs`)}
+                        className="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-left text-sm font-semibold transition text-slate-500 hover:bg-white/70 hover:text-slate-700"
+                      >
+                        <List className="h-4 w-4" />
+                        <span>View Job Posts</span>
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </div>
+            );
+          })
+        ) : null}
+
+        {/* Create a Company Page — always visible */}
+        <div className="rounded-2xl border border-white/60 bg-white/60 p-4 shadow-[0_22px_50px_-28px_rgba(15,23,42,0.4)] backdrop-blur-md">
+          <button
+            type="button"
+            onClick={() => onNavigate("/dashboard/profile?section=company&create=true")}
+            className="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-left text-sm font-semibold transition text-slate-500 hover:bg-white/70 hover:text-slate-700"
+          >
+            <PlusSquare className="h-4 w-4" />
+            <span>Create a Company Page</span>
+          </button>
+        </div>
+      </div>
     </div>
   );
 }
