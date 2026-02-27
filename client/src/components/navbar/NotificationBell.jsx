@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
-import { Bell, CheckCheck, UserPlus } from "lucide-react";
+import { Bell, CheckCheck, UserPlus, ThumbsUp, MessageCircle } from "lucide-react";
 import {
   fetchNotifications,
   markNotificationRead,
@@ -16,6 +16,9 @@ function resolveNotificationRoute(n) {
     if (experienceId) params.set("experienceId", experienceId);
     if (fromUserId) return `/dashboard/profiles/${fromUserId}?${params}`;
     return `/dashboard/profile?section=experience`;
+  }
+  if (n.type === "post_like" || n.type === "post_comment") {
+    return `/dashboard`;
   }
   return null;
 }
@@ -37,6 +40,8 @@ function timeAgo(dateStr) {
 
 const ICON_MAP = {
   line_manager_added: UserPlus,
+  post_like: ThumbsUp,
+  post_comment: MessageCircle,
 };
 
 /* ── component ── */

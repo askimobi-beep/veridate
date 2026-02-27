@@ -11,7 +11,7 @@ const NotificationSchema = new mongoose.Schema(
     type: {
       type: String,
       required: true,
-      enum: ["line_manager_added"],
+      enum: ["line_manager_added", "post_like", "post_comment"],
     },
     message: {
       type: String,

@@ -17,6 +17,21 @@ export async function createFeedPost(formData) {
   return res.data;
 }
 
+export async function updateFeedPost(id, text) {
+  const res = await axiosInstance.patch(`feed/${id}`, { text });
+  return res.data;
+}
+
+export async function toggleLikePost(id) {
+  const res = await axiosInstance.post(`feed/${id}/like`);
+  return res.data;
+}
+
+export async function addComment(id, text) {
+  const res = await axiosInstance.post(`feed/${id}/comment`, { text });
+  return res.data;
+}
+
 export async function deleteFeedPost(id) {
   const res = await axiosInstance.delete(`feed/${id}`);
   return res.data;

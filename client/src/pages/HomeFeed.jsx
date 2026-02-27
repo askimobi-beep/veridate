@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useCallback, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
-import { fetchFeed, createFeedPost, deleteFeedPost } from "@/services/feedService";
+import { fetchFeed, createFeedPost, updateFeedPost, toggleLikePost, addComment, deleteFeedPost } from "@/services/feedService";
 import { fetchMyCompanies } from "@/services/companyService";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -32,6 +32,11 @@ import {
   Mic,
   Video,
   Sparkles,
+  MoreHorizontal,
+  Pencil,
+  ThumbsUp,
+  MessageCircle,
+  Send,
 } from "lucide-react";
 
 /* ─── constants ─── */
@@ -527,7 +532,7 @@ function EmptyState({ onCompose }) {
 /* ═══════════════════════════════════════
    FEED POST CARD
 ═══════════════════════════════════════ */
-function PostCard({ post, currentUserId, apiPicUrl, onDelete }) {
+function PostCard({ post, currentUserId, apiPicUrl, onDelete, onEdit }) {
   const postUser = post.user || {};
   const displayName =
     [postUser.firstName, postUser.lastName].filter(Boolean).join(" ").trim() ||
@@ -536,24 +541,103 @@ function PostCard({ post, currentUserId, apiPicUrl, onDelete }) {
   const TypeIcon = ct.icon;
   const isOwner = currentUserId && String(currentUserId) === String(postUser._id);
 
+  const [menuOpen,   setMenuOpen]   = useState(false);
+  const [editing,    setEditing]    = useState(false);
+  const [editText,   setEditText]   = useState(post.text || "");
+  const [saving,     setSaving]     = useState(false);
+  const [likes,      setLikes]      = useState(post.likes || []);
+  const [comments,   setComments]   = useState(post.comments || []);
+  const [showComments, setShowComments] = useState(false);
+  const [commentText,  setCommentText]  = useState("");
+  const [commenting,   setCommenting]   = useState(false);
+  const menuRef    = useRef(null);
+  const commentRef = useRef(null);
+
+  const liked = currentUserId && likes.some((l) => String(l) === String(currentUserId) || String(l?._id) === String(currentUserId));
+
+  useEffect(() => {
+    if (!menuOpen) return;
+    const handler = (e) => {
+      if (menuRef.current && !menuRef.current.contains(e.target)) setMenuOpen(false);
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [menuOpen]);
+
+  const handleSave = async () => {
+    if (!editText.trim()) return;
+    setSaving(true);
+    try {
+      const res = await updateFeedPost(post._id, editText.trim());
+      if (res?.data) onEdit(res.data);
+      setEditing(false);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleLike = async () => {
+    // Optimistic update
+    const alreadyLiked = likes.some(
+      (l) => String(l) === String(currentUserId) || String(l?._id) === String(currentUserId)
+    );
+    setLikes((prev) =>
+      alreadyLiked
+        ? prev.filter((l) => String(l) !== String(currentUserId) && String(l?._id) !== String(currentUserId))
+        : [...prev, currentUserId]
+    );
+    try {
+      const res = await toggleLikePost(post._id);
+      if (res?.likes) setLikes(res.likes);
+    } catch (err) {
+      console.error("Like failed:", err?.response?.data || err.message);
+      // Revert on failure
+      setLikes((prev) =>
+        alreadyLiked
+          ? [...prev, currentUserId]
+          : prev.filter((l) => String(l) !== String(currentUserId))
+      );
+    }
+  };
+
+  const handleComment = async () => {
+    if (!commentText.trim()) return;
+    const text = commentText.trim();
+    setCommentText("");
+    setCommenting(true);
+    try {
+      const res = await addComment(post._id, text);
+      if (res?.comments) setComments(res.comments);
+    } catch (err) {
+      console.error("Comment failed:", err?.response?.data || err.message);
+      setCommentText(text); // restore on failure
+    } finally {
+      setCommenting(false);
+    }
+  };
+
+  const profilePicSrc = postUser.profilePic
+    ? `${apiPicUrl}/uploads/profile/${postUser.profilePic}`
+    : null;
+
   return (
-    <Card className="rounded-2xl border border-white/60 bg-white/80 shadow-sm backdrop-blur-md p-4">
-      <div className="flex items-start justify-between gap-2">
-        <div className="flex items-center gap-3">
-          <Avatar className="h-10 w-10 shrink-0 ring-1 ring-black/5">
-            <AvatarImage
-              src={`${apiPicUrl}/uploads/profile/${postUser.profilePic}`}
-              alt={displayName}
-              className="object-cover"
-            />
+    <Card className="rounded-2xl border border-slate-200/80 bg-white shadow-sm overflow-hidden">
+      {/* Header */}
+      <div className="flex items-start justify-between gap-2 px-4 pt-4 pb-2">
+        <div className="flex items-start gap-3">
+          <Avatar className="h-11 w-11 shrink-0 ring-1 ring-black/5">
+            {profilePicSrc && (
+              <AvatarImage src={profilePicSrc} alt={displayName} className="object-cover" />
+            )}
             <AvatarFallback className="bg-orange-50 text-[color:var(--brand-orange)] font-semibold text-sm">
               {getInitial(displayName)}
             </AvatarFallback>
           </Avatar>
-          <div>
-            <p className="text-sm font-semibold text-slate-800">{displayName}</p>
-            <div className="flex items-center gap-2 mt-0.5">
+          <div className="text-left">
+            <p className="text-sm font-semibold text-slate-800 leading-tight">{displayName}</p>
+            <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
               <span className="text-xs text-slate-400">{timeAgo(post.createdAt)}</span>
+              <span className="text-slate-300">·</span>
               <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold ${ct.color}`}>
                 <TypeIcon className="h-3 w-3" />
                 {ct.label}
@@ -561,37 +645,177 @@ function PostCard({ post, currentUserId, apiPicUrl, onDelete }) {
             </div>
           </div>
         </div>
+
         {isOwner && (
-          <button
-            type="button"
-            onClick={() => onDelete(post._id)}
-            className="p-1.5 rounded-lg text-slate-300 hover:text-red-500 hover:bg-red-50 transition"
-            title="Delete post"
-          >
-            <Trash2 className="h-4 w-4" />
-          </button>
+          <div className="relative shrink-0" ref={menuRef}>
+            <button
+              type="button"
+              onClick={() => setMenuOpen((v) => !v)}
+              className="p-1.5 rounded-full text-slate-400 hover:bg-slate-100 transition"
+            >
+              <MoreHorizontal className="h-5 w-5" />
+            </button>
+            {menuOpen && (
+              <div className="absolute right-0 top-8 z-20 w-44 rounded-xl border border-slate-200 bg-white shadow-lg py-1">
+                <button
+                  type="button"
+                  onClick={() => { setEditing(true); setEditText(post.text || ""); setMenuOpen(false); }}
+                  className="flex w-full items-center gap-2.5 px-3 py-2 text-sm text-slate-700 hover:bg-slate-50 transition"
+                >
+                  <Pencil className="h-4 w-4 text-slate-400" />
+                  Edit post
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { onDelete(post._id); setMenuOpen(false); }}
+                  className="flex w-full items-center gap-2.5 px-3 py-2 text-sm text-red-600 hover:bg-red-50 transition"
+                >
+                  <Trash2 className="h-4 w-4" />
+                  Delete post
+                </button>
+              </div>
+            )}
+          </div>
         )}
       </div>
 
-      <p className="mt-3 text-sm text-slate-700 whitespace-pre-wrap leading-relaxed">
-        {post.text}
-      </p>
+      {/* Body */}
+      <div className="px-4 pb-3 text-left">
+        {editing ? (
+          <div className="space-y-2">
+            <textarea
+              className="w-full rounded-lg border border-slate-200 p-3 text-sm text-slate-700 resize-none focus:outline-none focus:ring-2 focus:ring-[color:var(--brand-orange)]/40 min-h-[80px]"
+              value={editText}
+              onChange={(e) => setEditText(e.target.value)}
+              autoFocus
+            />
+            <div className="flex items-center gap-2 justify-end">
+              <button type="button" onClick={() => setEditing(false)}
+                className="px-3 py-1.5 text-xs font-semibold text-slate-500 rounded-lg hover:bg-slate-100 transition">
+                Cancel
+              </button>
+              <button type="button" onClick={handleSave} disabled={saving || !editText.trim()}
+                className="px-4 py-1.5 text-xs font-semibold text-white bg-[color:var(--brand-orange)] rounded-lg hover:opacity-90 transition disabled:opacity-50">
+                {saving ? "Saving..." : "Save"}
+              </button>
+            </div>
+          </div>
+        ) : (
+          <p className="text-sm text-slate-700 whitespace-pre-wrap leading-relaxed">{post.text}</p>
+        )}
+      </div>
 
+      {/* Media */}
       {post.mediaUrl && (
-        <div className="mt-3 rounded-xl overflow-hidden border border-slate-100">
+        <div className="border-t border-slate-100">
           {post.mediaType === "video" ? (
-            <video
-              src={`${apiPicUrl}/uploads/feed/${post.mediaUrl}`}
-              controls
-              className="w-full max-h-96 object-contain bg-black"
-            />
+            <video src={`${apiPicUrl}/uploads/feed/${post.mediaUrl}`} controls
+              className="w-full max-h-[500px] object-contain bg-black" />
           ) : (
-            <img
-              src={`${apiPicUrl}/uploads/feed/${post.mediaUrl}`}
-              alt=""
-              className="w-full max-h-96 object-cover"
-            />
+            <img src={`${apiPicUrl}/uploads/feed/${post.mediaUrl}`} alt=""
+              className="w-full max-h-[500px] object-cover" />
           )}
+        </div>
+      )}
+
+      {/* Like / comment counts */}
+      {(likes.length > 0 || comments.length > 0) && (
+        <div className="flex items-center justify-between px-4 pt-2 pb-1">
+          {likes.length > 0 && (
+            <span className="flex items-center gap-1 text-xs text-slate-400">
+              <span className="inline-flex h-4 w-4 items-center justify-center rounded-full bg-[color:var(--brand-orange)] text-white">
+                <ThumbsUp className="h-2.5 w-2.5" />
+              </span>
+              {likes.length}
+            </span>
+          )}
+          {comments.length > 0 && (
+            <button
+              type="button"
+              onClick={() => setShowComments((v) => !v)}
+              className="ml-auto text-xs text-slate-400 hover:underline"
+            >
+              {comments.length} comment{comments.length !== 1 ? "s" : ""}
+            </button>
+          )}
+        </div>
+      )}
+
+      {/* Action buttons */}
+      <div className="flex items-center border-t border-slate-100 px-2 py-1">
+        <button
+          type="button"
+          onClick={handleLike}
+          className={`flex flex-1 items-center justify-center gap-1.5 rounded-lg px-3 py-2 text-sm font-semibold transition hover:bg-slate-50 ${
+            liked ? "text-[color:var(--brand-orange)]" : "text-slate-500"
+          }`}
+        >
+          <ThumbsUp className={`h-4 w-4 ${liked ? "fill-[color:var(--brand-orange)]" : ""}`} />
+          Like
+        </button>
+        <button
+          type="button"
+          onClick={() => { setShowComments(true); setTimeout(() => commentRef.current?.focus(), 100); }}
+          className="flex flex-1 items-center justify-center gap-1.5 rounded-lg px-3 py-2 text-sm font-semibold text-slate-500 transition hover:bg-slate-50"
+        >
+          <MessageCircle className="h-4 w-4" />
+          Comment
+        </button>
+      </div>
+
+      {/* Comments section */}
+      {showComments && (
+        <div className="border-t border-slate-100 px-4 pt-3 pb-4 space-y-3">
+          {comments.map((c, i) => {
+            const cUser = c.user || {};
+            const cName = [cUser.firstName, cUser.lastName].filter(Boolean).join(" ").trim() || cUser.email || "User";
+            const cPic = cUser.profilePic ? `${apiPicUrl}/uploads/profile/${cUser.profilePic}` : null;
+            return (
+              <div key={c._id || i} className="flex items-start gap-2.5">
+                <Avatar className="h-8 w-8 shrink-0">
+                  {cPic && <AvatarImage src={cPic} alt={cName} className="object-cover" />}
+                  <AvatarFallback className="bg-orange-50 text-[color:var(--brand-orange)] text-xs font-semibold">
+                    {getInitial(cName)}
+                  </AvatarFallback>
+                </Avatar>
+                <div className="flex-1 rounded-2xl bg-slate-50 px-3 py-2 text-left">
+                  <p className="text-xs font-semibold text-slate-800">{cName}</p>
+                  <p className="text-sm text-slate-700 mt-0.5">{c.text}</p>
+                </div>
+              </div>
+            );
+          })}
+
+          {/* Add comment input */}
+          <div className="flex items-center gap-2.5">
+            <Avatar className="h-8 w-8 shrink-0">
+              {currentUserId && postUser.profilePic && (
+                <AvatarImage src={`${apiPicUrl}/uploads/profile/${postUser.profilePic}`} className="object-cover" />
+              )}
+              <AvatarFallback className="bg-orange-50 text-[color:var(--brand-orange)] text-xs font-semibold">
+                {getInitial(displayName)}
+              </AvatarFallback>
+            </Avatar>
+            <div className="flex flex-1 items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5">
+              <input
+                ref={commentRef}
+                type="text"
+                placeholder="Add a comment..."
+                value={commentText}
+                onChange={(e) => setCommentText(e.target.value)}
+                onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleComment(); } }}
+                className="flex-1 bg-transparent text-sm text-slate-700 outline-none placeholder:text-slate-400"
+              />
+              <button
+                type="button"
+                onClick={handleComment}
+                disabled={commenting || !commentText.trim()}
+                className="text-[color:var(--brand-orange)] disabled:opacity-30 transition hover:opacity-80"
+              >
+                <Send className="h-4 w-4" />
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </Card>
@@ -657,6 +881,10 @@ export default function HomeFeed() {
     }
   };
 
+  const handleEdit = (updatedPost) => {
+    setPosts((prev) => prev.map((p) => p._id === updatedPost._id ? updatedPost : p));
+  };
+
   const scrollToComposer = () => {
     composerRef.current?.scrollIntoView({ behavior: "smooth" });
   };
@@ -700,6 +928,7 @@ export default function HomeFeed() {
                   currentUserId={user?._id}
                   apiPicUrl={apiPicUrl}
                   onDelete={handleDelete}
+                  onEdit={handleEdit}
                 />
               ))}
 
