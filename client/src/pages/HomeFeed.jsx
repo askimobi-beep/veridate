@@ -123,15 +123,15 @@ function LeftSidebar({ user, apiPicUrl, onNavigate, companies }) {
         <p className="px-2 pb-2 text-[10px] font-semibold uppercase tracking-wider text-slate-400 text-left">
           Profile Sections
         </p>
-        <div className="space-y-0.5">
+        <div className="space-y-2">
           {LEFT_LINKS.map(({ key, label, icon: Icon, section }) => (
             <button
               key={key}
               onClick={() => onNavigate(`/dashboard/profile?section=${section}`)}
-              className="flex w-full items-center gap-2.5 rounded-xl px-2 py-2 text-left text-sm font-medium text-slate-600 transition hover:bg-orange-50 hover:text-[color:var(--brand-orange)]"
+              className="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-left text-sm font-semibold text-slate-500 transition hover:bg-white/70 hover:text-slate-700"
             >
               <Icon className="h-4 w-4 shrink-0" />
-              <span className="flex-1 text-xs">{label}</span>
+              <span className="flex-1">{label}</span>
             </button>
           ))}
         </div>
@@ -153,7 +153,7 @@ function LeftSidebar({ user, apiPicUrl, onNavigate, companies }) {
                     <button
                       type="button"
                       onClick={() => toggleCompany(co._id)}
-                      className="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-left text-sm font-semibold transition text-slate-700 hover:bg-white/70"
+                      className="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-left text-base font-semibold transition text-slate-700 hover:bg-white/70"
                     >
                       <Building2 className="h-4 w-4 flex-shrink-0" />
                       <span className="flex-1 truncate">{name}</span>
@@ -162,7 +162,7 @@ function LeftSidebar({ user, apiPicUrl, onNavigate, companies }) {
                         : <Plus className="h-3.5 w-3.5 flex-shrink-0 opacity-50" />}
                     </button>
                   ) : (
-                    <div className="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-sm font-semibold text-slate-700">
+                    <div className="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-base font-semibold text-slate-700">
                       <Building2 className="h-4 w-4 flex-shrink-0" />
                       <span className="flex-1 truncate">{name}</span>
                     </div>

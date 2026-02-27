@@ -750,7 +750,7 @@ export default function PersonalInformation() {
                             <button
                               type="button"
                               onClick={() => toggleCompany(company._id)}
-                              className={`flex w-full items-center gap-3 rounded-xl px-3 py-2 text-left text-sm font-semibold transition ${
+                              className={`flex w-full items-center gap-3 rounded-xl px-3 py-2 text-left text-base font-semibold transition ${
                                 open === "company" && selectedCompanyId === company._id
                                   ? "brand-orange-soft text-[color:var(--brand-orange)] shadow-[0_6px_16px_-10px_rgba(251,119,59,0.7)]"
                                   : "text-slate-700 hover:bg-white/70 hover:text-slate-700"
@@ -763,7 +763,7 @@ export default function PersonalInformation() {
                                 : <Plus className="h-3.5 w-3.5 flex-shrink-0 opacity-50" />}
                             </button>
                           ) : (
-                            <div className={`flex w-full items-center gap-3 rounded-xl px-3 py-2 text-sm font-semibold ${
+                            <div className={`flex w-full items-center gap-3 rounded-xl px-3 py-2 text-base font-semibold ${
                               open === "company" && selectedCompanyId === company._id
                                 ? "brand-orange-soft text-[color:var(--brand-orange)] shadow-[0_6px_16px_-10px_rgba(251,119,59,0.7)]"
                                 : "text-slate-700"
