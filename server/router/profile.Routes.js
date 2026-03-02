@@ -12,7 +12,8 @@ const {
   saveProfilePhoto,
   profileSummary,
   profileChat,
-  getLineManagerCandidates
+  getLineManagerCandidates,
+  getPeopleYouMayKnow
 } = require("../controllers/profile.Controller");
 
 const upload = require("../middlewares/uploadMiddleware");
@@ -72,6 +73,7 @@ router.post("/ai/profile-summary", softAuth, profileSummary);
 router.get("/directory", softAuth, listProfilesPublic);
 router.post("/ai/profile-chat", softAuth, profileChat);
 router.get("/line-manager-candidates", protect, getLineManagerCandidates);
+router.get("/people-you-may-know", protect, getPeopleYouMayKnow);
 router.get("/getonid/:userId", getProfileByUserId);
 router.get("/me", protect, getProfile);
 

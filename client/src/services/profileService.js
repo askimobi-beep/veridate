@@ -40,3 +40,8 @@ export const fetchProfiles = async (params) => {
 
   return { data: normalized, total: res.data?.total || 0 };
 };
+
+export async function fetchPeopleYouMayKnow() {
+  const res = await axiosInstance.get("/profile/people-you-may-know");
+  return res.data?.suggestions || [];
+}

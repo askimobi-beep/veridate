@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import { fetchFeed, createFeedPost, updateFeedPost, toggleLikePost, addComment, deleteFeedPost } from "@/services/feedService";
 import { fetchMyCompanies } from "@/services/companyService";
+import { fetchPeopleYouMayKnow } from "@/services/profileService";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
@@ -37,6 +38,8 @@ import {
   ThumbsUp,
   MessageCircle,
   Send,
+  Link as LinkIcon,
+  Upload,
 } from "lucide-react";
 
 /* ─── constants ─── */
@@ -46,7 +49,6 @@ const CONTENT_TYPES = [
   { value: "project",       label: "Project",       icon: FolderKanban, color: "bg-purple-100 text-purple-700" },
   { value: "degree",        label: "Degree",        icon: GraduationCap,color: "bg-orange-100 text-orange-700" },
   { value: "conference",    label: "Conference",    icon: Users,        color: "bg-pink-100 text-pink-700" },
-  { value: "photo",         label: "Photo",         icon: Camera,       color: "bg-cyan-100 text-cyan-700" },
 ];
 
 const typeMap = Object.fromEntries(CONTENT_TYPES.map((t) => [t.value, t]));
@@ -120,25 +122,6 @@ function LeftSidebar({ user, apiPicUrl, onNavigate, companies }) {
           >
             View Profile
           </button>
-        </div>
-      </Card>
-
-      {/* Quick navigation — Profile Sections */}
-      <Card className="rounded-2xl border border-white/60 bg-white/60 shadow-[0_22px_50px_-28px_rgba(15,23,42,0.4)] backdrop-blur-md p-3">
-        <p className="px-2 pb-2 text-[10px] font-semibold uppercase tracking-wider text-slate-400 text-left">
-          Profile Sections
-        </p>
-        <div className="space-y-2">
-          {LEFT_LINKS.map(({ key, label, icon: Icon, section }) => (
-            <button
-              key={key}
-              onClick={() => onNavigate(`/dashboard/profile?section=${section}`)}
-              className="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-left text-sm font-semibold text-slate-500 transition hover:bg-white/70 hover:text-slate-700"
-            >
-              <Icon className="h-4 w-4 shrink-0" />
-              <span className="flex-1">{label}</span>
-            </button>
-          ))}
         </div>
       </Card>
 
@@ -218,7 +201,7 @@ function LeftSidebar({ user, apiPicUrl, onNavigate, companies }) {
 /* ═══════════════════════════════════════
    RIGHT SIDEBAR
 ═══════════════════════════════════════ */
-function RightSidebar({ onNavigate }) {
+function RightSidebar({ onNavigate, suggestions = [], apiPicUrl = "" }) {
   return (
     <div className="space-y-3">
       {/* Suggested Jobs */}
@@ -288,15 +271,53 @@ function RightSidebar({ onNavigate }) {
         </div>
       </Card>
 
-      {/* Suggested Connections — future-ready placeholder */}
+      {/* People You May Know */}
       <Card className="rounded-2xl border border-white/60 bg-white/80 shadow-sm backdrop-blur-md p-4">
         <div className="flex items-center justify-between mb-3">
           <p className="text-xs font-semibold text-slate-700 tracking-wide">People You May Know</p>
         </div>
-        <div className="flex flex-col items-center justify-center py-4 text-center gap-2">
-          <Users className="h-8 w-8 text-slate-200" />
-          <p className="text-xs text-slate-400">Connections coming soon</p>
-        </div>
+        {suggestions.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-4 text-center gap-2">
+            <Users className="h-8 w-8 text-slate-200" />
+            <p className="text-xs text-slate-400">No suggestions yet</p>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {suggestions.map((s) => {
+              const picSrc = s.profilePic
+                ? `${apiPicUrl}/uploads/profile/${s.profilePic}`
+                : null;
+              const reasonText =
+                s.reason?.type === "company"
+                  ? `Worked at ${s.reason.name}`
+                  : `Studied at ${s.reason.name}`;
+              return (
+                <button
+                  key={s.userId}
+                  onClick={() => onNavigate(`/dashboard/profiles/${s.userId}`)}
+                  className="w-full text-left group"
+                >
+                  <div className="flex items-center gap-2">
+                    <Avatar className="h-8 w-8 shrink-0 ring-1 ring-black/5">
+                      {picSrc && (
+                        <AvatarImage src={picSrc} alt={s.name} className="object-cover" />
+                      )}
+                      <AvatarFallback className="bg-orange-50 text-[color:var(--brand-orange)] text-[10px] font-semibold">
+                        {getInitial(s.name)}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-xs font-semibold text-slate-700 truncate group-hover:text-[color:var(--brand-orange)] transition">
+                        {s.name}
+                      </p>
+                      <p className="text-[10px] text-slate-400 truncate">{reasonText}</p>
+                    </div>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        )}
       </Card>
     </div>
   );
@@ -310,8 +331,14 @@ function PostComposer({ user, apiPicUrl, onPostCreated }) {
   const [selectedType, setSelectedType] = useState("");
   const [postText, setPostText]       = useState("");
   const [mediaFile, setMediaFile]     = useState(null);
+  const [mediaPreview, setMediaPreview] = useState(null);
+  const [linkUrl, setLinkUrl]         = useState("");
   const [submitting, setSubmitting]   = useState(false);
+  const [mediaModal, setMediaModal]   = useState(null);   // "photo" | "video" | null
+  const [linkModal, setLinkModal]     = useState(false);
+  const [linkInput, setLinkInput]     = useState("");
   const textareaRef                   = useRef(null);
+  const fileInputRef                  = useRef(null);
 
   const displayName =
     [user?.firstName, user?.lastName].filter(Boolean).join(" ").trim() || "User";
@@ -327,19 +354,47 @@ function PostComposer({ user, apiPicUrl, onPostCreated }) {
   useEffect(() => {
     const handler = (e) => {
       if (!open) return;
-      if (e.key === "Escape") { handleCancel(); }
+      if (e.key === "Escape") {
+        if (mediaModal) { setMediaModal(null); return; }
+        if (linkModal) { setLinkModal(false); return; }
+        handleCancel();
+      }
       if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) { handleSubmit(); }
     };
     document.addEventListener("keydown", handler);
     return () => document.removeEventListener("keydown", handler);
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open, selectedType, postText, mediaFile]);
+  }, [open, selectedType, postText, mediaFile, mediaModal, linkModal]);
 
   const handleCancel = () => {
     setOpen(false);
     setSelectedType("");
     setPostText("");
     setMediaFile(null);
+    setMediaPreview(null);
+    setLinkUrl("");
+    setMediaModal(null);
+    setLinkModal(false);
+    setLinkInput("");
+  };
+
+  const handleMediaSelect = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setMediaFile(file);
+    setMediaPreview(URL.createObjectURL(file));
+    setMediaModal(null);
+    setOpen(true);
+  };
+
+  const handleLinkAdd = () => {
+    if (!linkInput.trim()) return;
+    let url = linkInput.trim();
+    if (!/^https?:\/\//i.test(url)) url = "https://" + url;
+    setLinkUrl(url);
+    setLinkModal(false);
+    setLinkInput("");
+    setOpen(true);
   };
 
   const handleSubmit = async () => {
@@ -348,7 +403,7 @@ function PostComposer({ user, apiPicUrl, onPostCreated }) {
     try {
       const fd = new FormData();
       fd.append("contentType", selectedType);
-      fd.append("text", postText.trim());
+      fd.append("text", linkUrl ? `${postText.trim()}\n\n${linkUrl}` : postText.trim());
       if (mediaFile) fd.append("media", mediaFile);
       const res = await createFeedPost(fd);
       if (res?.data) onPostCreated(res.data);
@@ -360,146 +415,295 @@ function PostComposer({ user, apiPicUrl, onPostCreated }) {
     }
   };
 
-  return (
-    <Card className="rounded-2xl border border-white/60 bg-white/80 shadow-sm backdrop-blur-md p-4">
-      {!open ? (
-        /* ── Collapsed trigger ── */
-        <button
-          type="button"
-          onClick={() => setOpen(true)}
-          className="w-full flex items-center gap-3 text-left group"
-        >
-          <Avatar className="h-10 w-10 shrink-0 ring-1 ring-black/5">
-            <AvatarImage
-              src={`${apiPicUrl}/uploads/profile/${user?.profilePic}`}
-              alt={displayName}
-              className="object-cover"
-            />
-            <AvatarFallback className="bg-orange-50 text-[color:var(--brand-orange)] font-semibold text-sm">
-              {getInitial(displayName)}
-            </AvatarFallback>
-          </Avatar>
-          <div className="flex-1 rounded-full border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm text-slate-400 group-hover:border-slate-300 transition">
-            What's new? Share an update...
+  /* ── Media Upload Modal (LinkedIn-style) ── */
+  const MediaUploadModal = () => {
+    if (!mediaModal) return null;
+    const isPhoto = mediaModal === "photo";
+    return (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm" onClick={() => setMediaModal(null)}>
+        <div className="relative w-full max-w-lg mx-4 rounded-2xl bg-white shadow-2xl" onClick={(e) => e.stopPropagation()}>
+          {/* Header */}
+          <div className="flex items-center justify-between border-b border-slate-200 px-6 py-4">
+            <h3 className="text-lg font-semibold text-slate-800">Editor</h3>
+            <button type="button" onClick={() => setMediaModal(null)} className="rounded-full p-1 hover:bg-slate-100 transition">
+              <X className="h-5 w-5 text-slate-500" />
+            </button>
           </div>
-          <div className="hidden sm:flex items-center gap-1 shrink-0">
-            <div className="rounded-full p-2 hover:bg-slate-100 transition">
-              <ImagePlus className="h-4 w-4 text-slate-400" />
+          {/* Body */}
+          <div className="flex flex-col items-center justify-center px-6 py-16 text-center">
+            <div className="mb-4 h-40 w-52">
+              <svg viewBox="0 0 200 150" className="h-full w-full">
+                <rect x="50" y="20" width="100" height="70" rx="6" fill="#f1f5f9" stroke="#cbd5e1" strokeWidth="2"/>
+                <rect x="60" y="30" width="30" height="20" rx="3" fill="#94a3b8"/>
+                <rect x="60" y="55" width="80" height="5" rx="2" fill="#cbd5e1"/>
+                <rect x="60" y="65" width="60" height="5" rx="2" fill="#e2e8f0"/>
+                <circle cx="130" cy="110" r="18" fill="#fed7aa"/>
+                <rect x="122" y="95" width="16" height="20" rx="8" fill="#fdba74"/>
+                <rect x="115" y="110" width="30" height="25" rx="4" fill="#fb923c"/>
+                <rect x="45" y="100" width="20" height="40" rx="3" fill="#e2e8f0"/>
+                <rect x="150" y="105" width="15" height="30" rx="3" fill="#94a3b8"/>
+              </svg>
             </div>
-          </div>
-        </button>
-      ) : (
-        /* ── Expanded composer ── */
-        <div className="space-y-4">
-          {/* User row */}
-          <div className="flex items-center gap-3">
-            <Avatar className="h-10 w-10 shrink-0 ring-1 ring-black/5">
-              <AvatarImage
-                src={`${apiPicUrl}/uploads/profile/${user?.profilePic}`}
-                alt={displayName}
-                className="object-cover"
-              />
-              <AvatarFallback className="bg-orange-50 text-[color:var(--brand-orange)] font-semibold text-sm">
-                {getInitial(displayName)}
-              </AvatarFallback>
-            </Avatar>
-            <div className="text-left">
-              <p className="text-sm font-semibold text-slate-800">{displayName}</p>
-              <p className="text-xs text-slate-400">Share a professional update</p>
-            </div>
-          </div>
-
-          {/* Content type chips */}
-          <div>
-            <p className="text-xs font-medium text-slate-400 mb-2 text-left">Select type</p>
-            <div className="flex flex-wrap gap-2">
-              {CONTENT_TYPES.map((ct) => {
-                const Icon = ct.icon;
-                const isSelected = selectedType === ct.value;
-                return (
-                  <button
-                    key={ct.value}
-                    type="button"
-                    onClick={() => setSelectedType(isSelected ? "" : ct.value)}
-                    className={`flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold border transition ${
-                      isSelected
-                        ? "border-[color:var(--brand-orange)] bg-orange-50 text-[color:var(--brand-orange)]"
-                        : "border-slate-200 bg-white text-slate-600 hover:border-slate-300"
-                    }`}
-                  >
-                    <Icon className="h-3.5 w-3.5" />
-                    {ct.label}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* Textarea */}
-          <Textarea
-            ref={textareaRef}
-            placeholder={
-              selectedType
-                ? `Share your ${typeMap[selectedType]?.label.toLowerCase()} update...`
-                : "What's on your mind?"
-            }
-            value={postText}
-            onChange={(e) => setPostText(e.target.value)}
-            className="min-h-[100px] resize-none text-sm"
-            maxLength={2000}
-          />
-
-          {/* Character count */}
-          <div className="flex items-center justify-between text-[10px] text-slate-400 -mt-2">
-            <span>{postText.length}/2000</span>
-            <span className="hidden sm:inline">Ctrl+Enter to post · Esc to cancel</span>
-          </div>
-
-          {/* Footer actions */}
-          <div className="flex items-center justify-between border-t border-slate-100 pt-3">
-            <label className="flex items-center gap-1.5 cursor-pointer rounded-full border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-500 hover:border-slate-300 transition">
-              <ImagePlus className="h-3.5 w-3.5" />
-              {mediaFile ? (
-                <span className="max-w-[100px] truncate text-[color:var(--brand-orange)]">
-                  {mediaFile.name}
-                </span>
-              ) : (
-                "Add Photo/Video"
-              )}
+            <h4 className="text-lg font-semibold text-slate-800 mb-1">Select files to begin</h4>
+            <p className="text-sm text-slate-400 mb-6">
+              {isPhoto ? "Share images in your post." : "Share a single video in your post."}
+            </p>
+            <label className="cursor-pointer rounded-full bg-[color:var(--brand-orange)] px-6 py-2.5 text-sm font-semibold text-white hover:brightness-110 transition">
+              <Upload className="inline h-4 w-4 mr-2 -mt-0.5" />
+              Upload from computer
               <input
+                ref={fileInputRef}
                 type="file"
-                accept="image/*,video/*"
+                accept={isPhoto ? "image/*" : "video/*"}
                 className="hidden"
-                onChange={(e) => setMediaFile(e.target.files?.[0] || null)}
+                onChange={handleMediaSelect}
               />
             </label>
-            {mediaFile && (
-              <button
-                type="button"
-                onClick={() => setMediaFile(null)}
-                className="ml-1 text-slate-400 hover:text-red-500 transition"
-              >
-                <X className="h-3.5 w-3.5" />
-              </button>
-            )}
-
-            <div className="flex items-center gap-2 ml-auto">
-              <Button variant="ghost" size="sm" onClick={handleCancel} className="text-slate-500">
-                Cancel
-              </Button>
-              <Button
-                size="sm"
-                disabled={!selectedType || !postText.trim() || submitting}
-                onClick={handleSubmit}
-                className="bg-[color:var(--brand-orange)] text-white hover:brightness-110 px-5"
-              >
-                {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : "Post"}
-              </Button>
-            </div>
+          </div>
+          {/* Footer */}
+          <div className="flex justify-end border-t border-slate-200 px-6 py-3">
+            <button type="button" disabled className="rounded-full bg-slate-100 px-5 py-2 text-sm font-semibold text-slate-400 cursor-not-allowed">
+              Next
+            </button>
           </div>
         </div>
-      )}
-    </Card>
+      </div>
+    );
+  };
+
+  /* ── Link Modal ── */
+  const LinkModal = () => {
+    if (!linkModal) return null;
+    return (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm" onClick={() => setLinkModal(false)}>
+        <div className="relative w-full max-w-md mx-4 rounded-2xl bg-white shadow-2xl" onClick={(e) => e.stopPropagation()}>
+          {/* Header */}
+          <div className="flex items-center justify-between border-b border-slate-200 px-6 py-4">
+            <h3 className="text-lg font-semibold text-slate-800">Add a link</h3>
+            <button type="button" onClick={() => setLinkModal(false)} className="rounded-full p-1 hover:bg-slate-100 transition">
+              <X className="h-5 w-5 text-slate-500" />
+            </button>
+          </div>
+          {/* Body */}
+          <div className="px-6 py-6 space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1.5 text-left">URL</label>
+              <input
+                type="url"
+                placeholder="https://example.com"
+                value={linkInput}
+                onChange={(e) => setLinkInput(e.target.value)}
+                onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); handleLinkAdd(); } }}
+                autoFocus
+                className="w-full rounded-lg border border-slate-200 px-4 py-2.5 text-sm text-slate-700 outline-none focus:border-[color:var(--brand-orange)] focus:ring-2 focus:ring-[color:var(--brand-orange)]/20 transition"
+              />
+            </div>
+          </div>
+          {/* Footer */}
+          <div className="flex justify-end gap-2 border-t border-slate-200 px-6 py-3">
+            <button type="button" onClick={() => setLinkModal(false)} className="rounded-full px-5 py-2 text-sm font-semibold text-slate-500 hover:bg-slate-100 transition">
+              Cancel
+            </button>
+            <button
+              type="button"
+              onClick={handleLinkAdd}
+              disabled={!linkInput.trim()}
+              className="rounded-full bg-[color:var(--brand-orange)] px-5 py-2 text-sm font-semibold text-white hover:brightness-110 transition disabled:opacity-50"
+            >
+              Add
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  return (
+    <>
+      <MediaUploadModal />
+      <LinkModal />
+      <Card className="rounded-2xl border border-white/60 bg-white/80 shadow-sm backdrop-blur-md p-4">
+        {!open ? (
+          /* ── Collapsed trigger — LinkedIn style ── */
+          <div className="space-y-3">
+            <button
+              type="button"
+              onClick={() => setOpen(true)}
+              className="w-full flex items-center gap-3 text-left group"
+            >
+              <Avatar className="h-10 w-10 shrink-0 ring-1 ring-black/5">
+                <AvatarImage
+                  src={`${apiPicUrl}/uploads/profile/${user?.profilePic}`}
+                  alt={displayName}
+                  className="object-cover"
+                />
+                <AvatarFallback className="bg-orange-50 text-[color:var(--brand-orange)] font-semibold text-sm">
+                  {getInitial(displayName)}
+                </AvatarFallback>
+              </Avatar>
+              <div className="flex-1 rounded-full border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm text-slate-400 group-hover:border-slate-300 transition">
+                What's new? Share an update...
+              </div>
+            </button>
+            <div className="flex items-center justify-around border-t border-slate-100 pt-2">
+              <button
+                type="button"
+                onClick={() => setMediaModal("photo")}
+                className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-50 transition"
+              >
+                <Camera className="h-5 w-5 text-blue-500" />
+                Photo
+              </button>
+              <button
+                type="button"
+                onClick={() => setMediaModal("video")}
+                className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-50 transition"
+              >
+                <Video className="h-5 w-5 text-green-600" />
+                Video
+              </button>
+              <button
+                type="button"
+                onClick={() => setLinkModal(true)}
+                className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-50 transition"
+              >
+                <LinkIcon className="h-5 w-5 text-[color:var(--brand-orange)]" />
+                Link
+              </button>
+            </div>
+          </div>
+        ) : (
+          /* ── Expanded composer ── */
+          <div className="space-y-4">
+            {/* User row */}
+            <div className="flex items-center gap-3">
+              <Avatar className="h-10 w-10 shrink-0 ring-1 ring-black/5">
+                <AvatarImage
+                  src={`${apiPicUrl}/uploads/profile/${user?.profilePic}`}
+                  alt={displayName}
+                  className="object-cover"
+                />
+                <AvatarFallback className="bg-orange-50 text-[color:var(--brand-orange)] font-semibold text-sm">
+                  {getInitial(displayName)}
+                </AvatarFallback>
+              </Avatar>
+              <div className="text-left">
+                <p className="text-sm font-semibold text-slate-800">{displayName}</p>
+                <p className="text-xs text-slate-400">Share a professional update</p>
+              </div>
+            </div>
+
+            {/* Content type chips */}
+            <div>
+              <p className="text-xs font-medium text-slate-400 mb-2 text-left">Select type</p>
+              <div className="flex flex-wrap gap-2">
+                {CONTENT_TYPES.map((ct) => {
+                  const Icon = ct.icon;
+                  const isSelected = selectedType === ct.value;
+                  return (
+                    <button
+                      key={ct.value}
+                      type="button"
+                      onClick={() => setSelectedType(isSelected ? "" : ct.value)}
+                      className={`flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold border transition ${
+                        isSelected
+                          ? "border-[color:var(--brand-orange)] bg-orange-50 text-[color:var(--brand-orange)]"
+                          : "border-slate-200 bg-white text-slate-600 hover:border-slate-300"
+                      }`}
+                    >
+                      <Icon className="h-3.5 w-3.5" />
+                      {ct.label}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Textarea */}
+            <Textarea
+              ref={textareaRef}
+              placeholder={
+                selectedType
+                  ? `Share your ${typeMap[selectedType]?.label.toLowerCase()} update...`
+                  : "What's new? Share an update..."
+              }
+              value={postText}
+              onChange={(e) => setPostText(e.target.value)}
+              className="min-h-[100px] resize-none text-sm"
+              maxLength={2000}
+            />
+
+            {/* Media preview */}
+            {mediaPreview && (
+              <div className="relative rounded-xl border border-slate-200 overflow-hidden">
+                {mediaFile?.type?.startsWith("video") ? (
+                  <video src={mediaPreview} controls className="w-full max-h-[240px] object-contain bg-black" />
+                ) : (
+                  <img src={mediaPreview} alt="Preview" className="w-full max-h-[240px] object-cover" />
+                )}
+                <button
+                  type="button"
+                  onClick={() => { setMediaFile(null); setMediaPreview(null); }}
+                  className="absolute top-2 right-2 rounded-full bg-black/60 p-1.5 text-white hover:bg-black/80 transition"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+            )}
+
+            {/* Link preview */}
+            {linkUrl && (
+              <div className="flex items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">
+                <LinkIcon className="h-4 w-4 text-[color:var(--brand-orange)] shrink-0" />
+                <span className="flex-1 text-sm text-slate-600 truncate">{linkUrl}</span>
+                <button
+                  type="button"
+                  onClick={() => setLinkUrl("")}
+                  className="text-slate-400 hover:text-red-500 transition"
+                >
+                  <X className="h-3.5 w-3.5" />
+                </button>
+              </div>
+            )}
+
+            {/* Character count */}
+            <div className="flex items-center justify-between text-[10px] text-slate-400 -mt-2">
+              <span>{postText.length}/2000</span>
+              <span className="hidden sm:inline">Ctrl+Enter to post · Esc to cancel</span>
+            </div>
+
+            {/* Footer actions */}
+            <div className="flex items-center justify-between border-t border-slate-100 pt-3">
+              <div className="flex items-center gap-1">
+                <button type="button" onClick={() => setMediaModal("photo")} className="rounded-full p-2 text-slate-400 hover:bg-slate-100 hover:text-blue-500 transition" title="Add photo">
+                  <Camera className="h-5 w-5" />
+                </button>
+                <button type="button" onClick={() => setMediaModal("video")} className="rounded-full p-2 text-slate-400 hover:bg-slate-100 hover:text-green-600 transition" title="Add video">
+                  <Video className="h-5 w-5" />
+                </button>
+                <button type="button" onClick={() => { setLinkInput(linkUrl); setLinkModal(true); }} className="rounded-full p-2 text-slate-400 hover:bg-slate-100 hover:text-[color:var(--brand-orange)] transition" title="Add link">
+                  <LinkIcon className="h-5 w-5" />
+                </button>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <Button variant="ghost" size="sm" onClick={handleCancel} className="text-slate-500">
+                  Cancel
+                </Button>
+                <Button
+                  size="sm"
+                  disabled={!selectedType || !postText.trim() || submitting}
+                  onClick={handleSubmit}
+                  className="bg-[color:var(--brand-orange)] text-white hover:brightness-110 px-5"
+                >
+                  {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : "Post"}
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
+      </Card>
+    </>
   );
 }
 
@@ -835,6 +1039,7 @@ export default function HomeFeed() {
   const [loading,     setLoading]     = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [companies,   setCompanies]   = useState([]);
+  const [suggestions, setSuggestions] = useState([]);
 
   const composerRef = useRef(null);
   const apiPicUrl   = import.meta.env.VITE_API_PIC_URL || "";
@@ -858,6 +1063,7 @@ export default function HomeFeed() {
 
   useEffect(() => {
     fetchMyCompanies().then(setCompanies).catch(() => {});
+    fetchPeopleYouMayKnow().then(setSuggestions).catch(() => {});
   }, []);
 
   const handleLoadMore = () => {
@@ -956,7 +1162,7 @@ export default function HomeFeed() {
         {/* ── Right Sidebar ── */}
         <aside className="hidden lg:block">
           <div className="sticky top-24">
-            <RightSidebar onNavigate={navigate} />
+            <RightSidebar onNavigate={navigate} suggestions={suggestions} apiPicUrl={apiPicUrl} />
           </div>
         </aside>
       </div>

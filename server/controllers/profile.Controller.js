@@ -1664,6 +1664,113 @@ async function notifyNewLineManagers(userId, updatedExperience, oldManagersMap) 
 /* =========================
    GET LINE MANAGER CANDIDATES
    ========================= */
+/* ── People You May Know ── */
+exports.getPeopleYouMayKnow = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const OVERLAP_DAYS = 30;
+    const LIMIT = 10;
+
+    const myProfile = await Profile.findOne({ user: new ObjectId(userId) }).lean();
+    if (!myProfile) return res.json({ suggestions: [] });
+
+    // Collect user's company keys + date ranges
+    const myCompanies = (myProfile.experience || []).map((e) => ({
+      key: e.companyKey || normalizeCompany(e.company || ""),
+      name: e.company,
+      start: new Date(e.startDate).getTime(),
+      end: e.endDate ? new Date(e.endDate).getTime() : Date.now(),
+      type: "company",
+    })).filter((c) => c.key);
+
+    // Collect user's institute keys + date ranges
+    const myInstitutes = (myProfile.education || []).map((e) => ({
+      key: e.instituteKey || normalizeInstitute(e.institute || ""),
+      name: e.institute,
+      start: new Date(e.startDate).getTime(),
+      end: e.endDate ? new Date(e.endDate).getTime() : Date.now(),
+      type: "institute",
+    })).filter((c) => c.key);
+
+    const allKeys = [...myCompanies, ...myInstitutes];
+    if (allKeys.length === 0) return res.json({ suggestions: [] });
+
+    const companyKeys = [...new Set(myCompanies.map((c) => c.key))];
+    const instituteKeys = [...new Set(myInstitutes.map((i) => i.key))];
+
+    // Find profiles that share any company or institute
+    const orConditions = [];
+    if (companyKeys.length) orConditions.push({ "experience.companyKey": { $in: companyKeys } });
+    if (instituteKeys.length) orConditions.push({ "education.instituteKey": { $in: instituteKeys } });
+
+    const profiles = await Profile.find({
+      user: { $ne: new ObjectId(userId) },
+      $or: orConditions,
+    })
+      .populate("user", "firstName lastName email")
+      .lean();
+
+    const suggestions = [];
+
+    for (const profile of profiles) {
+      if (!profile.user) continue;
+      let bestReason = null;
+
+      // Check experience overlap
+      for (const theirExp of profile.experience || []) {
+        const theirKey = theirExp.companyKey || normalizeCompany(theirExp.company || "");
+        const myMatch = myCompanies.find((c) => c.key === theirKey);
+        if (!myMatch) continue;
+        const theirStart = new Date(theirExp.startDate).getTime();
+        const theirEnd = theirExp.endDate ? new Date(theirExp.endDate).getTime() : Date.now();
+        const overlapStart = Math.max(myMatch.start, theirStart);
+        const overlapEnd = Math.min(myMatch.end, theirEnd);
+        if (overlapEnd <= overlapStart) continue;
+        const days = (overlapEnd - overlapStart) / (1000 * 60 * 60 * 24);
+        if (days >= OVERLAP_DAYS) {
+          bestReason = { type: "company", name: myMatch.name, days: Math.round(days) };
+          break;
+        }
+      }
+
+      // Check education overlap if no company match found
+      if (!bestReason) {
+        for (const theirEdu of profile.education || []) {
+          const theirKey = theirEdu.instituteKey || normalizeInstitute(theirEdu.institute || "");
+          const myMatch = myInstitutes.find((i) => i.key === theirKey);
+          if (!myMatch) continue;
+          const theirStart = new Date(theirEdu.startDate).getTime();
+          const theirEnd = theirEdu.endDate ? new Date(theirEdu.endDate).getTime() : Date.now();
+          const overlapStart = Math.max(myMatch.start, theirStart);
+          const overlapEnd = Math.min(myMatch.end, theirEnd);
+          if (overlapEnd <= overlapStart) continue;
+          const days = (overlapEnd - overlapStart) / (1000 * 60 * 60 * 24);
+          if (days >= OVERLAP_DAYS) {
+            bestReason = { type: "institute", name: myMatch.name, days: Math.round(days) };
+            break;
+          }
+        }
+      }
+
+      if (bestReason) {
+        const u = profile.user;
+        suggestions.push({
+          userId: typeof u === "object" ? u._id : u,
+          name: `${u.firstName || ""} ${u.lastName || ""}`.trim() || u.email,
+          profilePic: profile.profilePic || null,
+          reason: bestReason,
+        });
+      }
+      if (suggestions.length >= LIMIT) break;
+    }
+
+    return res.json({ suggestions });
+  } catch (err) {
+    console.error("getPeopleYouMayKnow error:", err);
+    return res.status(500).json({ error: "Failed to fetch suggestions" });
+  }
+};
+
 exports.getLineManagerCandidates = async (req, res) => {
   try {
     const userId = req.user.id;
