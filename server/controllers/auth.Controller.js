@@ -61,7 +61,7 @@ exports.Loginuser = async (req, res) => {
 
     const user = await User.findOne({ email });
     if (!user) {
-      return res.status(400).json({ message: "Your account or password is incorrect." });
+      return res.status(400).json({ message: "This email may be incorrect. Make sure you typed it correctly." });
     }
     if (!user.password) {
       return res.status(403).json({
