@@ -11,9 +11,14 @@ export const AuthProvider = ({ children }) => {
 
   const login = async (credentials) => {
     setLoading(true);
-    const res = await axiosInstance.post("auth/login-user", credentials);
-    await checkAuth();
-    return res;
+    try {
+      const res = await axiosInstance.post("auth/login-user", credentials);
+      await checkAuth();
+      return res;
+    } catch (err) {
+      setLoading(false);
+      throw err;
+    }
   };
 
   const googleLogin = async (credential) => {
