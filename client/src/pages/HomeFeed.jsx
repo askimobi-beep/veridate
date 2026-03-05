@@ -32,6 +32,7 @@ import {
   Minus,
   Eye,
   List,
+  FilePlus,
   Mic,
   Video,
   Sparkles,
@@ -378,6 +379,28 @@ function LeftSidebar({ user, apiPicUrl, onNavigate, companies, myProfile }) {
             <PlusSquare className="h-4 w-4" />
             <span>Create a Company Page</span>
           </button>
+          {(!companies || companies.length === 0) && (
+            <>
+              <button
+                type="button"
+                disabled
+                title="Create a Company Page first"
+                className="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-left text-sm font-semibold opacity-40 cursor-not-allowed text-slate-400"
+              >
+                <List className="h-4 w-4" />
+                <span>View Job Posts</span>
+              </button>
+              <button
+                type="button"
+                disabled
+                title="Create a Company Page first"
+                className="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-left text-sm font-semibold opacity-40 cursor-not-allowed text-slate-400"
+              >
+                <FilePlus className="h-4 w-4" />
+                <span>Post a Job</span>
+              </button>
+            </>
+          )}
         </div>
       </div>
     </div>
