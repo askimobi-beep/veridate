@@ -4,9 +4,11 @@ import { useAuth } from "@/context/AuthContext";
 import { fetchFeed, createFeedPost, updateFeedPost, toggleLikePost, addComment, deleteFeedPost } from "@/services/feedService";
 import { fetchMyCompanies } from "@/services/companyService";
 import { fetchPeopleYouMayKnow } from "@/services/profileService";
+import { getProfileMe } from "@/lib/profileApi";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   BriefcaseBusiness as Briefcase,
@@ -40,6 +42,7 @@ import {
   Send,
   Link as LinkIcon,
   Upload,
+  Star,
 } from "lucide-react";
 
 /* ─── constants ─── */
@@ -84,8 +87,82 @@ function timeAgo(dateStr) {
 /* ═══════════════════════════════════════
    LEFT SIDEBAR
 ═══════════════════════════════════════ */
-function LeftSidebar({ user, apiPicUrl, onNavigate, companies }) {
+/* ── rating helpers ── */
+function recordAvgRating(row) {
+  const ratings = Array.isArray(row?.verifications)
+    ? row.verifications.map((v) => Number(v?.rating ?? 0)).filter((r) => Number.isFinite(r) && r > 0)
+    : [];
+  return ratings.length ? ratings.reduce((a, b) => a + b, 0) / ratings.length : 0;
+}
+
+function profileRatingData(profile) {
+  if (!profile) return { average: 0, totalVerifications: 0, allVerifications: [] };
+  const sections = [
+    ...(Array.isArray(profile.education) ? profile.education.map((r) => ({ ...r, _section: "education" })) : []),
+    ...(Array.isArray(profile.experience) ? profile.experience.map((r) => ({ ...r, _section: "experience" })) : []),
+    ...(Array.isArray(profile.projects) ? profile.projects.map((r) => ({ ...r, _section: "project" })) : []),
+  ];
+  const allVerifications = [];
+  let ratingSum = 0;
+  let ratingCount = 0;
+  for (const row of sections) {
+    if (!Array.isArray(row.verifications)) continue;
+    for (const v of row.verifications) {
+      const r = Number(v?.rating ?? 0);
+      if (r > 0) { ratingSum += r; ratingCount++; }
+      allVerifications.push({
+        ...v,
+        _section: row._section,
+        _title:
+          row._section === "education"
+            ? [row.degreeTitle, row.institute].filter(Boolean).join(" at ")
+            : row._section === "experience"
+            ? [row.jobTitle, row.company].filter(Boolean).join(" at ")
+            : [row.projectTitle, row.company].filter(Boolean).join(" at "),
+      });
+    }
+  }
+  return {
+    average: ratingCount ? ratingSum / ratingCount : 0,
+    totalVerifications: ratingCount,
+    allVerifications: allVerifications.sort((a, b) => {
+      const at = a?.createdAt ? new Date(a.createdAt).getTime() : 0;
+      const bt = b?.createdAt ? new Date(b.createdAt).getTime() : 0;
+      return bt - at;
+    }),
+  };
+}
+
+function SidebarStars({ value = 0, className = "" }) {
+  return (
+    <span className={`inline-flex items-center gap-0.5 ${className}`}>
+      {[1, 2, 3, 4, 5].map((s) => (
+        <Star
+          key={s}
+          className={`h-3.5 w-3.5 ${s <= Math.round(value) ? "text-[color:var(--brand-orange)]" : "text-gray-300"}`}
+          fill={s <= Math.round(value) ? "currentColor" : "none"}
+          strokeWidth={1.5}
+        />
+      ))}
+    </span>
+  );
+}
+
+function timeAgoShort(value) {
+  if (!value) return "";
+  const diff = Math.max(0, (Date.now() - new Date(value).getTime()) / 1000);
+  const units = [["y", 31536000], ["mo", 2592000], ["w", 604800], ["d", 86400], ["h", 3600], ["m", 60]];
+  for (const [label, secs] of units) {
+    const count = Math.floor(diff / secs);
+    if (count >= 1) return `${count}${label} ago`;
+  }
+  return "just now";
+}
+
+function LeftSidebar({ user, apiPicUrl, onNavigate, companies, myProfile }) {
   const [expandedCompanyId, setExpandedCompanyId] = useState(null);
+  const [ratingsOpen, setRatingsOpen] = useState(false);
+  const [ratingSort, setRatingSort] = useState("newest");
   const displayName =
     [user?.firstName, user?.lastName].filter(Boolean).join(" ").trim() ||
     user?.email || "User";
@@ -114,7 +191,19 @@ function LeftSidebar({ user, apiPicUrl, onNavigate, companies }) {
           </Avatar>
           <div className="mt-2 text-left">
             <p className="text-sm font-semibold text-slate-800 truncate">{displayName}</p>
-            <p className="text-xs text-slate-400 truncate">{user?.email}</p>
+            {(() => {
+              const { average, totalVerifications } = profileRatingData(myProfile);
+              return (
+                <button
+                  type="button"
+                  onClick={() => totalVerifications > 0 && setRatingsOpen(true)}
+                  className={`mt-0.5 inline-flex items-center gap-1 ${totalVerifications > 0 ? "cursor-pointer hover:opacity-80" : "cursor-default"}`}
+                >
+                  <SidebarStars value={average} />
+                  <span className="text-xs text-slate-500">({totalVerifications})</span>
+                </button>
+              );
+            })()}
           </div>
           <button
             onClick={() => onNavigate("/dashboard/profile")}
@@ -124,6 +213,103 @@ function LeftSidebar({ user, apiPicUrl, onNavigate, companies }) {
           </button>
         </div>
       </Card>
+
+      {/* Ratings Popup */}
+      <Dialog open={ratingsOpen} onOpenChange={setRatingsOpen}>
+        <DialogContent className="sm:max-w-lg bg-white">
+          <DialogHeader>
+            <DialogTitle>Profile Ratings</DialogTitle>
+          </DialogHeader>
+          {(() => {
+            const { average, totalVerifications, allVerifications } = profileRatingData(myProfile);
+            const sorted = [...allVerifications].sort((a, b) => {
+              if (ratingSort === "highest") return (b.rating || 0) - (a.rating || 0);
+              if (ratingSort === "lowest") return (a.rating || 0) - (b.rating || 0);
+              return (new Date(b.createdAt || 0).getTime()) - (new Date(a.createdAt || 0).getTime());
+            });
+            return (
+              <div className="space-y-4">
+                {/* Summary bar */}
+                <div className="flex flex-col gap-3 rounded-xl border border-slate-100 bg-white/70 p-3 shadow-sm sm:flex-row sm:items-center sm:justify-between">
+                  <div className="flex flex-wrap items-center gap-3">
+                    <div className="flex items-center gap-2">
+                      <SidebarStars value={average} />
+                      <span className="text-sm font-semibold text-slate-800">
+                        {average ? average.toFixed(1) : "0.0"} / 5
+                      </span>
+                    </div>
+                    <div className="rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-600">
+                      {totalVerifications} veridation{totalVerifications !== 1 ? "s" : ""}
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {["newest", "highest", "lowest"].map((id) => (
+                      <Button
+                        key={id}
+                        size="sm"
+                        variant={ratingSort === id ? "default" : "outline"}
+                        className={`rounded-full border ${
+                          ratingSort === id
+                            ? "bg-[color:var(--brand-orange)] text-white hover:bg-[color:var(--brand-orange)]"
+                            : "bg-white text-slate-700"
+                        }`}
+                        onClick={() => setRatingSort(id)}
+                      >
+                        {id.charAt(0).toUpperCase() + id.slice(1)}
+                      </Button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Review cards */}
+                <div className="max-h-96 space-y-3 overflow-y-auto pr-1">
+                  {sorted.length === 0 ? (
+                    <p className="py-6 text-center text-sm text-slate-400">No ratings yet.</p>
+                  ) : (
+                    sorted.map((entry, idx) => {
+                      const rating = Number(entry?.rating || 0);
+                      const comment = (entry?.comment || "").trim();
+                      const userObj = entry?.user;
+                      const reviewerName =
+                        (userObj && typeof userObj === "object"
+                          ? [userObj.firstName, userObj.lastName].filter(Boolean).join(" ").trim() || userObj.name || "Verified User"
+                          : "Verified User");
+                      const avatarUrl = userObj?.profilePic
+                        ? `${apiPicUrl}/uploads/profile/${userObj.profilePic}`
+                        : null;
+                      const when = timeAgoShort(entry?.createdAt);
+                      return (
+                        <div key={`${entry?._id || idx}`} className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+                          {/* Title */}
+                          <p className="text-xs font-semibold text-slate-500 mb-2">{entry._title}</p>
+                          <div className="flex items-start gap-3">
+                            <Avatar className="h-10 w-10">
+                              {avatarUrl && <AvatarImage src={avatarUrl} alt={reviewerName} className="object-cover" />}
+                              <AvatarFallback className="bg-orange-50 text-[color:var(--brand-orange)] text-xs font-semibold">
+                                {getInitial(reviewerName)}
+                              </AvatarFallback>
+                            </Avatar>
+                            <div className="flex-1">
+                              <p className="text-sm font-semibold text-slate-800">{reviewerName}</p>
+                              <div className="mt-1 flex items-center gap-2">
+                                <SidebarStars value={rating} />
+                                {when && <span className="text-xs text-slate-400">{when}</span>}
+                              </div>
+                              {comment && (
+                                <p className="mt-2 text-sm italic text-slate-600">"{comment}"</p>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })
+                  )}
+                </div>
+              </div>
+            );
+          })()}
+        </DialogContent>
+      </Dialog>
 
       {/* Company Page — separate card, styled like /profile sidebar */}
       <div className="space-y-3">
@@ -1040,6 +1226,7 @@ export default function HomeFeed() {
   const [loadingMore, setLoadingMore] = useState(false);
   const [companies,   setCompanies]   = useState([]);
   const [suggestions, setSuggestions] = useState([]);
+  const [myProfile,   setMyProfile]   = useState(null);
 
   const composerRef = useRef(null);
   const apiPicUrl   = import.meta.env.VITE_API_PIC_URL || "";
@@ -1064,6 +1251,7 @@ export default function HomeFeed() {
   useEffect(() => {
     fetchMyCompanies().then(setCompanies).catch(() => {});
     fetchPeopleYouMayKnow().then(setSuggestions).catch(() => {});
+    getProfileMe().then(setMyProfile).catch(() => {});
   }, []);
 
   const handleLoadMore = () => {
@@ -1105,7 +1293,7 @@ export default function HomeFeed() {
         {/* ── Left Sidebar ── */}
         <aside className="hidden lg:block">
           <div className="sticky top-24">
-            <LeftSidebar user={user} apiPicUrl={apiPicUrl} onNavigate={navigate} companies={companies} />
+            <LeftSidebar user={user} apiPicUrl={apiPicUrl} onNavigate={navigate} companies={companies} myProfile={myProfile} />
           </div>
         </aside>
 

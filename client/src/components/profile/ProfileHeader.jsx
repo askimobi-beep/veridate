@@ -3,7 +3,7 @@
 import React, { useMemo, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
 import ProfilePhotoPicker from "../form/ProfilePhotoPicker";
-import { Share2, Copy, Check } from "lucide-react";
+import { Share2, Copy, Check, Star } from "lucide-react";
 
 const initials = (name = "") =>
   name
@@ -14,6 +14,40 @@ const initials = (name = "") =>
     .toUpperCase();
 
 const isAbsolute = (v) => typeof v === "string" && /^(https?:)?\/\//i.test(v);
+
+function computeProfileRating(data) {
+  if (!data) return { average: 0, totalVerifications: 0 };
+  const rows = [
+    ...(Array.isArray(data.education) ? data.education : []),
+    ...(Array.isArray(data.experience) ? data.experience : []),
+    ...(Array.isArray(data.projects) ? data.projects : []),
+  ];
+  let sum = 0;
+  let count = 0;
+  for (const row of rows) {
+    if (!Array.isArray(row.verifications)) continue;
+    for (const v of row.verifications) {
+      const r = Number(v?.rating ?? 0);
+      if (r > 0) { sum += r; count++; }
+    }
+  }
+  return { average: count ? sum / count : 0, totalVerifications: count };
+}
+
+function HeaderStars({ value = 0 }) {
+  return (
+    <span className="inline-flex items-center gap-0.5">
+      {[1, 2, 3, 4, 5].map((s) => (
+        <Star
+          key={s}
+          className={`h-4 w-4 ${s <= Math.round(value) ? "text-[color:var(--brand-orange)]" : "text-gray-300"}`}
+          fill={s <= Math.round(value) ? "currentColor" : "none"}
+          strokeWidth={1.5}
+        />
+      ))}
+    </span>
+  );
+}
 
 export default function ProfileHeader({
   user,
@@ -110,14 +144,24 @@ export default function ProfileHeader({
             {user?.name || "Professional Profile"}
           </motion.h1>
 
-          <motion.p
+          <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.3, duration: 0.5 }}
-            className="text-sm text-gray-600"
+            className="flex items-center gap-2 mt-0.5"
           >
-            Fill in your details and upload required documents.
-          </motion.p>
+            {(() => {
+              const { average, totalVerifications } = computeProfileRating(user);
+              return (
+                <>
+                  <HeaderStars value={average} />
+                  <span className="text-sm text-gray-600">
+                    ({totalVerifications}) · {totalVerifications} Veridation{totalVerifications !== 1 ? "s" : ""}
+                  </span>
+                </>
+              );
+            })()}
+          </motion.div>
         </div>
       </div>
 

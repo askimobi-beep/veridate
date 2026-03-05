@@ -545,6 +545,7 @@ export default function PersonalInformation() {
       icon: FileText,
       done: hasEducation,
       hint: hasEducation ? "Completed" : "Add degree",
+      count: Array.isArray(formData?.education) ? formData.education.filter((e) => e?.degreeTitle || e?.institute).length : 0,
     },
     {
       key: "experience",
@@ -552,6 +553,7 @@ export default function PersonalInformation() {
       icon: Briefcase,
       done: hasExperience,
       hint: hasExperience ? "Completed" : "Add role",
+      count: Array.isArray(formData?.experience) ? formData.experience.filter((e) => e?.jobTitle || e?.company).length : 0,
     },
     {
       key: "projects",
@@ -559,6 +561,7 @@ export default function PersonalInformation() {
       icon: ClipboardList,
       done: hasProjects,
       hint: hasProjects ? "Completed" : "Add project",
+      count: Array.isArray(formData?.projects) ? formData.projects.filter((e) => e?.projectTitle || e?.company).length : 0,
     },
     {
       key: "audio",
@@ -715,14 +718,27 @@ export default function PersonalInformation() {
                         key={item.key}
                         type="button"
                         onClick={() => scrollToSection(item.key)}
-                        className={`flex w-full items-center gap-3 rounded-xl px-3 py-2 text-left text-sm font-semibold transition ${
+                        className={`flex w-full items-center justify-between gap-3 rounded-xl px-3 py-2 text-left text-sm font-semibold transition ${
                           isActive
                             ? "brand-orange-soft text-[color:var(--brand-orange)] shadow-[0_6px_16px_-10px_rgba(251,119,59,0.7)]"
                             : "text-slate-500 hover:bg-white/70 hover:text-slate-700"
                         }`}
                       >
-                        <Icon className="h-4 w-4" />
-                        <span>{item.label}</span>
+                        <span className="flex items-center gap-3">
+                          <Icon className="h-4 w-4" />
+                          <span>{item.label}</span>
+                        </span>
+                        {typeof item.count === "number" ? (
+                          <span
+                            className={`flex h-6 w-6 items-center justify-center rounded-full text-xs font-bold ${
+                              isActive
+                                ? "bg-[color:var(--brand-orange)] text-white"
+                                : "bg-slate-200 text-slate-700"
+                            }`}
+                          >
+                            {item.count}
+                          </span>
+                        ) : null}
                       </button>
                     );
                   })}
