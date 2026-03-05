@@ -61,7 +61,7 @@ exports.Loginuser = async (req, res) => {
 
     const user = await User.findOne({ email });
     if (!user) {
-      return res.status(400).json({ message: "Invalid email or password" });
+      return res.status(400).json({ message: "Your account or password is incorrect." });
     }
     if (!user.password) {
       return res.status(403).json({
@@ -91,10 +91,10 @@ exports.Loginuser = async (req, res) => {
       isMatch = await bcrypt.compare(password, passwordHash);
     } catch (err) {
       console.error("Password compare error:", err);
-      return res.status(401).json({ message: "Invalid email or password" });
+      return res.status(401).json({ message: "Your account or password is incorrect." });
     }
     if (!isMatch) {
-      return res.status(401).json({ message: "Incorrect password" });
+      return res.status(401).json({ message: "Your account or password is incorrect." });
     }
 
     const payload = { id: user._id, email: user.email, role: user.role };

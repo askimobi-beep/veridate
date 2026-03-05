@@ -87,7 +87,13 @@ export default function LoginPage() {
 
           {/* Only show error if exists */}
           {error ? (
-            <p className="text-center text-sm text-red-600 mb-4">{error}</p>
+            <p className="text-sm text-red-600 mb-4">
+              {error}{" "}
+              If you don't remember your password,{" "}
+              <Link to="/forgot-password" className="text-red-600 underline font-medium">
+                reset it now
+              </Link>.
+            </p>
           ) : null}
 
           {/* Email/Password Form */}
