@@ -85,21 +85,6 @@ export default function LoginPage() {
             <img src={logo} alt="Logo" className="h-14 w-auto" />
           </div>
 
-          {/* Only show error if exists */}
-          {error ? (
-            <p className="text-sm text-red-600 mb-4">
-              {error}
-              {error.includes("password is incorrect") && (
-                <>
-                  {" "}If you don't remember your password,{" "}
-                  <Link to="/forgot-password" className="text-red-600 underline font-medium">
-                    reset it now
-                  </Link>.
-                </>
-              )}
-            </p>
-          ) : null}
-
           {/* Email/Password Form */}
           <form
             onSubmit={handleLogin}
@@ -143,6 +128,19 @@ export default function LoginPage() {
                 required
                 autoComplete="current-password"
               />
+              {error && (
+                <p className="text-xs text-red-600 mt-1">
+                  {error}
+                  {error.includes("password is incorrect") && (
+                    <>
+                      {" "}If you don't remember your password,{" "}
+                      <Link to="/forgot-password" className="text-red-600 underline font-medium">
+                        reset it now
+                      </Link>.
+                    </>
+                  )}
+                </p>
+              )}
             </div>
 
             {/* Remember & Forgot */}
