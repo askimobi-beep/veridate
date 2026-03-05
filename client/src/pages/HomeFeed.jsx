@@ -139,7 +139,7 @@ function SidebarStars({ value = 0, className = "" }) {
       {[1, 2, 3, 4, 5].map((s) => (
         <Star
           key={s}
-          className={`h-3.5 w-3.5 ${s <= Math.round(value) ? "text-[color:var(--brand-orange)]" : "text-gray-300"}`}
+          className={`h-3.5 w-3.5 text-[color:var(--brand-orange)]`}
           fill={s <= Math.round(value) ? "currentColor" : "none"}
           strokeWidth={1.5}
         />

@@ -103,6 +103,7 @@ export default function UserMenu({ user, onLogout }) {
                       user?.profilePic
                     }`}
                     alt={displayName}
+                    className="object-cover"
                   />
                   <AvatarFallback>{getInitial(displayName)}</AvatarFallback>
                 </Avatar>
